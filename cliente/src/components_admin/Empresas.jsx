@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
+
 // Companies Directory Component
 const CompaniesDirectory = () => {
   const [searchTerm, setSearchTerm] = useState('');
