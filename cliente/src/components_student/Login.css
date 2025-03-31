@@ -1,0 +1,620 @@
+/* Variables globales */
+:root {
+  --primary-color: #8B0000;
+  --primary-dark: #580000;
+  --primary-light: rgba(139, 0, 0, 0.1);
+  --secondary-dark: #1f0000;
+  --text-dark: #333;
+  --text-light: #fff;
+  --gray-light: #f5f5f5;
+  --gray-medium: #ddd;
+  --transition: all 0.3s ease;
+  --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  --input-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --button-shadow: 0 4px 6px rgba(139, 0, 0, 0.2);
+}
+
+/* Reset y estilos base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+/* Contenedor principal con animación de intro */
+.login-container {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  background-color: var(--primary-dark);
+  opacity: 0;
+  animation: fadeIn 1s ease-out forwards;
+}
+
+/* Fondo con overlay */
+.login-container {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #580000;
+  background-image: url('/public/fondo_UPQROO.PNG');
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.login-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+}
+
+/* Animación inicial para todo el contenedor */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Contenedor del formulario con animación */
+.login-form-container {
+  display: flex;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1000px;
+  min-height: 400px;
+  background-color: transparent;
+  box-shadow: var(--box-shadow);
+  overflow: hidden;
+  border-radius: 30px;
+  margin: 20px;
+  transform: scale(0.8);
+  opacity: 0;
+  animation: formAppear 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s forwards;
+}
+
+@keyframes formAppear {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Elemento de fondo oscuro con desenfoque */
+.login-form-container::before {
+  content: "";
+  position: absolute;
+  border-radius: 30px;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.221);
+  backdrop-filter: blur(3px);
+  z-index: -1;
+  transform: translateX(-100%);
+  animation: slideInLeft 1s ease-out 0.7s forwards;
+  
+}
+
+@keyframes slideInLeft {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* Sección del logo con animación */
+.logo-section {
+  width: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 50px;
+  background-color: rgba(0, 0, 0, 0.021);
+  position: relative;
+  opacity: 0;
+  animation: fadeInSection 1s ease-out 1s forwards;
+}
+
+@keyframes fadeInSection {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.logo-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: linear-gradient(45deg, 
+                    rgba(255, 255, 255, 0.174) 0%, 
+                    rgba(31, 0, 0, 0.436) 120%);
+                    
+  z-index: -1;  
+}
+
+.university-logo {
+  width: 130%;
+  max-width: 1000px;
+  height: auto;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+  margin-bottom: 20px;
+  opacity: 0;
+  transform: translateY(30px) scale(0.9);
+  animation: logoReveal 1.5s cubic-bezier(0.18, 1.25, 0.6, 1) 1.3s forwards;
+}
+
+@keyframes logoReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Sección del formulario con animación */
+.login-form-section {
+  width: 60%;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0;
+  position: relative;
+  transform: translateX(100%);
+  animation: slideInRight 1s ease-out 0.9s forwards;
+}
+
+@keyframes slideInRight {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.login-form-content {
+  padding: 50px;
+  width: 100%;
+  max-width: 450px;
+  margin: 0 auto;
+}
+
+h2 {
+  font-size: 1.4rem;
+  text-align: center;
+  margin-bottom: 35px;
+  color: var(--text-dark);
+  font-weight: 600;
+  line-height: 1.5;
+  animation: fadeInRight 0.6s ease-out 1.5s both;
+}
+
+/* Grupos de formulario con animación secuencial */
+.form-group {
+  margin-bottom: 25px;
+  position: relative;
+  opacity: 0;
+}
+
+.form-group:nth-child(1) {
+  animation: fadeInUp 0.8s ease-out 1.7s forwards;
+}
+
+.form-group:nth-child(2) {
+  animation: fadeInUp 0.8s ease-out 1.9s forwards;
+}
+
+@keyframes fadeInUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+label {
+  display: block;
+  font-size: 0.95rem;
+  margin-bottom: 10px;
+  color: var(--text-dark);
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.form-input {
+  width: 100%;
+  padding: 14px 16px;
+  background-color: var(--gray-light);
+  border: 1px solid var(--gray-medium);
+  border-radius: 6px;
+  font-size: 16px;
+  transition: var(--transition);
+  color: var(--text-dark);
+  box-shadow: var(--input-shadow);
+}
+
+.form-input:focus {
+  background-color: white;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-light);
+  outline: none;
+}
+
+/* Enlaces y botones con animación */
+.forgot-password {
+  text-align: right;
+  margin-top: 10px;
+  opacity: 0;
+  animation: fadeInUp 0.5s ease-out 2.1s forwards;
+}
+
+.forgot-password a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.forgot-password a:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+
+.login-button {
+  width: 100%;
+  padding: 15px;
+  background-color: var(--primary-color);
+  color: var(--text-light);
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 25px;
+  transition: var(--transition);
+  box-shadow: var(--button-shadow);
+  letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  animation: fadeInButton 0.8s ease-out 2.3s forwards;
+}
+
+@keyframes fadeInButton {
+  0% {
+    opacity: 0;
+    transform: translateY(15px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.login-button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+              transparent 0%, 
+              rgba(255, 255, 255, 0.2) 50%, 
+              transparent 100%);
+  transition: left 0.7s ease;
+}
+
+.login-button:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(139, 0, 0, 0.3);
+}
+
+.login-button:hover::after {
+  left: 100%;
+}
+
+.login-button:active {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(139, 0, 0, 0.2);
+}
+
+.register-link {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  opacity: 0;
+  animation: fadeInUp 0.5s ease-out 2.5s forwards;
+}
+
+.register-link a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 600;
+  transition: var(--transition);
+  margin-left: 5px;
+  position: relative;
+}
+
+.register-link a:hover {
+  color: var(--primary-dark);
+}
+
+.register-link a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--primary-color);
+  transition: width 0.3s ease;
+}
+
+.register-link a:hover::after {
+  width: 100%;
+}
+
+/* Efectos de partículas luminosas */
+.particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  animation: fadeIn 1s ease-out 2.7s forwards;
+}
+
+.particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background-color: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.3);
+}
+
+.particle:nth-child(1) {
+  top: 20%;
+  left: 10%;
+  animation: floatParticle 8s infinite ease-in-out;
+}
+
+.particle:nth-child(2) {
+  top: 50%;
+  left: 15%;
+  animation: floatParticle 12s infinite ease-in-out;
+}
+
+.particle:nth-child(3) {
+  top: 80%;
+  left: 25%;
+  animation: floatParticle 9s infinite ease-in-out;
+}
+
+.particle:nth-child(4) {
+  top: 15%;
+  left: 85%;
+  animation: floatParticle 10s infinite ease-in-out;
+}
+
+.particle:nth-child(5) {
+  top: 45%;
+  left: 90%;
+  animation: floatParticle 11s infinite ease-in-out;
+}
+
+.particle:nth-child(6) {
+  top: 75%;
+  left: 80%;
+  animation: floatParticle 13s infinite ease-in-out;
+}
+
+@keyframes floatParticle {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.5;
+  }
+  25% {
+    transform: translate(15px, 15px) scale(1.2);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(0, 25px) scale(1);
+    opacity: 0.6;
+  }
+  75% {
+    transform: translate(-15px, 15px) scale(1.1);
+    opacity: 0.7;
+  }
+}
+
+/* Efecto de barrido luminoso */
+.login-form-container::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(30deg);
+  animation: shiningEffect 6s ease-in-out 3s infinite;
+}
+
+@keyframes shiningEffect {
+  0% {
+    transform: rotate(30deg) translateX(-100%);
+  }
+  100% {
+    transform: rotate(30deg) translateX(100%);
+  }
+}
+
+/* Responsive styles */
+@media (max-width: 992px) {
+  .login-form-container {
+    max-width: 700px;
+  }
+  
+  .login-form-content {
+    padding: 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .login-form-container {
+    flex-direction: column;
+    max-width: 90%;
+    min-height: auto;
+  }
+  
+  .logo-section {
+    width: 100%;
+    padding: 30px 20px;
+  }
+  
+  .university-logo {
+    max-width: 180px;
+    margin-bottom: 0;
+  }
+  
+  .login-form-section {
+    width: 100%;
+  }
+  
+  .login-form-content {
+    padding: 40px 30px;
+  }
+  
+
+  .login-form-container::before {
+    width: 100%;
+    height: 50%;
+  }
+  
+  @keyframes slideInLeft {
+    0% {
+      transform: translateY(-100%);
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+  
+  .login-form-section {
+    transform: translateY(100%);
+    animation: slideInUp 1s ease-out 0.9s forwards;
+  }
+  
+  @keyframes slideInUp {
+    0% {
+      transform: translateY(100%);
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .login-form-content {
+    padding: 30px 20px;
+  }
+  
+  h2 {
+    font-size: 1.25rem;
+    margin-bottom: 25px;
+  }
+  
+  .login-button {
+    padding: 14px;
+  }
+  
+
+  .university-logo {
+    animation-delay: 0.8s;
+  }
+  
+  .form-group:nth-child(1) {
+    animation-delay: 1.2s;
+  }
+  
+  .form-group:nth-child(2) {
+    animation-delay: 1.4s;
+  }
+  
+  .login-button {
+    animation-delay: 1.6s;
+  }
+  
+  .register-link {
+    animation-delay: 1.8s;
+  }
+}
+
+
+.logo-section::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, 
+              rgba(255, 255, 255, 0.05) 0%, 
+              transparent 70%);
+  z-index: 1;
+  border-radius: 50%;
+} 
