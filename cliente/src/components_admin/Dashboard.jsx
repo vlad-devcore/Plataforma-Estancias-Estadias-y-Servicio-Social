@@ -26,21 +26,51 @@ const Dashboard = () => {
         } md:translate-x-0 z-40`}
       >
         {/* Logo con animación */}
-        <motion.img
-          src="/logo192.png"
-          alt="Logo"
-          className="h-20 w-auto"
-        />
+        <motion.img src="/logo192.png" alt="Logo" className="h-20 w-auto" />
 
-        {/* Menú */}
         <ul className="mt-8 space-y-4">
-          <NavItem to="/inicio" label="Inicio" currentPath={location.pathname} onClick={() => setIsMobileMenuOpen(false)} />
-          <NavItem to="/usuarios" label="Usuarios" currentPath={location.pathname} onClick={() => setIsMobileMenuOpen(false)} />
-          <NavItem to="/empresas" label="Empresas" currentPath={location.pathname} onClick={() => setIsMobileMenuOpen(false)} />
-          <NavItem to="/periodos" label="Periodos" currentPath={location.pathname} onClick={() => setIsMobileMenuOpen(false)} />
-          <NavItem to="/formatos" label="Formatos" currentPath={location.pathname} onClick={() => setIsMobileMenuOpen(false)} />
-          <NavItem to="/registros" label="Registros" currentPath={location.pathname} onClick={() => setIsMobileMenuOpen(false)} />
-          <NavItem to="/perfil" label="Perfil" currentPath={location.pathname} onClick={() => setIsMobileMenuOpen(false)} />
+          <NavItem
+            to="/admin/inicio"
+            label="Inicio"
+            currentPath={location.pathname}
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <NavItem
+            to="/admin/usuarios"
+            label="Usuarios"
+            currentPath={location.pathname}
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <NavItem
+            to="/admin/empresas"
+            label="Empresas"
+            currentPath={location.pathname}
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <NavItem
+            to="/admin/periodos"
+            label="Periodos"
+            currentPath={location.pathname}
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <NavItem
+            to="/admin/formatos"
+            label="Formatos"
+            currentPath={location.pathname}
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <NavItem
+            to="/admin/registros"
+            label="Registros"
+            currentPath={location.pathname}
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <NavItem
+            to="/admin/perfil"
+            label="Perfil"
+            currentPath={location.pathname}
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
         </ul>
 
         {/* Efecto de conexión visual */}
@@ -93,7 +123,9 @@ const NavItem = ({ to, label, currentPath, onClick }) => {
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       transition={{ duration: 0.2 }}
-      className={`py-3 px-4 rounded-md relative ${isActive ? "bg-white/10" : "hover:bg-white/10"}`}
+      className={`py-3 px-4 rounded-md relative ${
+        isActive ? "bg-white/10" : "hover:bg-white/10"
+      }`}
     >
       <Link to={to} className="block" onClick={onClick}>
         {label}
