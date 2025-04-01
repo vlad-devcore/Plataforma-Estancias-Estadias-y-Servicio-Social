@@ -2,14 +2,14 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import { AnimatePresence } from 'framer-motion';
 
 // Importar vistas de administración
-import Dashboard from './components_admin/Dashboard';
-import Inicio from './components_admin/Inicio';
-import Usuarios from './components_admin/Usuarios';
-import Registros from './components_admin/Registros';
-import Formatos from './components_admin/Formatos';
-import Empresas from './components_admin/Empresas';
-import PerfilAdmin from './components_admin/Perfil';
-import Periodos from './components_admin/Periodos';
+import Sidebar from './components_admin/Sidebar';
+import Inicio from './components_admin/InicioAdmin';
+import Usuarios from './components_admin/UsuariosAdmin';
+import Registros from './components_admin/RegistrosAdmin';
+import Formatos from './components_admin/FormatosAdmin';
+import Empresas from './components_admin/EmpresasAdmin';
+import PerfilAdmin from './components_admin/PerfilAdmin';
+import Periodos from './components_admin/PeriodosAdmin';
 
 // Importar vistas de estudiantes
 import Login from './components_student/Login';
@@ -39,14 +39,14 @@ function AnimatedRoutes() {
         <Route path="/formatos/EstadiasNacionales" element={<EstadiasNacionales />} />
 
         {/* Rutas para administradores (Dashboard como layout principal) */}
-        <Route path="/admin" element={<Dashboard />}>
+        <Route path="" element={<Sidebar />}>
           <Route path="inicio" element={<Inicio />} />
           <Route path="usuarios" element={<Usuarios />} />
           <Route path="registros" element={<Registros />} />
           <Route path="formatos" element={<Formatos />} />
           <Route path="periodos" element={<Periodos />} />
           <Route path="empresas" element={<Empresas />} />
-          <Route path="perfil" element={<PerfilAdmin />} />
+          <Route path="perfiladmin" element={<PerfilAdmin />} />
         </Route>
       </Routes>
     </AnimatePresence>
