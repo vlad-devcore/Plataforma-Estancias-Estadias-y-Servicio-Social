@@ -43,13 +43,13 @@ const Sidebar = ({ onNavigate }) => {
         {/* Menú */}
         <nav>
   <ul className="space-y-2">
-    <NavItem to="/inicio" label="Inicio" currentPath={location.pathname} onClick={handleNavigation} />
-    <NavItem to="/usuarios" label="Usuarios" currentPath={location.pathname} onClick={handleNavigation} />
-    <NavItem to="/empresas" label="Empresas" currentPath={location.pathname} onClick={handleNavigation} />
-    <NavItem to="/periodos" label="Periodos" currentPath={location.pathname} onClick={handleNavigation} />
-    <NavItem to="/formatos" label="Formatos" currentPath={location.pathname} onClick={handleNavigation} />
-    <NavItem to="/registros" label="Registros" currentPath={location.pathname} onClick={handleNavigation} />
-    <NavItem to="/perfil" label="Perfil" currentPath={location.pathname} onClick={handleNavigation} />
+    <NavItem to="/inicioadmin" label="Inicio" currentPath={location.pathname} onClick={handleNavigation} />
+    <NavItem to="/usuariosadmin" label="Usuarios" currentPath={location.pathname} onClick={handleNavigation} />
+    <NavItem to="/empresasadmin" label="Empresas" currentPath={location.pathname} onClick={handleNavigation} />
+    <NavItem to="/periodosadmin" label="Periodos" currentPath={location.pathname} onClick={handleNavigation} />
+    <NavItem to="/formatosadmin" label="Formatos" currentPath={location.pathname} onClick={handleNavigation} />
+    <NavItem to="/registrosadmin" label="Registros" currentPath={location.pathname} onClick={handleNavigation} />
+    <NavItem to="/perfiladmin" label="Perfil" currentPath={location.pathname} onClick={handleNavigation} />
   </ul>
 </nav>
       </aside>

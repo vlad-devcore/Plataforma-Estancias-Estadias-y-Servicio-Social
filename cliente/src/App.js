@@ -14,6 +14,7 @@ import Periodos from './components_admin/PeriodosAdmin';
 // Vistas de estudiantes
 import Login from './components_student/Login';
 import Home from './components_student/Home';
+import EmpresasS from './components_student/Empresas';
 import PerfilStudent from './components_student/Perfil';
 import Estancia1 from './components_student/formatos/Estancia1';
 import Estancia2 from './components_student/formatos/Estancia2';
@@ -30,6 +31,7 @@ function AnimatedRoutes() {
         {/* Rutas públicas (estudiantes) */}
         <Route path="/" element={<Login />} />
         <Route path="/home" element={<Home />} />
+        <Route path="/empresas" element={<EmpresasS />} />
         <Route path="/perfil" element={<PerfilStudent />} />
         <Route path="/formatos/Estancia1" element={<Estancia1 />} />
         <Route path="/formatos/Estancia2" element={<Estancia2 />} />
@@ -39,12 +41,12 @@ function AnimatedRoutes() {
 
         {/* Rutas de admin (con Sidebar como layout) */}
         <Route element={<Sidebar />}>
-          <Route path="/inicio" element={<Inicio />} />
-          <Route path="/usuarios" element={<Usuarios />} />
-          <Route path="/registros" element={<Registros />} />
-          <Route path="/formatos" element={<Formatos />} />
-          <Route path="/periodos" element={<Periodos />} />
-          <Route path="/empresas" element={<Empresas />} />
+          <Route path="/inicioadmin" element={<Inicio />} />
+          <Route path="/usuariosadmin" element={<Usuarios />} />
+          <Route path="/registrosadmin" element={<Registros />} />
+          <Route path="/formatosadmin" element={<Formatos />} />
+          <Route path="/periodosadmin" element={<Periodos />} />
+          <Route path="/empresasadmin" element={<Empresas />} />
           <Route path="/perfiladmin" element={<PerfilAdmin />} />
         </Route>
       </Routes>
