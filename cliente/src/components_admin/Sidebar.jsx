@@ -30,43 +30,43 @@ const Dashboard = () => {
 
         <ul className="mt-8 space-y-4">
           <NavItem
-            to="/admin/inicio"
+            to="/inicio"
             label="Inicio"
             currentPath={location.pathname}
             onClick={() => setIsMobileMenuOpen(false)}
           />
           <NavItem
-            to="/admin/usuarios"
+            to="usuarios"
             label="Usuarios"
             currentPath={location.pathname}
             onClick={() => setIsMobileMenuOpen(false)}
           />
           <NavItem
-            to="/admin/empresas"
+            to="empresas"
             label="Empresas"
             currentPath={location.pathname}
             onClick={() => setIsMobileMenuOpen(false)}
           />
           <NavItem
-            to="/admin/periodos"
+            to="periodos"
             label="Periodos"
             currentPath={location.pathname}
             onClick={() => setIsMobileMenuOpen(false)}
           />
           <NavItem
-            to="/admin/formatos"
+            to="formatos"
             label="Formatos"
             currentPath={location.pathname}
             onClick={() => setIsMobileMenuOpen(false)}
           />
           <NavItem
-            to="/admin/registros"
+            to="registros"
             label="Registros"
             currentPath={location.pathname}
             onClick={() => setIsMobileMenuOpen(false)}
           />
           <NavItem
-            to="/admin/perfil"
+            to="perfiladmin"
             label="Perfil"
             currentPath={location.pathname}
             onClick={() => setIsMobileMenuOpen(false)}
