@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BarChart2, Users, Flag, HeartHandshake, Menu, X } from 'lucide-react';
-
+import { BarChart2, Users, Flag, HeartHandshake } from 'lucide-react';
+import { useLocation } from "react-router-dom";
 
 const StatCard = ({ title, value, subtitle, icon: Icon, delay }) => (
   <motion.div
@@ -56,108 +56,116 @@ const StatSection = ({ title, children, delay = 0 }) => (
   </motion.div>
 );
 
-// Componente renombrado a EstadisticasGlobales
 const EstadisticasGlobales = () => {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
-    >
-      <StatSection title="Periodo Cuatrimestre Actual" delay={0.2}>
-        <StatCard
-          title="Estancia I"
-          value="0"
-          subtitle="usuarios activos"
-          icon={Users}
-        />
-        <StatCard
-          title="Estancia II"
-          value="0"
-          subtitle="usuarios activos"
-          icon={Users}
-        />
-        <StatCard
-          title="Estadías"
-          value="0"
-          subtitle="usuarios activos"
-          icon={Users}
-        />
-        <StatCard
-          title="Servicio Social"
-          value="0"
-          subtitle="usuarios activos"
-          icon={HeartHandshake}
-        />
-        <StatCard
-          title="Estadías Nacionales"
-          value="0"
-          subtitle="usuarios activos"
-          icon={Flag}
-        />
-      </StatSection>
+  const location = useLocation();
 
-      <StatSection title="Estadísticas Globales" delay={0.4}>
-        
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="col-span-full bg-orange-50 rounded-lg p-4 mb-4 text-center"
-        >
-          <h3 className="text-gray-700 mb-1">Total de Usuarios en Plataforma</h3>
-          <motion.p
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.7 }}
-            className="text-orange-500 text-4xl font-bold mb-1"
+  return (
+    <div className="flex bg-gray-100 min-h-screen">
+      
+      {/* Main Content */}
+      <main className="flex-1 p-6 ml-0 md:ml-30">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
           >
-            5
-          </motion.p>
-          <p className="text-gray-500 text-sm">usuarios registrados</p>
-        </motion.div>
-        <StatCard
-          title="Estancia I"
-          value="0"
-          subtitle="usuarios totales"
-          icon={Users}
-        />
-        <StatCard
-          title="Estancia II"
-          value="0"
-          subtitle="usuarios totales"
-          icon={Users}
-        />
-        <StatCard
-          title="Estadías"
-          value="0"
-          subtitle="usuarios totales"
-          icon={Users}
-        />
-        <StatCard
-          title="Servicio Social"
-          value="0"
-          subtitle="usuarios totales"
-          icon={HeartHandshake}
-        />
-        <StatCard
-          title="Estadías Nacionales"
-          value="0"
-          subtitle="usuarios totales"
-          icon={Flag}
-        />
-      </StatSection>
-    </motion.div>
-  );
-};
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
+            >
+              <StatSection title="Periodo Cuatrimestre Actual" delay={0.2}>
+                <StatCard
+                  title="Estancia I"
+                  value="0"
+                  subtitle="usuarios activos"
+                  icon={Users}
+                />
+                <StatCard
+                  title="Estancia II"
+                  value="0"
+                  subtitle="usuarios activos"
+                  icon={Users}
+                />
+                <StatCard
+                  title="Estadías"
+                  value="0"
+                  subtitle="usuarios activos"
+                  icon={Users}
+                />
+                <StatCard
+                  title="Servicio Social"
+                  value="0"
+                  subtitle="usuarios activos"
+                  icon={HeartHandshake}
+                />
+                <StatCard
+                  title="Estadías Nacionales"
+                  value="0"
+                  subtitle="usuarios activos"
+                  icon={Flag}
+                />
+              </StatSection>
 
-const App = () => {
-  return (
-    <div>
-      <EstadisticasGlobales />
+              <StatSection title="Estadísticas Globales" delay={0.4}>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                  className="col-span-full bg-orange-50 rounded-lg p-4 mb-4 text-center"
+                >
+                  <h3 className="text-gray-700 mb-1">Total de Usuarios en Plataforma</h3>
+                  <motion.p
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 0.5, delay: 0.7 }}
+                    className="text-orange-500 text-4xl font-bold mb-1"
+                  >
+                    5
+                  </motion.p>
+                  <p className="text-gray-500 text-sm">usuarios registrados</p>
+                </motion.div>
+                <StatCard
+                  title="Estancia I"
+                  value="0"
+                  subtitle="usuarios totales"
+                  icon={Users}
+                />
+                <StatCard
+                  title="Estancia II"
+                  value="0"
+                  subtitle="usuarios totales"
+                  icon={Users}
+                />
+                <StatCard
+                  title="Estadías"
+                  value="0"
+                  subtitle="usuarios totales"
+                  icon={Users}
+                />
+                <StatCard
+                  title="Servicio Social"
+                  value="0"
+                  subtitle="usuarios totales"
+                  icon={HeartHandshake}
+                />
+                <StatCard
+                  title="Estadías Nacionales"
+                  value="0"
+                  subtitle="usuarios totales"
+                  icon={Flag}
+                />
+              </StatSection>
+            </motion.div>
+          </motion.div>
+        </AnimatePresence>
+      </main>
     </div>
   );
 };
 
-export default App;
+export default EstadisticasGlobales;
