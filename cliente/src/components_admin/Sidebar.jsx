@@ -1,147 +1,89 @@
-import { Link, Outlet, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react"; // Importamos íconos para el menú móvil
-import { useState } from "react"; // Necesario para manejar el estado del menú móvil
+import { Link, useLocation, Outlet } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Menu, X } from "lucide-react";
+import { useState } from "react";
 
-const Dashboard = () => {
+const Sidebar = ({ onNavigate }) => {
   const location = useLocation();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Estado para controlar el menú móvil
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleNavigation = () => {
+    setIsMobileMenuOpen(false);
+    if (onNavigate) onNavigate();
+  };
 
   return (
     <div className="flex bg-gray-100 min-h-screen">
-      {/* Botón para abrir el menú en móviles */}
+      {/* Botón móvil */}
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="fixed top-4 left-4 z-50 p-2 bg-orange-500 text-white rounded-lg md:hidden"
+        className="fixed top-4 left-4 z-50 p-2 bg-orange-500 text-white rounded-lg"
       >
         {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
       </motion.button>
 
-      {/* Sidebar */}
+      {/* Barra lateral */}
       <aside
-        className={`fixed md:relative w-64 bg-gradient-to-r from-orange-500 to-orange-600 text-white min-h-screen p-5 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed w-64 bg-gradient-to-r from-orange-500 to-orange-600 text-white min-h-screen p-5 transform transition-transform duration-300 ease-in-out ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0 z-40`}
       >
-        {/* Logo con animación */}
-        <motion.img src="/logo192.png" alt="Logo" className="h-20 w-auto" />
-
-        <ul className="mt-8 space-y-4">
-          <NavItem
-            to="/inicio"
-            label="Inicio"
-            currentPath={location.pathname}
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-          <NavItem
-            to="usuarios"
-            label="Usuarios"
-            currentPath={location.pathname}
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-          <NavItem
-            to="empresas"
-            label="Empresas"
-            currentPath={location.pathname}
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-          <NavItem
-            to="periodos"
-            label="Periodos"
-            currentPath={location.pathname}
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-          <NavItem
-            to="formatos"
-            label="Formatos"
-            currentPath={location.pathname}
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-          <NavItem
-            to="registros"
-            label="Registros"
-            currentPath={location.pathname}
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-          <NavItem
-            to="perfiladmin"
-            label="Perfil"
-            currentPath={location.pathname}
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-        </ul>
-
-        {/* Efecto de conexión visual */}
-        <motion.div
-          className="absolute top-0 right-0 w-1 bg-white"
-          initial={{ height: 0 }}
-          animate={{ height: "100%" }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+        {/* Logo */}
+        <motion.img 
+          src="/logo192.png" 
+          alt="Logo" 
+          className="h-20 w-auto mx-auto mb-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
         />
+
+        {/* Menú */}
+        <nav>
+  <ul className="space-y-2">
+    <NavItem to="/inicio" label="Inicio" currentPath={location.pathname} onClick={handleNavigation} />
+    <NavItem to="/usuarios" label="Usuarios" currentPath={location.pathname} onClick={handleNavigation} />
+    <NavItem to="/empresas" label="Empresas" currentPath={location.pathname} onClick={handleNavigation} />
+    <NavItem to="/periodos" label="Periodos" currentPath={location.pathname} onClick={handleNavigation} />
+    <NavItem to="/formatos" label="Formatos" currentPath={location.pathname} onClick={handleNavigation} />
+    <NavItem to="/registros" label="Registros" currentPath={location.pathname} onClick={handleNavigation} />
+    <NavItem to="/perfil" label="Perfil" currentPath={location.pathname} onClick={handleNavigation} />
+  </ul>
+</nav>
       </aside>
 
-      {/* Contenido Principal con Transiciones */}
-      <main className="flex-1 p-6 relative">
-        {/* Resaltado que sobresale desde el menú */}
-        <AnimatePresence>
-          {location.pathname && (
-            <motion.div
-              key={location.pathname}
-              className="absolute left-0 top-0 h-full w-1 bg-white"
-              initial={{ scaleY: 0 }}
-              animate={{ scaleY: 1 }}
-              exit={{ scaleY: 0 }}
-              transition={{ duration: 0.3 }}
-            />
-          )}
-        </AnimatePresence>
-
-        {/* Contenido de la vista */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Outlet /> {/* Aquí se renderizan las vistas hijas */}
-          </motion.div>
-        </AnimatePresence>
+      {/* Contenido principal */}
+      <main className="flex-1 p-6 ml-0 md:ml-64">
+        <Outlet />
       </main>
     </div>
   );
 };
 
 const NavItem = ({ to, label, currentPath, onClick }) => {
-  const isActive = currentPath === to;
+  const isActive = currentPath.startsWith(to);
 
   return (
-    <motion.li
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      transition={{ duration: 0.2 }}
-      className={`py-3 px-4 rounded-md relative ${
-        isActive ? "bg-white/10" : "hover:bg-white/10"
-      }`}
-    >
-      <Link to={to} className="block" onClick={onClick}>
-        {label}
+    <motion.li whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.2 }}>
+      <Link
+        to={to}
+        onClick={onClick}
+        className={`block py-3 px-4 rounded-md relative ${isActive ? "bg-white/10" : "hover:bg-white/10"}`}
+      >
+        <span className="relative z-10">{label}</span>
+        {isActive && (
+          <motion.div
+            className="absolute top-0 left-0 h-full w-1 bg-white rounded-r-md"
+            initial={{ scaleY: 0 }}
+            animate={{ scaleY: 1 }}
+            transition={{ duration: 0.3 }}
+          />
+        )}
       </Link>
-
-      {/* Efecto de resaltado activo */}
-      {isActive && (
-        <motion.div
-          className="absolute top-0 left-0 h-full w-1 bg-white"
-          initial={{ scaleY: 0 }}
-          animate={{ scaleY: 1 }}
-          transition={{ duration: 0.3 }}
-        />
-      )}
     </motion.li>
   );
 };
 
-export default Dashboard;
+export default Sidebar;
