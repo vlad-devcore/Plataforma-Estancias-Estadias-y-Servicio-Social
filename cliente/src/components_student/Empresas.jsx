@@ -1,178 +1,135 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Building2, MapPin, Users, ExternalLink, Eye } from 'lucide-react';
-import Header from './HeaderEstudiante'; // Importar el componente Header
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { Search } from 'lucide-react';
+import Header from './HeaderEstudiante';
 
-// Datos de empresas (esto debería venir de tu base de datos)
-const companiesData = [
-  {
-    id: 0,
-    rfc: "AAA123456ABC",
-    name: "Universidad Politecnica de Quintana Roo",
-    industry: "Educación",
-    location: "Cancún",
-    employees: "100-250",
-    email: "Universidad Politecnica de Quintana Roo",
-    address: "Av. Kabah 123, Cancún",
-    website: "www.upqroo.edu.mx",
-    phone: "(998) 1234-5678",
-    companyType: "Pública",
-    size: "Mediana"
-  },
-  {
-    id: 1,
-    rfc: "ABC123456XYZ",
-    name: "Innovatech Solutions",
-    industry: "Tecnología",
-    location: "Ciudad de México",
-    employees: "250-500",
-    email: "contacto@innovatech.com",
-    address: "Av. Reforma 123, CDMX",
-    website: "www.innovatech.com",
-    phone: "(55) 1234-5678",
-    companyType: "Privada",
-    size: "Mediana"
-  },
-  {
-    id: 2,
-    rfc: "DEF789012UVW",
-    name: "Construmex",
-    industry: "Construcción",
-    location: "Monterrey",
-    employees: "1000+",
-    email: "info@construmex.com",
-    address: "Blvd. Industrial 456, Monterrey",
-    website: "www.construmex.com",
-    phone: "(81) 8765-4321",
-    companyType: "Privada",
-    size: "Grande"
-  },
-  {
-    id: 3,
-    rfc: "GHI345678RST",
-    name: "EcoVerde",
-    industry: "Agricultura",
-    location: "Guadalajara",
-    employees: "100-250",
-    email: "contacto@ecoverde.com",
-    address: "Camino Real 789, Guadalajara",
-    website: "www.ecoverde.com",
-    phone: "(33) 3456-7890",
-    companyType: "Privada",
-    size: "Mediana"
-  }
-];
-
-// Modal Component
+// Modal Component actualizado
 const Modal = ({ company, onClose }) => (
-  <motion.div 
-    initial={{ opacity: 0 }} 
-    animate={{ opacity: 1 }} 
-    exit={{ opacity: 0 }} 
-    className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center p-4 z-50"
-  >
-    <motion.div 
-      initial={{ y: 50 }} 
-      animate={{ y: 0 }} 
-      exit={{ y: 50 }} 
-      className="bg-white p-4 md:p-6 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto"
-    >
-      <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-4 break-words">{company.name}</h2>
+  <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center p-4 z-50">
+    <div className="bg-white p-4 md:p-6 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-4 break-words">{company.empresa_nombre}</h2>
+      
       <div className="space-y-4">
-        <div className="flex flex-col md:flex-row md:justify-between gap-1">
-          <span className="text-gray-600 text-sm md:text-base">RFC</span>
-          <span className="font-medium text-sm md:text-base">{company.rfc}</span>
+        <div>
+          <h3 className="font-medium text-gray-900">RFC:</h3>
+          <p className="text-gray-600">{company.empresa_rfc}</p>
         </div>
-        <div className="flex flex-col md:flex-row md:justify-between gap-1">
-          <span className="text-gray-600 text-sm md:text-base">Correo Electrónico</span>
-          <span className="font-medium text-sm md:text-base break-words">{company.email}</span>
+        
+        <div>
+          <h3 className="font-medium text-gray-900">Dirección:</h3>
+          <p className="text-gray-600">{company.empresa_direccion}</p>
         </div>
-        <div className="flex flex-col md:flex-row md:justify-between gap-1">
-          <span className="text-gray-600 text-sm md:text-base">Dirección</span>
-          <span className="font-medium text-sm md:text-base break-words">{company.address}</span>
+        
+        <div>
+          <h3 className="font-medium text-gray-900">Email:</h3>
+          <p className="text-gray-600">{company.empresa_email || 'No especificado'}</p>
         </div>
-        <div className="flex flex-col md:flex-row md:justify-between gap-1">
-          <span className="text-gray-600 text-sm md:text-base">Sitio Web</span>
-          <span className="font-medium text-sm md:text-base break-words">
-            <a href={company.website} className="text-orange-600 hover:underline" target="_blank" rel="noopener noreferrer">
-              {company.website}
-            </a>
-          </span>
+        
+        <div>
+          <h3 className="font-medium text-gray-900">Teléfono:</h3>
+          <p className="text-gray-600">{company.empresa_telefono || 'No especificado'}</p>
         </div>
-        <div className="flex flex-col md:flex-row md:justify-between gap-1">
-          <span className="text-gray-600 text-sm md:text-base">Número de Teléfono</span>
-          <span className="font-medium text-sm md:text-base">{company.phone}</span>
+        
+        <div>
+          <h3 className="font-medium text-gray-900">Tamaño:</h3>
+          <p className="text-gray-600">{company.empresa_tamano}</p>
         </div>
-        <div className="flex flex-col md:flex-row md:justify-between gap-1">
-          <span className="text-gray-600 text-sm md:text-base">Industria</span>
-          <span className="font-medium text-sm md:text-base">{company.industry}</span>
+        
+        <div>
+          <h3 className="font-medium text-gray-900">Sociedad:</h3>
+          <p className="text-gray-600">{company.empresa_sociedad}</p>
         </div>
-        <div className="flex flex-col md:flex-row md:justify-between gap-1">
-          <span className="text-gray-600 text-sm md:text-base">Ubicación</span>
-          <span className="font-medium text-sm md:text-base">{company.location}</span>
-        </div>
-        <div className="flex flex-col md:flex-row md:justify-between gap-1">
-          <span className="text-gray-600 text-sm md:text-base">Empleados</span>
-          <span className="font-medium text-sm md:text-base">{company.employees}</span>
-        </div>
-        <div className="flex flex-col md:flex-row md:justify-between gap-1">
-          <span className="text-gray-600 text-sm md:text-base">Tipo de Empresa</span>
-          <span className="font-medium text-sm md:text-base">{company.companyType}</span>
-        </div>
-        <div className="flex flex-col md:flex-row md:justify-between gap-1">
-          <span className="text-gray-600 text-sm md:text-base">Tamaño de Empresa</span>
-          <span className="font-medium text-sm md:text-base">{company.size}</span>
-        </div>
-        <div className="flex flex-col gap-1">
-          <span className="text-gray-600 text-sm md:text-base">Descripción</span>
-          <p className="text-sm md:text-base">{company.description}</p>
+        
+        <div>
+          <h3 className="font-medium text-gray-900">Página Web:</h3>
+          <p className="text-gray-600">
+            {company.empresa_pagina_web ? (
+              <a href={company.empresa_pagina_web} target="_blank" rel="noopener noreferrer" className="text-orange-600 hover:underline">
+                {company.empresa_pagina_web}
+              </a>
+            ) : 'No especificado'}
+          </p>
         </div>
       </div>
-      <motion.button 
-        whileHover={{ scale: 1.05 }} 
-        whileTap={{ scale: 0.95 }} 
+      
+      <button 
         onClick={onClose} 
-        className="mt-6 w-full md:w-auto bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 text-sm md:text-base"
+        className="mt-6 bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors"
       >
         Cerrar
-      </motion.button>
-    </motion.div>
-  </motion.div>
+      </button>
+    </div>
+  </div>
 );
 
-// Main Component
+// Main Component actualizado
 export default function Empresas() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIndustry, setSelectedIndustry] = useState('Todas');
+  const [companies, setCompanies] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const industries = ['Todas', ...new Set(companiesData.map(company => company.industry))];
+  // Obtener las empresas desde el backend
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const response = await axios.get('http://localhost:99991/api/empresas');
+        setCompanies(response.data);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error al obtener empresas:', error);
+        setError('Error al cargar las empresas. Por favor, intenta nuevamente.');
+        setLoading(false);
+      }
+    };
 
-  const filteredCompanies = companiesData.filter(company => {
-    const matchesSearch = company.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         company.rfc.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesIndustry = selectedIndustry === 'Todas' || company.industry === selectedIndustry;
+    fetchCompanies();
+  }, []);
+
+  // Obtener industrias únicas para el filtro
+  const industries = ['Todas', ...new Set(companies.map(company => company.empresa_sociedad))];
+
+  const filteredCompanies = companies.filter(company => {
+    const matchesSearch = company.empresa_nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         company.empresa_rfc.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesIndustry = selectedIndustry === 'Todas' || company.empresa_sociedad === selectedIndustry;
     return matchesSearch && matchesIndustry;
   });
 
   const openModal = (company) => setSelectedCompany(company);
   const closeModal = () => setSelectedCompany(null);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <Header />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16 flex justify-center">
+          <div className="text-gray-600">Cargando empresas...</div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <Header />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16 flex justify-center">
+          <div className="text-red-600">{error}</div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header Component */}
       <Header />
 
-      {/* Main Content */}
-      <motion.main 
-        initial={{ y: 20, opacity: 0 }} 
-        animate={{ y: 0, opacity: 1 }} 
-        transition={{ delay: 0.2 }} 
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16"
-      >
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 space-y-4 md:space-y-0">
           <h1 className="text-2xl md:text-4xl font-bold text-gray-900">Directorio de Empresas</h1>
         </div>
@@ -200,23 +157,36 @@ export default function Empresas() {
         </div>
 
         {/* Company List */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCompanies.map(company => (
-            <div
-              key={company.id}
-              onClick={() => openModal(company)}
-              className="bg-white rounded-lg shadow-md p-4 cursor-pointer hover:shadow-lg transition-shadow duration-200"
-            >
-              <h3 className="font-semibold text-lg text-gray-900">{company.name}</h3>
-              <p className="text-sm text-gray-600">{company.industry}</p>
-              <p className="text-sm text-gray-600">{company.location}</p>
-            </div>
-          ))}
-        </div>
+        {filteredCompanies.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600">No se encontraron empresas que coincidan con los criterios de búsqueda.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCompanies.map(company => (
+              <div
+                key={company.id_empresa}
+                onClick={() => openModal(company)}
+                className="bg-white rounded-lg shadow-md p-4 cursor-pointer hover:shadow-lg transition-shadow duration-200"
+              >
+                <h3 className="font-semibold text-lg text-gray-900 mb-2">{company.empresa_nombre}</h3>
+                <p className="text-sm text-gray-600 mb-1">
+                  <span className="font-medium">RFC:</span> {company.empresa_rfc}
+                </p>
+                <p className="text-sm text-gray-600 mb-1">
+                  <span className="font-medium">Tipo:</span> {company.empresa_sociedad}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Tamaño:</span> {company.empresa_tamano}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Modal */}
         {selectedCompany && <Modal company={selectedCompany} onClose={closeModal} />}
-      </motion.main>
+      </main>
     </div>
   );
 }

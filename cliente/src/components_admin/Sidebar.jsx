@@ -51,7 +51,7 @@ const Sidebar = ({ onNavigate }) => {
     <NavItem to="/registrosadmin" label="Registros" currentPath={location.pathname} onClick={handleNavigation} />
     <NavItem to="/perfiladmin" label="Perfil" currentPath={location.pathname} onClick={handleNavigation} />
   </ul>
-</nav>
+</nav>  
       </aside>
 
       {/* Contenido principal */}
