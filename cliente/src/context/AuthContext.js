@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
       
       if (token && userData) {
         try {
-          await axios.get('http://localhost:5000/api/auth/verify', {
+          await axios.get('http://localhost:9999/api/auth/verify', {
             headers: { Authorization: `Bearer ${token}` }
           });
           setUser(JSON.parse(userData));
@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', {
+      const response = await axios.post('http://localhost:9999/api/auth/login', {
         email,
         password
       });

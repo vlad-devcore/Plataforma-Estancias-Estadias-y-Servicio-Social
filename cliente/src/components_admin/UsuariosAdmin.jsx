@@ -1,18 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Upload, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Search, Upload, Plus, Edit2, Trash2, Loader2 } from 'lucide-react';
+import Sidebar from './Sidebar';
 
 const UserTable = () => {
-  const users = [
-    { email: 'armand.franecki@example.org', role: 'Administrador' },
-    { email: 'asesor@example.org', role: 'Asesor Academico' },
-    { email: 'marcos.vladimir@example.org', role: 'Asesor Empresarial' },
-    { email: 'marcos@prueba.org', role: 'Estudiantes' },
-    { email: 'testestudiante@outlook.es', role: 'Estudiantes' }
-  ];
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch('http:'); // Reemplaza con tu URL real
+        if (!response.ok) {
+          throw new Error('Error al obtener los usuarios');
+        }
+        const data = await response.json();
+        setUsers(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  if (loading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex justify-center items-center p-8"
+      >
+        <Loader2 className="animate-spin h-8 w-8 text-orange-500" />
+      </motion.div>
+    );
+  }
+
+  if (error) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="bg-red-50 text-red-600 p-4 rounded-lg"
+      >
+        Error: {error}
+      </motion.div>
+    );
+  }
 
   return (
-    <motion.div 
+    <motion.div     
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
@@ -30,14 +70,19 @@ const UserTable = () => {
           <tbody className="divide-y divide-gray-200">
             {users.map((user, index) => (
               <motion.tr 
-                key={index}
+                key={user.id_user || index}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
                 className="hover:bg-gray-50"
               >
                 <td className="px-6 py-4">{user.email}</td>
-                <td className="px-6 py-4">{user.role}</td>
+                <td className="px-6 py-4">
+                  {user.role === 'estudiante' && 'Estudiante'}
+                  {user.role === 'administrador' && 'Administrador'}
+                  {user.role === 'asesor_academico' && 'Asesor Académico'}
+                  {user.role === 'asesor_empresarial' && 'Asesor Empresarial'}
+                </td>
                 <td className="px-6 py-4">
                   <div className="flex space-x-2">
                     <motion.button 
@@ -71,11 +116,15 @@ const UserTable = () => {
         transition={{ duration: 0.3, delay: 0.4 }}
         className="px-6 py-3 bg-gray-50 border-t"
       >
-        <p className="text-sm text-gray-500">Mostrando 1 a 5 de 5 registros</p>
+        <p className="text-sm text-gray-500">
+          Mostrando 1 a {users.length} de {users.length} registros
+        </p>
       </motion.div>
     </motion.div>
   );
 };
+
+// ... (el resto del código permanece igual)
 
 const CreateUserForm = () => {
   return (
@@ -205,8 +254,9 @@ const ImportUsers = () => {
 const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
-  return (
+  return (    
     <div className="min-h-screen bg-gray-50 p-8">
+      
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

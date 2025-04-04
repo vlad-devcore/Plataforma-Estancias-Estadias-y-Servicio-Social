@@ -1,5 +1,6 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate, BrowserRouter as Router } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Vistas de administrador
 import Sidebar from './components_admin/Sidebar';
@@ -22,33 +23,52 @@ import Estadias from './components_student/formatos/Estadias';
 import ServicioSocial from './components_student/formatos/ServicioSocial';
 import EstadiasNacionales from './components_student/formatos/EstadiasNacionales';
 
+// Página de acceso denegado
+import Unauthorized from './components/Unauthorized';
+
+// Componente PrivateRoute con validación de roles
+const PrivateRoute = ({ element, allowedRoles }) => {
+  const { user } = useAuth();
+
+  if (!user) {
+    return <Navigate to="/" replace />; // Redirige al login si no está autenticado
+  }
+
+  if (!allowedRoles.includes(user.role)) {
+    return <Navigate to="/unauthorized" replace />; // Redirige si el rol no tiene acceso
+  }
+
+  return element;
+};
+
 function AnimatedRoutes() {
   const location = useLocation();
 
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        {/* Rutas públicas (estudiantes) */}
+        {/* Rutas públicas */}
         <Route path="/" element={<Login />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/empresas" element={<EmpresasS />} />
-        <Route path="/perfil" element={<PerfilStudent />} />
-        <Route path="/formatos/Estancia1" element={<Estancia1 />} />
-        <Route path="/formatos/Estancia2" element={<Estancia2 />} />
-        <Route path="/formatos/Estadias" element={<Estadias />} />
-        <Route path="/formatos/ServicioSocial" element={<ServicioSocial />} />
-        <Route path="/formatos/EstadiasNacionales" element={<EstadiasNacionales />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
 
-        {/* Rutas de admin (con Sidebar como layout) */}
-        <Route element={<Sidebar />}>
-          <Route path="/inicioadmin" element={<Inicio />} />
-          <Route path="/usuariosadmin" element={<Usuarios />} />
-          <Route path="/registrosadmin" element={<Registros />} />
-          <Route path="/formatosadmin" element={<Formatos />} />
-          <Route path="/periodosadmin" element={<Periodos />} />
-          <Route path="/empresasadmin" element={<Empresas />} />
-          <Route path="/perfiladmin" element={<PerfilAdmin />} />
-        </Route>
+        {/* Rutas protegidas para estudiantes */}
+        <Route path="/home" element={<PrivateRoute element={<Home />} allowedRoles={["estudiante"]} />} />
+        <Route path="/empresas" element={<PrivateRoute element={<EmpresasS />} allowedRoles={["estudiante"]} />} />
+        <Route path="/perfil" element={<PrivateRoute element={<PerfilStudent />} allowedRoles={["estudiante"]} />} />
+        <Route path="/formatos/Estancia1" element={<PrivateRoute element={<Estancia1 />} allowedRoles={["estudiante"]} />} />
+        <Route path="/formatos/Estancia2" element={<PrivateRoute element={<Estancia2 />} allowedRoles={["estudiante"]} />} />
+        <Route path="/formatos/Estadias" element={<PrivateRoute element={<Estadias />} allowedRoles={["estudiante"]} />} />
+        <Route path="/formatos/ServicioSocial" element={<PrivateRoute element={<ServicioSocial />} allowedRoles={["estudiante"]} />} />
+        <Route path="/formatos/EstadiasNacionales" element={<PrivateRoute element={<EstadiasNacionales />} allowedRoles={["estudiante"]} />} />
+
+        {/* Rutas protegidas para administrador */}
+        <Route path="/inicioadmin" element={<PrivateRoute element={<Inicio />} allowedRoles={["administrador"]} />} />
+        <Route path="/usuariosadmin" element={<PrivateRoute element={<Usuarios />} allowedRoles={["administrador"]} />} />
+        <Route path="/registrosadmin" element={<PrivateRoute element={<Registros />} allowedRoles={["administrador"]} />} />
+        <Route path="/formatosadmin" element={<PrivateRoute element={<Formatos />} allowedRoles={["administrador"]} />} />
+        <Route path="/periodosadmin" element={<PrivateRoute element={<Periodos />} allowedRoles={["administrador"]} />} />
+        <Route path="/empresasadmin" element={<PrivateRoute element={<Empresas />} allowedRoles={["administrador"]} />} />
+        <Route path="/perfiladmin" element={<PrivateRoute element={<PerfilAdmin />} allowedRoles={["administrador"]} />} />
       </Routes>
     </AnimatePresence>
   );
@@ -56,9 +76,9 @@ function AnimatedRoutes() {
 
 function App() {
   return (
-    <Router>
-      <AnimatedRoutes />
-    </Router>
+    <AuthProvider>      
+        <AnimatedRoutes />      
+    </AuthProvider>
   );
 }
 

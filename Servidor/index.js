@@ -8,6 +8,7 @@ import userRouter from "./routes/users.js"; // Importa las rutas de usuarios
 import estudianteRouter from "./routes/estudiantes.js"; // Importa las rutas de estudiantes
 import empresaRouter from "./routes/empresas.js"; // Importa las rutas de empresas
 import documentoRouter from "./routes/documentos.js"; // Importa las rutas de documentos
+import authRouter from './routes/auth.js'; // Importa las rutas de autenticación
 
 dotenv.config();
 
@@ -44,6 +45,10 @@ app.use("/api/documentos", documentoRouter);
 app.get("/", (req, res) => {
     res.send("¡Servidor funcionando! 🚀");
 });
+
+// Montar las rutas de autenticación
+app.use('/api/auth', authRouter);
+
 
 // ✅ Iniciar servidor
 app.listen(PORT, () => {
