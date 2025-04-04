@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart2, Users, Flag, HeartHandshake } from 'lucide-react';
 import { useLocation } from "react-router-dom";
+import Sidebar from './Sidebar';
 
 const StatCard = ({ title, value, subtitle, icon: Icon, delay }) => (
   <motion.div
@@ -59,10 +60,10 @@ const StatSection = ({ title, children, delay = 0 }) => (
 const EstadisticasGlobales = () => {
   const location = useLocation();
 
-  return (
+  return (    
     <div className="flex bg-gray-100 min-h-screen">
-      
-      {/* Main Content */}
+     <Sidebar/> 
+      {/* Main Content */}  
       <main className="flex-1 p-6 ml-0 md:ml-30">
         <AnimatePresence mode="wait">
           <motion.div

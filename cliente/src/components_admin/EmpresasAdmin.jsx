@@ -1,20 +1,30 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
-
-// Companies Directory Component - SIN CAMBIOS en la lógica
 const CompaniesDirectory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [companies, setCompanies] = useState([]); // Ahora almacena empresas desde el backend
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const companies = [
-    {
-      rfc: '123',
-      name: 'Universidad Politécnica de Quintana Roo'
-    }
-  ];
+  useEffect(() => {
+    const fetchCompanies = async () => {
+        try {
+            const response = await axios.get('http://localhost:9999/api/empresas');
+            console.log("Empresas recibidas:", response.data); // 👀 Verifica qué datos llegan
+            setCompanies(response.data);
+            setLoading(false);
+        } catch (error) {
+            console.error('Error al obtener empresas:', error);
+            setError('Error al cargar las empresas. Por favor, intenta nuevamente.');
+            setLoading(false);
+        }
+    };
+
+    fetchCompanies();
+}, []);
+
 
   const handleFileSelect = (event) => {
     setSelectedFile(event.target.files[0]);
@@ -26,80 +36,75 @@ const CompaniesDirectory = () => {
     }
   };
 
-  // ENVOLVEMOS EL CONTENIDO ORIGINAL CON EL LAYOUT DEL SIDEBAR
   return (
     <div className="flex bg-gray-100 min-h-screen">
-     
-      
-      {/* Contenedor principal con TODO tu código original */}
       <main className="flex-1">
         <div className="px-4 py-8 max-w-7xl mx-auto">
-          {/* Todo tu contenido EXACTAMENTE igual */}
           <h1 className="text-3xl font-bold text-center mb-12">Directorio de empresas</h1>
-          
+
           <div className="flex justify-end mb-6">
             <div className="flex items-center">
-              <span className="mr-2">Search:</span>
+              <span className="mr-2">Buscar:</span>
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="border rounded px-3 py-1 w-64"
+                placeholder="Buscar por nombre o RFC..."
               />
             </div>
           </div>
 
-          <div className="mb-8">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-orange-500 text-white">
-                  <th className="px-4 py-2 text-left w-32">RFC</th>
-                  <th className="px-4 py-2 text-left">Nombre de la empresa o institución</th>
-                  <th className="px-4 py-2 text-right w-32">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {companies.map((company) => (
-                  <tr key={company.rfc} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-3">{company.rfc}</td>
-                    <td className="px-4 py-3">{company.name}</td>
-                    <td className="px-4 py-3">
-                      <button className="bg-red-800 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors">
-                        Ver datos
-                      </button>
-                    </td>
+          {loading ? (
+            <p className="text-center text-gray-600">Cargando empresas...</p>
+          ) : error ? (
+            <p className="text-center text-red-500">{error}</p>
+          ) : (
+            <div className="mb-8">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-orange-500 text-white">
+                    <th className="px-4 py-2 text-left w-32">RFC</th>
+                    <th className="px-4 py-2 text-left">Nombre de la empresa o institución</th>
+                    <th className="px-4 py-2 text-right w-32">Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="flex justify-between items-center text-sm">
-            <span>Showing 1 to 1 of 1 entries</span>
-            <div className="flex gap-2">
-              <button 
-                className="px-3 py-1 border rounded disabled:opacity-50"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              >
-                Previous
-              </button>
-              <button className="px-3 py-1 border rounded bg-gray-100">1</button>
-              <button 
-                className="px-3 py-1 border rounded disabled:opacity-50"
-                disabled={true}
-                onClick={() => setCurrentPage(prev => prev + 1)}
-              >
-                Next
-              </button>
+                </thead>
+                <tbody>
+                  {companies.length === 0 ? (
+                    <tr>
+                      <td colSpan="3" className="text-center py-4 text-gray-600">
+                        No hay empresas registradas.
+                      </td>
+                    </tr>
+                  ) : (
+                    companies
+                      .filter(
+                        (company) =>
+                          (company.name && company.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                          (company.rfc && company.rfc.toLowerCase().includes(searchTerm.toLowerCase()))
+                      )
+                      .map((company) => (
+                        <tr key={company.rfc} className="border-b hover:bg-gray-50">
+                          <td className="px-4 py-3">{company.empresa_rfc}</td>
+                          <td className="px-4 py-3">{company.empresa_nombre}</td>
+                          <td className="px-4 py-3">
+                            <button className="bg-red-800 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors">
+                              Ver datos
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                  )}
+                </tbody>
+              </table>
             </div>
-          </div>
+          )}
 
           <div className="mt-12">
             <h2 className="text-2xl font-bold text-center mb-8">Subir Empresas (Multiples)</h2>
             <div className="max-w-xl mx-auto">
               <div className="mb-4">
-                <p className="mb-2">Archivo csv</p>
+                <p className="mb-2">Archivo CSV</p>
                 <div className="flex gap-4 items-center">
                   <button
                     onClick={() => document.getElementById('fileInput').click()}
@@ -132,5 +137,4 @@ const CompaniesDirectory = () => {
   );
 };
 
-// Eliminamos el componente App ya que no es necesario
 export default CompaniesDirectory;
