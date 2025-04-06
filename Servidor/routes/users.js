@@ -102,7 +102,7 @@ const postUser = async (req, res) => {
         console.error("Error al agregar usuario:", error);
         res.status(500).json({ error: error.message || "Error interno del servidor" });
     } finally {
-        connection.release();
+        connection.release(); 
     }
 };
 
@@ -130,7 +130,7 @@ const updateUser = async (req, res) => {
         res.status(500).json({ error: "Error interno del servidor" });
     }
 };
-
+  
 // Eliminar usuario
 const deleteUser = async (req, res) => {
     const { id_user } = req.params;

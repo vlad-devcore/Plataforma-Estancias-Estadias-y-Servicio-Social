@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import fs from "fs";
 import path from "path";
+import morgan from 'morgan';
 import { fileURLToPath } from "url"; // Importar fileURLToPath para obtener __dirname
 import userRouter from "./routes/users.js"; // Importa las rutas de usuarios
 import estudianteRouter from "./routes/estudiantes.js"; // Importa las rutas de estudiantes
@@ -34,6 +35,15 @@ app.use(cors({
 }));
 
 app.use(express.json()); // Para recibir JSON en las peticiones
+
+
+// Configurar Morgan para ver el body de las solicitudes
+app.use(morgan(':method :url :status - Body: :body'));
+
+// Crear token personalizado para mostrar el body
+morgan.token('body', (req) => {
+  return JSON.stringify(req.body);
+});
 
 // ✅ Montar rutas
 app.use("/api/users", userRouter);
