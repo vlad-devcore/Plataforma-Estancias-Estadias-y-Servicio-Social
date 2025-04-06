@@ -77,7 +77,7 @@ export default function Empresas() {
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
-        const response = await axios.get('http://localhost:99991/api/empresas');
+        const response = await axios.get('http://localhost:9999/api/empresas');
         setCompanies(response.data);
         setLoading(false);
       } catch (error) {
