@@ -1,125 +1,155 @@
-import React, { useState } from "react";
-import { Search } from "react-feather";
-import CrudLayout from "../components/management/CrudLayout";
-import CrudTable from "../components/management/CrudTable/CrudTable";
-import EditEmpresaModal from "../components/empresas/modals/EditEmpresaModal";
-import ViewEmpresaModal from "../components/empresas/modals/ViewEmpresaModal";
-import ConfirmDeleteModal from "../components/admin/modals/ConfirmDeleteModal";
-import UploadCSV from "../components/empresas/UploadCSV";
-import useEmpresas from "../components/hooks/useEmpresas";
-import Sidebar from "../components_admin/Sidebar";
+import { motion } from 'framer-motion';
+import { Search, Plus, Building, Edit2 } from 'lucide-react';
+import { useState } from 'react';
+import useEmpresas from '../components/hooks/useEmpresas';
+import EmpresaTable from '../components/admin/empresas/EmpresaTable';
+import EmpresaForm from '../components/admin/empresas/EmpresaForm';
+import Sidebar from '../components_admin/Sidebar';
 
-const CompaniesDirectory = () => {
+const EmpresaManagement = () => {
   const {
-    companies,
+    companies: empresas,
     loading,
     error,
     updateEmpresa,
-    deleteEmpresa,
-    handleUpload,
+    deleteEmpresa
   } = useEmpresas();
 
-  const [searchTerm, setSearchTerm] = useState("");
+  const [formMode, setFormMode] = useState(null);
   const [selectedEmpresa, setSelectedEmpresa] = useState(null);
-  const [modalType, setModalType] = useState(null);
-  const [empresaToDelete, setEmpresaToDelete] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredCompanies = companies.filter(
-    (company) =>
-      company.empresa_nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      company.empresa_rfc.toLowerCase().includes(searchTerm.toLowerCase())
+  const handleEdit = (empresa) => {
+    setSelectedEmpresa(empresa);
+    setFormMode('edit');
+  };
+
+  const handleSubmit = async (data) => {
+    try {
+      if (formMode === 'edit') {
+        await updateEmpresa(selectedEmpresa.id_empresa, data);
+      }
+      setFormMode(null);
+      setSelectedEmpresa(null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const filteredEmpresas = empresas.filter(empresa => 
+    empresa.empresa_nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    empresa.empresa_rfc.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleModalOpen = (type, empresa = null) => {
-    setModalType(type);
-    setSelectedEmpresa(empresa);
-  };
-
-  const handleModalClose = () => {
-    setModalType(null);
-    setSelectedEmpresa(null);
-  };
-
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <div className="w-64 fixed left-0 top-0 h-full bg-white shadow-lg">
-        <Sidebar />
-      </div>
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Sidebar */}
+      <Sidebar />
+      
+      {/* Main Content */}
+      <div className="flex-1 p-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <h2 className="text-2xl font-semibold flex items-center text-gray-800">
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="w-6 h-6 text-blue-600 mr-2"
+              >
+                <Building size={24} />
+              </motion.div>
+              Gestión de Empresas
+            </h2>
+          </motion.div>
 
-      <div className="flex-1 ml-64 p-8">
-        <CrudLayout title="Directorio de Empresas" icon="briefcase">
-          {/* Barra de búsqueda */}
-          <div className="mb-6 relative">
-            <Search
-              className="absolute left-3 top-3.5 text-gray-400"
-              size={20}
-            />
-            <input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-orange-500"
-              placeholder="Buscar por nombre o RFC..."
-            />
+          {/* Search and Actions */}
+          <div className="mb-6 flex flex-col md:flex-row justify-between gap-4">
+            <div className="relative flex-1">
+              <motion.input
+                initial={{ width: '80%', opacity: 0 }}
+                animate={{ width: '100%', opacity: 1 }}
+                type="text"
+                placeholder="Buscar por nombre o RFC..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                setSelectedEmpresa(null);
+                setFormMode('create');
+              }}
+              className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors shadow-sm"
+            >
+              <Plus size={18} className="mr-1" />
+              Crear Empresa
+            </motion.button>
           </div>
 
-          {/* Tabla de empresas */}
-          <CrudTable
-            data={filteredCompanies}
-            columns={[
-              {
-                key: "empresa_rfc",
-                header: "RFC",
-                className: "w-32",
-              },
-              {
-                key: "empresa_nombre",
-                header: "Nombre",
-              },
-              {
-                key: "empresa_tamano",
-                header: "Tamaño",
-                render: (value) => <span className="capitalize">{value}</span>,
-              },
-            ]}
-            loading={loading}
-            error={error}
-            onView={(company) => handleModalOpen("ver", company)}
-            onDelete={(company) => handleModalOpen("eliminar", company)}
-          />
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Table Section */}
+            <div className={`lg:col-span-${formMode ? '2' : '3'}`}>
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200"
+              >
+                <EmpresaTable 
+                  empresas={filteredEmpresas} 
+                  loading={loading}
+                  error={error}
+                  onEdit={handleEdit}
+                  onDelete={deleteEmpresa}
+                />
+                <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
+                  <p className="text-sm text-gray-500">
+                    Mostrando {filteredEmpresas.length} de {empresas.length} registros
+                  </p>
+                </div>
+              </motion.div>
+            </div>
 
-          {/* Módulo de carga CSV */}
-          <div className="mt-12">
-            <UploadCSV onUpload={handleUpload} />
+            {/* Form Sidebar */}
+            {formMode && (
+              <motion.div 
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
+              >
+                <h3 className="text-lg font-medium mb-4 flex items-center">
+                  {formMode === 'create' ? (
+                    <>
+                      <Plus className="text-blue-600 mr-2" />
+                      Crear Nueva Empresa
+                    </>
+                  ) : (
+                    <>
+                      <Edit2 className="text-orange-500 mr-2" />
+                      Editar Empresa
+                    </>
+                  )}
+                </h3>
+                <EmpresaForm 
+                  initialData={selectedEmpresa || {}} 
+                  onSubmit={handleSubmit}
+                />
+              </motion.div>
+            )}
           </div>
-
-          {/* Modales */}
-          {modalType === "ver" && (
-            <ViewEmpresaModal
-              empresa={selectedEmpresa}
-              onClose={handleModalClose}
-            />
-          )}
-
-          {modalType === "editar" && (
-            <EditEmpresaModal
-              empresa={selectedEmpresa}
-              onClose={handleModalClose}
-              onSave={updateEmpresa}
-            />
-          )}
-
-          {empresaToDelete && (
-            <ConfirmDeleteModal
-              itemId={empresaToDelete.id_empresa} // ✅ ID específico para empresas
-              itemName={empresaToDelete.empresa_nombre}
-              onClose={() => setEmpresaToDelete(null)}
-              onConfirm={deleteEmpresa} // ✅ Función específica
-            />
-          )}
-        </CrudLayout>
+        </div>
       </div>
     </div>
   );
 };
 
-export default CompaniesDirectory;
+export default EmpresaManagement;

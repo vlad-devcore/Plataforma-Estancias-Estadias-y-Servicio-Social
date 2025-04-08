@@ -42,6 +42,8 @@ const extractNumbersFromEmail = (email) => {
 // Agregar un nuevo usuario con inserción automática en la tabla correspondiente
 const postUser = async (req, res) => {
     const { email, password, nombre, apellido_paterno, apellido_materno, genero, role } = req.body;
+    console.log("Datos recibidos en el backend:", req.body);
+
 
     if (!email || !password || !nombre || !apellido_paterno || !role) {
         return res.status(400).json({ error: "Faltan campos obligatorios" });

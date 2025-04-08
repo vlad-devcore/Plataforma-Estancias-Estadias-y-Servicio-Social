@@ -1,83 +1,172 @@
-// src/hooks/useUsers.js
 import { useState, useEffect } from 'react';
 
 const useUsers = () => {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [state, setState] = useState({
+    users: [],
+    loading: true,
+    error: null,
+    searchTerm: ''
+  });
+
+  // Función para manejar estados
+  const setData = (newState) => {
+    setState(prev => ({ ...prev, ...newState }));
+  };
 
   const fetchUsers = async () => {
     try {
+      setData({ loading: true, error: null });
       const response = await fetch('http://localhost:9999/api/users');
-      if (!response.ok) throw new Error('Error al obtener usuarios');
-      setUsers(await response.json());
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-  const updateUser = async (id_user, updatedData) => {
-    try {
-      const currentUser = users.find(user => user.id_user === id_user);
-      console.log("🔍 Usuario actual:", JSON.parse(JSON.stringify(currentUser)));
-      
-      const fullData = { ...currentUser, ...updatedData };
-      console.log("🧩 Datos combinados:", fullData);
-  
-      const response = await fetch(`http://localhost:9999/api/users/${id_user}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(fullData)
-      });
-  
-      console.log("📡 Respuesta del servidor:", {
-        status: response.status,
-        ok: response.ok
-      });
-  
-      const responseData = await response.json();
-      console.log("📦 Contenido de la respuesta:", responseData);
-  
-      if (!response.ok) throw new Error(responseData.error || "Error desconocido");
-  
-      setUsers(users.map(user => user.id_user === id_user ? fullData : user));
-      return responseData;
+      const data = await response.json();
+      setData({ users: data, loading: false });
       
     } catch (err) {
-      console.error("🔥 Error en updateUser:", {
-        id_user,
-        updatedData,
-        error: err.message
+      setData({ 
+        error: err.message || 'Error al obtener usuarios',
+        loading: false 
       });
       throw err;
     }
   };
 
-const deleteUser = async (id_user) => {
-  try {
-    const response = await fetch(`http://localhost:9999/api/users/${id_user}`, { // Usar id_user
-      method: 'DELETE'
-    });
+  const updateUser = async (id_user, updatedData) => {
+    try {
+      setData({ loading: true, error: null });
+      
+      const currentUser = state.users.find(user => user.id_user === id_user);
+      const fullData = { ...currentUser, ...updatedData };
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al eliminar usuario');
+      const response = await fetch(`http://localhost:9999/api/users/${id_user}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fullData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al actualizar usuario");
+      }
+
+      setData({
+        users: state.users.map(user => 
+          user.id_user === id_user ? fullData : user
+        ),
+        loading: false
+      });
+
+      return await response.json();
+      
+    } catch (err) {
+      setData({ error: err.message, loading: false });
+      throw err;
     }
+  };
 
-    setUsers(users.filter(user => id_user));
-  } catch (err) {
-    setError(err.message);
-    throw err; // Propagar el error para manejo en UI
-  }
-};
+  const deleteUser = async (id_user) => {
+    try {
+      setData({ loading: true, error: null });
+      
+      const response = await fetch(`http://localhost:9999/api/users/${id_user}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al eliminar usuario');
+      }
+
+      setData({
+        users: state.users.filter(user => user.id_user !== id_user),
+        loading: false
+      });
+
+    } catch (err) {
+      setData({ error: err.message, loading: false });
+      throw err;
+    }
+  };
+
+  const createUser = async (newUser) => {
+    try {
+      setData({ loading: true, error: null });
+  
+      const response = await fetch('http://localhost:9999/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUser)
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al crear usuario");
+      }
+  
+      const created = await response.json();
+      // Refresca lista con fetchUsers o añade directamente
+      await fetchUsers(); // o setData({ users: [...state.users, created], loading: false });
+  
+      return created;
+    } catch (err) {
+      setData({ error: err.message, loading: false });
+      throw err;
+    }
+  };
+  
+
+  const createUsersFromCSV = async (file) => {
+    try {
+      setData({ loading: true, error: null });
+  
+      const formData = new FormData();
+      formData.append('file', file);
+  
+      const response = await fetch('http://localhost:9999/api/users/upload', {
+        method: 'POST',
+        body: formData
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al subir archivo CSV");
+      }
+  
+      const result = await response.json();
+      await fetchUsers();
+      return result;
+    } catch (err) {
+      setData({ error: err.message, loading: false });
+      throw err;
+    }
+  };
+  
+
+  // Filtrado de usuarios
+  const filteredUsers = state.users.filter(user => 
+    user.email.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
+    (user.role && user.role.toLowerCase().includes(state.searchTerm.toLowerCase()))
+  );
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  return { users, loading, error, updateUser, deleteUser, fetchUsers };
-};
+  return {
+    ...state,
+    filteredUsers,
+    setSearchTerm: (searchTerm) => setData({ searchTerm }),
+    fetchUsers,
+    updateUser,
+    deleteUser,
+    createUser,
+    createUsersFromCSV
+  };
+}  
+
+
 
 export default useUsers;

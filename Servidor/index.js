@@ -10,6 +10,7 @@ import estudianteRouter from "./routes/estudiantes.js"; // Importa las rutas de 
 import empresaRouter from "./routes/empresas.js"; // Importa las rutas de empresas
 import documentoRouter from "./routes/documentos.js"; // Importa las rutas de documentos
 import authRouter from './routes/auth.js'; // Importa las rutas de autenticación
+import documentosAdminRouter from './routes/documentosAdmin.js'; // Importa las rutas de documentosAdmin
 
 dotenv.config();
 
@@ -43,19 +44,21 @@ app.use(morgan(':method :url :status - Body: :body'));
 // Crear token personalizado para mostrar el body
 morgan.token('body', (req) => {
   return JSON.stringify(req.body);
-});
+}); 
 
 // ✅ Montar rutas
 app.use("/api/users", userRouter);
 app.use("/api/estudiantes", estudianteRouter);
 app.use("/api/empresas", empresaRouter);
 app.use("/api/documentos", documentoRouter);
+app.use("/api/documentosAdmin", documentosAdminRouter); // Montar las rutas de documentosAdmin
+
 
 // ✅ Ruta de prueba
 app.get("/", (req, res) => {
     res.send("¡Servidor funcionando! 🚀");
 });
-
+    
 // Montar las rutas de autenticación
 app.use('/api/auth', authRouter);
 
