@@ -1,17 +1,8 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  User, 
-  Mail, 
-  Key, 
-  Book, 
-  Globe, 
-  Accessibility, 
-  GraduationCap, 
-  Eye, 
-  EyeOff 
-} from 'lucide-react';
+import { useAuth } from '../context/AuthContext';  // Asegúrate de que la ruta sea correcta
+import { User, Mail, Key, Book, Globe, Accessibility, GraduationCap, Eye, EyeOff } from 'lucide-react';
 
 // FormInput Component
 const FormInput = ({ icon: Icon, label, type = "text", value, onChange, options = [] }) => {
@@ -69,19 +60,41 @@ const FormInput = ({ icon: Icon, label, type = "text", value, onChange, options 
 
 // Profile Component
 export default function Profile() {
+  const { user, loading, updateUser } = useAuth();  // Obtén los datos del usuario desde el contexto
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
-    nombre: 'Vlad example',
-    apellidos: 'Zuckerberg example',
-    matricula: '202500123',
-    genero: 'Hombre',
-    discapacidad: 'No',
-    lenguaIndigena: 'No',
-    programaEducativo: 'Ingeniería en Software',
-    correo: 'estudiante@example.com',
-    contrasena: '********',
+    nombre: '',
+    apellidos: '',
+    matricula: '',
+    genero: '',
+    discapacidad: '',
+    lenguaIndigena: '',
+    programaEducativo: '',
+    correo: '',
+    contrasena: '',
     antiguaContrasena: '',
     nuevaContrasena: ''
   });
+
+  // Cargar datos del usuario
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        nombre: user.name,
+        apellidos: user.surname,
+        matricula: user.matricula,
+        genero: user.gender,
+        discapacidad: user.disability,
+        lenguaIndigena: user.indigenousLanguage,
+        programaEducativo: user.program,
+        correo: user.email,
+        contrasena: '********',
+        antiguaContrasena: '',
+        nuevaContrasena: ''
+      });
+    }
+  }, [user]);
 
   const handleChange = (field) => (e) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
@@ -90,7 +103,12 @@ export default function Profile() {
   const handleSubmit = (e) => {
     e.preventDefault();
     // Lógica para guardar cambios
+    updateUser(formData);
   };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <motion.div
@@ -162,7 +180,7 @@ export default function Profile() {
                 options={[ 
                   'Ingeniería Financiera',
                   'Ingeniería en Software',
-                  'Licenciatura en Terapia Fisica',
+                  'Licenciatura en Terapia Física',
                   'Ingeniería en Biotecnología',
                   'Licenciatura en Administración y Gestión Empresarial',
                   'Ingeniería Biomédica'
@@ -215,7 +233,7 @@ export default function Profile() {
               </button>
             </motion.div>
           </form>
-        </div>
+        </div>  
       </motion.main>
     </motion.div>
   );
