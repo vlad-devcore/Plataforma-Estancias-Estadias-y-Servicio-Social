@@ -11,6 +11,7 @@ import empresaRouter from "./routes/empresas.js"; // Importa las rutas de empres
 import documentoRouter from "./routes/documentos.js"; // Importa las rutas de documentos
 import authRouter from './routes/auth.js'; // Importa las rutas de autenticación
 import documentosAdminRouter from './routes/documentosAdmin.js'; // Importa las rutas de documentosAdmin
+import periodosRouter from './routes/periodos.js'; // Importa las rutas de periodos
 
 dotenv.config();
 
@@ -52,16 +53,14 @@ app.use("/api/estudiantes", estudianteRouter);
 app.use("/api/empresas", empresaRouter);
 app.use("/api/documentos", documentoRouter);
 app.use("/api/documentosAdmin", documentosAdminRouter); // Montar las rutas de documentosAdmin
-
+app.use("/api/periodos", periodosRouter); 
+// Montar las rutas de autenticación
+app.use('/api/auth', authRouter);
 
 // ✅ Ruta de prueba
 app.get("/", (req, res) => {
     res.send("¡Servidor funcionando! 🚀");
 });
-    
-// Montar las rutas de autenticación
-app.use('/api/auth', authRouter);
-
 
 // ✅ Iniciar servidor
 app.listen(PORT, () => {
