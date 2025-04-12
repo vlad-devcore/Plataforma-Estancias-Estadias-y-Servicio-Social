@@ -47,8 +47,7 @@ const Estancia1 = () => {
   const item = {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0 }
-  };
-
+  }; 
   return (
     <PlantillaServicio
       titulo="Estancia I"
