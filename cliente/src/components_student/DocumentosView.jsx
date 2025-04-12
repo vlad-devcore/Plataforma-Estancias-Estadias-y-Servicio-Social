@@ -1,36 +1,36 @@
 import { useEffect, useState } from "react";
-import useProceso from "../../hooks/useProceso";
-import useProgramasEducativos from "../../hooks/useProgramasEducativos";
-import useEmpresas from "../../hooks/useEmpresas";  // Hook de empresas
-import useAsesores from "../../hooks/useAsesores"; // Hook de asesores
+import useProceso from "../components/hooks/useProcesos"
+import useProgramasEducativos from "../components/hooks/useProgramasEducativos";
+import useEmpresas from "../components/hooks/useEmpresas";
+import useUsers from "../components/hooks/useUsers";
 import axios from "axios";
 import Swal from "sweetalert2";
 
-const DocumentosView = ({ tipoProceso }) => {                                                                                                   
+const DocumentosView = ({ tipoProceso }) => {
   const [user, setUser] = useState(null);
   const [yaRegistrado, setYaRegistrado] = useState(false);
   const [documentos, setDocumentos] = useState([]);
+  const [asesores, setAsesores] = useState([]);
+
   const [formData, setFormData] = useState({
     IdEmpresa: "",
     IdAsesorInterno: "",
     IdAsesorExterno: "",
     IdProgramaEducativo: "",
     IdPeriodo: "",
-    TipoProceso: tipoProceso, 
+    TipoProceso: tipoProceso,
   });
 
   const { programas } = useProgramasEducativos();
   const { registrarProceso, obtenerProcesoPorEstudiante } = useProceso();
-  const { companies } = useEmpresas();  // Hook de empresas
-  const { asesoresInternos, asesoresExternos } = useAsesores();  // Hook de asesores
+  const { companies } = useEmpresas();
+  const { getAsesores } = useUsers();
 
-  // Obtener usuario del localStorage
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
     setUser(storedUser);
   }, []);
 
-  // Verificar si el usuario ya está registrado
   useEffect(() => {
     const verificarRegistro = async () => {
       if (user?.id) {
@@ -52,7 +52,14 @@ const DocumentosView = ({ tipoProceso }) => {
     verificarRegistro();
   }, [user, tipoProceso]);
 
-  // Cargar documentos del proceso
+  useEffect(() => {
+    const listaAsesores = getAsesores().map(asesor => ({
+      Id_asesor: asesor.id_user,
+      NombreCompleto: `${asesor.name} ${asesor.lastname}`
+    }));
+    setAsesores(listaAsesores);
+  }, [getAsesores]);
+
   const cargarDocumentos = async (idProceso) => {
     try {
       const { data } = await axios.get(`http://localhost:9999/api/documentos/proceso/${idProceso}`);
@@ -62,7 +69,6 @@ const DocumentosView = ({ tipoProceso }) => {
     }
   };
 
-  // Manejar cambios en el formulario
   const handleChange = (e) => {
     setFormData(prev => ({
       ...prev,
@@ -70,7 +76,6 @@ const DocumentosView = ({ tipoProceso }) => {
     }));
   };
 
-  // Enviar formulario para registrarse en el periodo activo
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -103,7 +108,7 @@ const DocumentosView = ({ tipoProceso }) => {
 
           <select name="IdAsesorInterno" onChange={handleChange} required className="p-2 border rounded">
             <option value="">Selecciona asesor interno</option>
-            {asesoresInternos.map(asesor => (
+            {asesores.map(asesor => (
               <option key={asesor.Id_asesor} value={asesor.Id_asesor}>
                 {asesor.NombreCompleto}
               </option>
@@ -112,7 +117,7 @@ const DocumentosView = ({ tipoProceso }) => {
 
           <select name="IdAsesorExterno" onChange={handleChange} required className="p-2 border rounded">
             <option value="">Selecciona asesor externo</option>
-            {asesoresExternos.map(asesor => (
+            {asesores.map(asesor => (
               <option key={asesor.Id_asesor} value={asesor.Id_asesor}>
                 {asesor.NombreCompleto}
               </option>
