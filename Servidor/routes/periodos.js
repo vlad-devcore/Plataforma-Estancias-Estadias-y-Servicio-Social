@@ -80,9 +80,29 @@ const deletePeriodo = async (req, res) => {
     }
 };
 
+
+
+// Obtener el periodo activo
+const getPeriodoActivo = async (req, res) => {
+    try {
+        const [results] = await pool.query(
+            "SELECT * FROM periodos WHERE EstadoActivo = 'Activo' ORDER BY FechaInicio DESC LIMIT 1"
+        );
+        if (results.length === 0) {
+            return res.status(404).json({ error: "No hay un periodo activo actualmente" });
+        }
+        res.status(200).json(results[0]);
+    } catch (error) {
+        console.error("Error al obtener el periodo activo:", error);
+        res.status(500).json({ error: "Error interno del servidor" });
+    }
+};
+
+
 // Rutas
 router.get("/", getPeriodos);
 router.get("/:IdPeriodo", getPeriodoById);
+router.get("/activo", getPeriodoActivo);
 router.post("/", postPeriodo);
 router.put("/:IdPeriodo", updatePeriodo);
 router.delete("/:IdPeriodo", deletePeriodo);
