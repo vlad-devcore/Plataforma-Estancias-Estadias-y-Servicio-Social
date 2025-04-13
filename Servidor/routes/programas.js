@@ -6,7 +6,7 @@ const router = express.Router();
 // Obtener todos los programas educativos
 router.get("/", async (req, res) => {
     try {
-        const [results] = await pool.query("SELECT * FROM programas_educativos");
+        const [results] = await pool.query("SELECT * FROM programa_educativo");
         res.status(200).json(results);
     } catch (error) {
         console.error("Error al obtener programas:", error);

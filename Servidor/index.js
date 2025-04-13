@@ -14,6 +14,7 @@ import documentosAdminRouter from './routes/documentosAdmin.js'; // Importa las 
 import periodosRouter from './routes/periodos.js'; // Importa las rutas de periodos
 import procesoRouter from './routes/proceso.js'; // Importa las rutas de procesos
 import programasRouter from './routes/programas.js'; // Importa las rutas de programas
+import asesoresRouter from './routes/asesores.js'; // Importa las rutas de asesores
 
 dotenv.config();
 
@@ -60,6 +61,7 @@ app.use("/api/periodos", periodosRouter);
 app.use('/api/auth', authRouter);
 app.use("/api/proceso", procesoRouter); // Montar las rutas de procesos
 app.use("/api/programas", programasRouter); // Montar las rutas de programas
+app.use("/api/asesores", asesoresRouter); // Montar las rutas de asesores
 
 // ✅ Ruta de prueba
 app.get("/", (req, res) => {

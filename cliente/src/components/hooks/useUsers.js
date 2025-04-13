@@ -8,7 +8,6 @@ const useUsers = () => {
     searchTerm: ''
   });
 
-  // Función para manejar estados
   const setData = (newState) => {
     setState(prev => ({ ...prev, ...newState }));
   };
@@ -32,6 +31,10 @@ const useUsers = () => {
       });
       throw err;
     }
+  };
+
+  const getAsesores = () => {
+    return state.users.filter(user => user.role === 'asesor_academico');
   };
 
   const updateUser = async (id_user, updatedData) => {
@@ -107,16 +110,13 @@ const useUsers = () => {
       }
   
       const created = await response.json();
-      // Refresca lista con fetchUsers o añade directamente
-      await fetchUsers(); // o setData({ users: [...state.users, created], loading: false });
-  
+      await fetchUsers();
       return created;
     } catch (err) {
       setData({ error: err.message, loading: false });
       throw err;
     }
   };
-  
 
   const createUsersFromCSV = async (file) => {
     try {
@@ -143,9 +143,7 @@ const useUsers = () => {
       throw err;
     }
   };
-  
 
-  // Filtrado de usuarios
   const filteredUsers = state.users.filter(user => 
     user.email.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
     (user.role && user.role.toLowerCase().includes(state.searchTerm.toLowerCase()))
@@ -163,10 +161,9 @@ const useUsers = () => {
     updateUser,
     deleteUser,
     createUser,
-    createUsersFromCSV
+    createUsersFromCSV,
+    getAsesores // <-- aquí exportamos la función para obtener los asesores
   };
-}  
-
-
+};
 
 export default useUsers;
