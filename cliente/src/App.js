@@ -8,6 +8,7 @@ import Inicio from './components_admin/InicioAdmin';
 import Usuarios from './components_admin/UsuariosAdmin';
 import Registros from './components_admin/RegistrosAdmin';
 import Formatos from './components_admin/FormatosAdmin';
+import Documentacion from './components_admin/DocumentacionAdmin';
 import Empresas from './components_admin/EmpresasAdmin';
 import PerfilAdmin from './components_admin/PerfilAdmin';
 import Periodos from './components_admin/PeriodosAdmin';
@@ -66,6 +67,7 @@ function AnimatedRoutes() {
         <Route path="/usuariosadmin" element={<PrivateRoute element={<Usuarios />} allowedRoles={["administrador"]} />} />
         <Route path="/registrosadmin" element={<PrivateRoute element={<Registros />} allowedRoles={["administrador"]} />} />
         <Route path="/formatosadmin" element={<PrivateRoute element={<Formatos />} allowedRoles={["administrador"]} />} />
+        <Route path="/documentacionadmin" element={<PrivateRoute element={<Documentacion />} allowedRoles={["administrador"]} />} />
         <Route path="/periodosadmin" element={<PrivateRoute element={<Periodos />} allowedRoles={["administrador"]} />} />
         <Route path="/empresasadmin" element={<PrivateRoute element={<Empresas />} allowedRoles={["administrador"]} />} />
         <Route path="/perfiladmin" element={<PrivateRoute element={<PerfilAdmin />} allowedRoles={["administrador"]} />} />
