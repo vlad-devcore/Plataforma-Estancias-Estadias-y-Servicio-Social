@@ -9,14 +9,16 @@ import { AnimatePresence } from "framer-motion";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
 // Vistas de administrador
-import Sidebar from "./components_admin/Sidebar";
-import Inicio from "./components_admin/InicioAdmin";
-import Usuarios from "./components_admin/UsuariosAdmin";
-import Registros from "./components_admin/RegistrosAdmin";
-import Formatos from "./components_admin/FormatosAdmin";
-import Empresas from "./components_admin/EmpresasAdmin";
-import PerfilAdmin from "./components_admin/PerfilAdmin";
-import Periodos from "./components_admin/PeriodosAdmin";
+import Sidebar from './components_admin/Sidebar';
+import Inicio from './components_admin/InicioAdmin';
+import Usuarios from './components_admin/UsuariosAdmin';
+import Registros from './components_admin/RegistrosAdmin';
+import Formatos from './components_admin/FormatosAdmin';
+import Documentacion from './components_admin/DocumentacionAdmin';
+import Empresas from './components_admin/EmpresasAdmin';
+import PerfilAdmin from './components_admin/PerfilAdmin';
+import Periodos from './components_admin/PeriodosAdmin';
+
 
 // Vistas de estudiantes
 import Login from "./components_student/Login";
@@ -170,69 +172,16 @@ function AnimatedRoutes() {
         />
 
         {/* Rutas protegidas para administrador */}
-        <Route
-          path="/inicioadmin"
-          element={
-            <PrivateRoute
-              element={<Inicio />}
-              allowedRoles={["administrador"]}
-            />
-          }
-        />
-        <Route
-          path="/usuariosadmin"
-          element={
-            <PrivateRoute
-              element={<Usuarios />}
-              allowedRoles={["administrador"]}
-            />
-          }
-        />
-        <Route
-          path="/registrosadmin"
-          element={
-            <PrivateRoute
-              element={<Registros />}
-              allowedRoles={["administrador"]}
-            />
-          }
-        />
-        <Route
-          path="/formatosadmin"
-          element={
-            <PrivateRoute
-              element={<Formatos />}
-              allowedRoles={["administrador"]}
-            />
-          }
-        />
-        <Route
-          path="/periodosadmin"
-          element={
-            <PrivateRoute
-              element={<Periodos />}
-              allowedRoles={["administrador"]}
-            />
-          }
-        />
-        <Route
-          path="/empresasadmin"
-          element={
-            <PrivateRoute
-              element={<Empresas />}
-              allowedRoles={["administrador"]}
-            />
-          }
-        />
-        <Route
-          path="/perfiladmin"
-          element={
-            <PrivateRoute
-              element={<PerfilAdmin />}
-              allowedRoles={["administrador"]}
-            />
-          }
-        />
+
+        <Route path="/inicioadmin" element={<PrivateRoute element={<Inicio />} allowedRoles={["administrador"]} />} />
+        <Route path="/usuariosadmin" element={<PrivateRoute element={<Usuarios />} allowedRoles={["administrador"]} />} />
+        <Route path="/registrosadmin" element={<PrivateRoute element={<Registros />} allowedRoles={["administrador"]} />} />
+        <Route path="/formatosadmin" element={<PrivateRoute element={<Formatos />} allowedRoles={["administrador"]} />} />
+        <Route path="/documentacionadmin" element={<PrivateRoute element={<Documentacion />} allowedRoles={["administrador"]} />} />
+        <Route path="/periodosadmin" element={<PrivateRoute element={<Periodos />} allowedRoles={["administrador"]} />} />
+        <Route path="/empresasadmin" element={<PrivateRoute element={<Empresas />} allowedRoles={["administrador"]} />} />
+        <Route path="/perfiladmin" element={<PrivateRoute element={<PerfilAdmin />} allowedRoles={["administrador"]} />} />
+
       </Routes>
     </AnimatePresence>
   );
