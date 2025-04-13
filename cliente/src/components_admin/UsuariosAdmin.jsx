@@ -16,7 +16,7 @@ const UserManagement = () => {
     updateUser,
     deleteUser,
     createUser,
-    onFileUpload // Esta es la función que ya tienes en el hook useUsers
+    onFileUpload // Función para la importación de CSV
   } = useUsers();
 
   const [formMode, setFormMode] = useState(null);
@@ -32,11 +32,10 @@ const UserManagement = () => {
       if (formMode === 'edit') {
         await updateUser(selectedUser.id_user, data);
       } else if (formMode === 'create') {
-        await createUser(data); // ✅ Agregamos esta línea
+        await createUser(data);
       } else if (formMode === 'import') {
-        // Aquí llamamos a la función de importación que maneja el archivo CSV
         if (data.file) {
-          await onFileUpload(data.file); // Llamando a la función que ya está en el hook useUsers
+          await onFileUpload(data.file);
         } else {
           console.error('No se seleccionó un archivo CSV');
         }
@@ -56,7 +55,7 @@ const UserManagement = () => {
       
       {/* Main Content */}
       <div className="flex-1 p-8">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full mx-auto">
           {/* Header */}
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
@@ -75,7 +74,7 @@ const UserManagement = () => {
             </h2>
           </motion.div>
 
-          {/* Search and Actions */}
+          {/* Search & Acciones */}
           <div className="mb-6 flex flex-col md:flex-row justify-between gap-4">
             <div className="relative flex-1">
               <motion.input
@@ -112,13 +111,13 @@ const UserManagement = () => {
           </div>
 
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Table Section - Takes full width when no form is open */}
-            <div className={`lg:col-span-${formMode ? '2' : '3'}`}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full">
+            {/* Table Section */}
+            <div className={formMode ? "lg:col-span-2 w-full" : "lg:col-span-3 w-full"}>
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200"
+                className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 w-full"
               >
                 <UserTable 
                   users={filteredUsers} 
@@ -135,12 +134,12 @@ const UserManagement = () => {
               </motion.div>
             </div>
 
-            {/* Form Sidebar - Only appears when formMode is active */}
+            {/* Form Sidebar */}
             {formMode && (
               <motion.div 
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
+                className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 w-full lg:col-span-1"
               >
                 <h3 className="text-lg font-medium mb-4 flex items-center">
                   {formMode === 'create' && <Plus className="text-purple-600 mr-2" />}
@@ -154,7 +153,7 @@ const UserManagement = () => {
                   mode={formMode} 
                   initialData={selectedUser || {}} 
                   onSubmit={handleSubmit}
-                  onFileUpload={(e) => onFileUpload(e.target.files[0])} // Llamando a la función 'onFileUpload' desde el hook
+                  onFileUpload={(e) => onFileUpload(e.target.files[0])}
                 />
               </motion.div>
             )}

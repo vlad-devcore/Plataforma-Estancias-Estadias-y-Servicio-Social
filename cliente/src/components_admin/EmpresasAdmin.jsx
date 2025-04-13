@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Search, Plus, Building, Edit2 } from 'lucide-react';
+import { Search, Plus, Building, Edit2, X } from 'lucide-react';
 import { useState } from 'react';
 import useEmpresas from '../components/hooks/useEmpresas';
 import EmpresaTable from '../components/admin/empresas/EmpresaTable';
@@ -95,57 +95,69 @@ const EmpresaManagement = () => {
             </motion.button>
           </div>
 
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Table Section */}
-            <div className={`lg:col-span-${formMode ? '2' : '3'}`}>
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200"
-              >
-                <EmpresaTable 
-                  empresas={filteredEmpresas} 
-                  loading={loading}
-                  error={error}
-                  onEdit={handleEdit}
-                  onDelete={deleteEmpresa}
-                />
-                <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
-                  <p className="text-sm text-gray-500">
-                    Mostrando {filteredEmpresas.length} de {empresas.length} registros
-                  </p>
-                </div>
-              </motion.div>
+          {/* Table Section - Always Full Width */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 mb-6"
+          >
+            <EmpresaTable 
+              empresas={filteredEmpresas} 
+              loading={loading}
+              error={error}
+              onEdit={handleEdit}
+              onDelete={deleteEmpresa}
+            />
+            <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
+              <p className="text-sm text-gray-500">
+                Mostrando {filteredEmpresas.length} de {empresas.length} registros
+              </p>
             </div>
+          </motion.div>
 
-            {/* Form Sidebar */}
-            {formMode && (
+          {/* Form Modal */}
+          {formMode && (
+            <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
               <motion.div 
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white rounded-lg shadow-lg p-6 border border-gray-200 w-full max-w-md"
               >
-                <h3 className="text-lg font-medium mb-4 flex items-center">
-                  {formMode === 'create' ? (
-                    <>
-                      <Plus className="text-blue-600 mr-2" />
-                      Crear Nueva Empresa
-                    </>
-                  ) : (
-                    <>
-                      <Edit2 className="text-orange-500 mr-2" />
-                      Editar Empresa
-                    </>
-                  )}
-                </h3>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium flex items-center">
+                    {formMode === 'create' ? (
+                      <>
+                        <Plus className="text-blue-600 mr-2" />
+                        Crear Nueva Empresa
+                      </>
+                    ) : (
+                      <>
+                        <Edit2 className="text-orange-500 mr-2" />
+                        Editar Empresa
+                      </>
+                    )}
+                  </h3>
+                  <button 
+                    onClick={() => {
+                      setFormMode(null);
+                      setSelectedEmpresa(null);
+                    }}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
                 <EmpresaForm 
                   initialData={selectedEmpresa || {}} 
                   onSubmit={handleSubmit}
+                  onCancel={() => {
+                    setFormMode(null);
+                    setSelectedEmpresa(null);
+                  }}
                 />
               </motion.div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

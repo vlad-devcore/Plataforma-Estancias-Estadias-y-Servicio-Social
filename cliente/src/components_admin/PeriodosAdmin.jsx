@@ -44,7 +44,7 @@ const PeriodoManagement = () => {
       <Sidebar />
 
       <div className="flex-1 p-8">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full mx-auto">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -70,16 +70,18 @@ const PeriodoManagement = () => {
             </motion.button>
           </div>
 
-          {/* Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className={`lg:col-span-${formMode ? '2' : '3'}`}>
+          {/* Layout flexible: la tabla ocupa todo el ancho si no se muestra el formulario; si se muestra, usamos flex */}
+          <div className="flex flex-col lg:flex-row gap-8 w-full">
+            <div className="flex-1">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200"
+                className="bg-white rounded-lg shadow-sm overflow-x-auto border border-gray-200 w-full"
               >
                 <PeriodoTable
                   periodos={periodos}
+                  loading={loading}
+                  error={error}
                   onEdit={handleEdit}
                   onDelete={deletePeriodo}
                 />
@@ -95,13 +97,12 @@ const PeriodoManagement = () => {
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
+                className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 w-full lg:w-1/3"
               >
                 <h3 className="text-lg font-medium mb-4 flex items-center">
                   {formMode === 'create' && <Plus className="text-purple-600 mr-2" />}
                   {formMode === 'edit' && <CalendarClock className="text-orange-500 mr-2" />}
-                  {formMode === 'create' && 'Crear Periodo'}
-                  {formMode === 'edit' && 'Editar Periodo'}
+                  {formMode === 'create' ? 'Crear Periodo' : 'Editar Periodo'}
                 </h3>
                 <PeriodoForm
                   mode={formMode}
