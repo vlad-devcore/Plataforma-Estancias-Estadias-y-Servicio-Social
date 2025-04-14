@@ -18,22 +18,59 @@ const EmpresaManagement = () => {
   const [formMode, setFormMode] = useState(null);
   const [selectedEmpresa, setSelectedEmpresa] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [confirmData, setConfirmData] = useState(null);
 
   const handleEdit = (empresa) => {
     setSelectedEmpresa(empresa);
     setFormMode('edit');
   };
 
-  const handleSubmit = async (data) => {
+  const handleDelete = (empresaId) => {
+    setConfirmAction('delete');
+    setConfirmData(empresaId);
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmAction = async () => {
     try {
-      if (formMode === 'edit') {
-        await updateEmpresa(selectedEmpresa.id_empresa, data);
+      if (confirmAction === 'delete') {
+        await deleteEmpresa(confirmData);
+      } else if (confirmAction === 'update') {
+        await updateEmpresa(selectedEmpresa.id_empresa, confirmData);
+        setFormMode(null);
+        setSelectedEmpresa(null);
+      } else if (confirmAction === 'create') {
+        // Si en el futuro se implementa createEmpresa
+        // await createEmpresa(confirmData);
+        setFormMode(null);
+        setSelectedEmpresa(null);
       }
-      setFormMode(null);
-      setSelectedEmpresa(null);
     } catch (err) {
       console.error(err);
     }
+    setShowConfirmation(false);
+    setConfirmAction(null);
+    setConfirmData(null);
+  };
+
+  const handleCancelAction = () => {
+    setShowConfirmation(false);
+    setConfirmAction(null);
+    setConfirmData(null);
+  };
+
+  const handleSubmit = async (data) => {
+    setConfirmData(data);
+    
+    if (formMode === 'edit') {
+      setConfirmAction('update');
+    } else if (formMode === 'create') {
+      setConfirmAction('create');
+    }
+    
+    setShowConfirmation(true);
   };
 
   const filteredEmpresas = empresas.filter(empresa => 
@@ -106,7 +143,7 @@ const EmpresaManagement = () => {
               loading={loading}
               error={error}
               onEdit={handleEdit}
-              onDelete={deleteEmpresa}
+              onDelete={handleDelete}
             />
             <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
               <p className="text-sm text-gray-500">
@@ -155,6 +192,40 @@ const EmpresaManagement = () => {
                     setSelectedEmpresa(null);
                   }}
                 />
+              </motion.div>
+            </div>
+          )}
+
+          {/* Modal de Confirmación */}
+          {showConfirmation && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <motion.div 
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="bg-white rounded-lg p-6 shadow-lg max-w-md w-full mx-4"
+              >
+                <h3 className="text-lg font-semibold mb-3">Confirmar Acción</h3>
+                <p className="text-gray-600 mb-6">
+                  {confirmAction === 'delete' && '¿Estás seguro de que deseas eliminar esta empresa? Esta acción no se puede deshacer.'}
+                  {confirmAction === 'update' && '¿Confirmas la actualización de los datos de esta empresa?'}
+                  {confirmAction === 'create' && '¿Confirmas la creación de esta nueva empresa?'}
+                </p>
+                <div className="flex justify-end gap-3">
+                  <button 
+                    onClick={handleCancelAction}
+                    className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    onClick={handleConfirmAction}
+                    className={`px-4 py-2 text-white rounded-md hover:bg-opacity-90 transition-colors ${
+                      confirmAction === 'delete' ? 'bg-red-500' : 'bg-blue-500'
+                    }`}
+                  >
+                    Confirmar
+                  </button>
+                </div>
               </motion.div>
             </div>
           )}

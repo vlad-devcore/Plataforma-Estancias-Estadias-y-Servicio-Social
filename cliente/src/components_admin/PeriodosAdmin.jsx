@@ -18,25 +18,58 @@ const PeriodoManagement = () => {
 
   const [formMode, setFormMode] = useState(null);
   const [selectedPeriodo, setSelectedPeriodo] = useState(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [confirmData, setConfirmData] = useState(null);
 
   const handleEdit = (periodo) => {
     setSelectedPeriodo(periodo);
     setFormMode('edit');
   };
 
-  const handleSubmit = async (data) => {
-    try {
-      if (formMode === 'edit') {
-        await updatePeriodo(selectedPeriodo.IdPeriodo, data);
-      } else if (formMode === 'create') {
-        await createPeriodo(data);
-      }
+  const handleDelete = (periodoId) => {
+    setConfirmAction('delete');
+    setConfirmData(periodoId);
+    setShowConfirmation(true);
+  };
 
-      setFormMode(null);
-      setSelectedPeriodo(null);
+  const handleConfirmAction = async () => {
+    try {
+      if (confirmAction === 'delete') {
+        await deletePeriodo(confirmData);
+      } else if (confirmAction === 'update') {
+        await updatePeriodo(selectedPeriodo.IdPeriodo, confirmData);
+        setFormMode(null);
+        setSelectedPeriodo(null);
+      } else if (confirmAction === 'create') {
+        await createPeriodo(confirmData);
+        setFormMode(null);
+        setSelectedPeriodo(null);
+      }
     } catch (err) {
       console.error(err);
     }
+    setShowConfirmation(false);
+    setConfirmAction(null);
+    setConfirmData(null);
+  };
+
+  const handleCancelAction = () => {
+    setShowConfirmation(false);
+    setConfirmAction(null);
+    setConfirmData(null);
+  };
+
+  const handleSubmit = async (data) => {
+    setConfirmData(data);
+    
+    if (formMode === 'edit') {
+      setConfirmAction('update');
+    } else if (formMode === 'create') {
+      setConfirmAction('create');
+    }
+    
+    setShowConfirmation(true);
   };
 
   return (
@@ -83,7 +116,7 @@ const PeriodoManagement = () => {
                   loading={loading}
                   error={error}
                   onEdit={handleEdit}
-                  onDelete={deletePeriodo}
+                  onDelete={handleDelete}
                 />
                 <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
                   <p className="text-sm text-gray-500">
@@ -114,6 +147,40 @@ const PeriodoManagement = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal de Confirmación */}
+      {showConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-lg p-6 shadow-lg max-w-md w-full mx-4"
+          >
+            <h3 className="text-lg font-semibold mb-3">Confirmar Acción</h3>
+            <p className="text-gray-600 mb-6">
+              {confirmAction === 'delete' && '¿Estás seguro de que deseas eliminar este periodo? Esta acción no se puede deshacer.'}
+              {confirmAction === 'update' && '¿Confirmas la actualización de los datos de este periodo?'}
+              {confirmAction === 'create' && '¿Confirmas la creación de este nuevo periodo?'}
+            </p>
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={handleCancelAction}
+                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleConfirmAction}
+                className={`px-4 py-2 text-white rounded-md hover:bg-opacity-90 transition-colors ${
+                  confirmAction === 'delete' ? 'bg-red-500' : 'bg-purple-500'
+                }`}
+              >
+                Confirmar
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
