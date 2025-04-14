@@ -1,4 +1,3 @@
-// src/context/AuthContext.js
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -37,11 +36,14 @@ export const AuthProvider = ({ children }) => {
         email,
         password
       });
-
+  
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       setUser(response.data.user);
+  
       
+      console.log("🔐 Usuario guardado en localStorage:", response.data.user);
+  
       return { success: true, user: response.data.user };
     } catch (error) {
       return { 
@@ -50,6 +52,7 @@ export const AuthProvider = ({ children }) => {
       };
     }
   };
+  
 
   const logout = () => {
     localStorage.removeItem('token');

@@ -68,6 +68,18 @@ const usePeriodos = () => {
     }
   };
 
+  // Obtener el periodo activo
+const getPeriodoActivo = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/activo`);
+    return response.data;
+  } catch (err) {
+    console.error("Error al obtener el periodo activo:", err);
+    throw err;
+  }
+};
+
+
   useEffect(() => {
     fetchPeriodos();
   }, []);
@@ -81,7 +93,8 @@ const usePeriodos = () => {
     deletePeriodo,
     getPeriodoById,
     fetchPeriodos,
+    getPeriodoActivo, // aquí
   };
-};
+}  
 
 export default usePeriodos;

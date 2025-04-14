@@ -99,12 +99,41 @@ const getPeriodoActivo = async (req, res) => {
 };
 
 
+// Cambiar estado manualmente de un periodo (por el admin)
+const cambiarEstadoPeriodo = async (req, res) => {
+    const { IdPeriodo } = req.params;
+    const { nuevoEstado } = req.body;
+
+    if (!["Activo", "Inactivo"].includes(nuevoEstado)) {
+        return res.status(400).json({ error: "Estado no válido. Debe ser 'Activo' o 'Inactivo'" });
+    }
+
+    try {
+        const [result] = await pool.query(
+            "UPDATE periodos SET EstadoActivo = ? WHERE IdPeriodo = ?",
+            [nuevoEstado, IdPeriodo]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: "Periodo no encontrado" });
+        }
+
+        res.status(200).json({ message: `Periodo actualizado a estado '${nuevoEstado}'` });
+    } catch (error) {
+        console.error("Error al cambiar el estado del periodo:", error);
+        res.status(500).json({ error: "Error interno del servidor" });
+    }
+};
+
+
 // Rutas
 router.get("/", getPeriodos);
-router.get("/:IdPeriodo", getPeriodoById);
 router.get("/activo", getPeriodoActivo);
+router.get("/:IdPeriodo", getPeriodoById);
 router.post("/", postPeriodo);
 router.put("/:IdPeriodo", updatePeriodo);
 router.delete("/:IdPeriodo", deletePeriodo);
+router.patch("/:IdPeriodo/estado", cambiarEstadoPeriodo);
 
-export default router;
+
+export default router; 
