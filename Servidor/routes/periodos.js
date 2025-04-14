@@ -6,13 +6,19 @@ const router = express.Router();
 // Obtener todos los periodos
 const getPeriodos = async (req, res) => {
     try {
-        const [results] = await pool.query("SELECT * FROM periodos ORDER BY Año DESC, FechaInicio DESC");
-        res.status(200).json(results);
-    } catch (error) {
-        console.error("Error al obtener periodos:", error);
-        res.status(500).json({ error: "Error interno del servidor" });
-    }
-};
+        console.log('GET /api/periodos - Obtener todos los periodos');
+        const [results] = await pool.query(`
+          SELECT IdPeriodo, Año, Fase, EstadoActivo
+          FROM periodos
+          ORDER BY Año DESC, Fase
+        `);
+        console.log('Periodos obtenidos:', results);
+        res.json(results);
+      } catch (error) {
+        console.error('Error al obtener periodos:', error.message);
+        res.status(500).json({ error: error.message });
+      }
+    };
 
 // Obtener un periodo por ID
 const getPeriodoById = async (req, res) => {
