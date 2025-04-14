@@ -2,15 +2,20 @@ import { motion } from 'framer-motion';
 import { Search, Eye, CheckCircle, XCircle, File, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 import Sidebar from './Sidebar';
+import useDocumentosAdmin from '../components/hooks/useDocumentosAdmin';
 
 const DocumentManagement = () => {
-  const [documents, setDocuments] = useState([
-    { id: 1, matricula: '202100389', nombre: 'Certificado de Estudios', fecha: '2025-04-10', estatus: 'pendiente' },
-    { id: 2, matricula: '202100162', nombre: 'Comprobante de Pago', fecha: '2025-04-09', estatus: 'pendiente' },
-    { id: 3, matricula: '202500987', nombre: 'Identificación Oficial', fecha: '2025-04-08', estatus: 'pendiente' },
-    { id: 4, matricula: '202900987', nombre: 'Acta de Nacimiento', fecha: '2025-04-07', estatus: 'pendiente' },
-    { id: 5, matricula: '202300547', nombre: 'Carta de Recomendación', fecha: '2025-04-06', estatus: 'pendiente' },
-  ]);
+  const {
+    documents,
+    periodos,
+    loading,
+    error,
+    success,
+    approveDocument,
+    rejectDocument,
+    updateFilters,
+    resetMessages,
+  } = useDocumentosAdmin();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDocument, setSelectedDocument] = useState(null);
@@ -20,36 +25,49 @@ const DocumentManagement = () => {
 
   const handleViewDocument = (document) => {
     console.log('Ver documento', document);
-    // Aquí se implementaría la lógica para visualizar el PDF
+    window.open(`http://localhost:9999/api/documentos/download/${document.id_Documento}`, '_blank');
   };
 
-  const handleApproveDocument = (documentId) => {
-    setDocuments(prev => 
-      prev.map(doc => 
-        doc.id === documentId ? { ...doc, estatus: 'aprobado' } : doc
-      )
-    );
-  };
-
-  const openRejectionModal = (document) => {
+  const openConfirmApproveModal = (document) => {
     setSelectedDocument(document);
-    setModalType('rejection');
+    setModalType('confirmApprove');
     setModalOpen(true);
   };
 
-  const handleRejectDocument = () => {
-    setDocuments(prev => 
-      prev.map(doc => 
-        doc.id === selectedDocument.id ? { ...doc, estatus: 'rechazado', notaRechazo: rejectionNote } : doc
-      )
-    );
-    setModalOpen(false);
-    setRejectionNote('');
+  const openConfirmRejectModal = (document) => {
+    setSelectedDocument(document);
+    setModalType('confirmReject');
+    setModalOpen(true);
+  };
+
+  const handleApproveDocument = async () => {
+    if (selectedDocument) {
+      await approveDocument(selectedDocument.id_Documento);
+      setModalOpen(false);
+    }
+  };
+
+  const openRejectionModal = () => {
+    setModalType('rejection');
+    // No cerramos el modal, solo cambiamos el tipo
+  };
+
+  const handleRejectDocument = async () => {
+    if (selectedDocument) {
+      await rejectDocument(selectedDocument.id_Documento, rejectionNote);
+      setModalOpen(false);
+      setRejectionNote('');
+    }
+  };
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    updateFilters({ [name]: value === 'Todos' ? '' : value });
   };
 
   const filteredDocuments = documents.filter(doc => 
-    doc.matricula.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+    doc.Matricula.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    doc.Nombre_TipoDoc.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -78,12 +96,69 @@ const DocumentManagement = () => {
             </h2>
           </motion.div>
 
-          {/* Search */}
+          {/* Messages */}
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              {error}
+              <button onClick={resetMessages} className="ml-2 text-red-900 underline">Cerrar</button>
+            </div>
+          )}
+          {success && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+              {success}
+              <button onClick={resetMessages} className="ml-2 text-green-900 underline">Cerrar</button>
+            </div>
+          )}
+
+          {/* Filters and Search */}
           <div className="mb-6 flex flex-col md:flex-row justify-between gap-4">
+            {/* Filtro por Estatus */}
+            <div className="flex-1">
+              <label htmlFor="estatus" className="block text-sm font-medium text-gray-700 mb-1">
+                Filtrar por Estatus
+              </label>
+              <select
+                id="estatus"
+                name="estatus"
+                onChange={handleFilterChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="Todos">Todos</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Aprobado">Aprobado</option>
+                <option value="Rechazado">Rechazado</option>
+              </select>
+            </div>
+
+            {/* Filtro por Periodo */}
+            <div className="flex-1">
+              <label htmlFor="idPeriodo" className="block text-sm font-medium text-gray-700 mb-1">
+                Filtrar por Periodo
+              </label>
+              <select
+                id="idPeriodo"
+                name="idPeriodo"
+                onChange={handleFilterChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="Todos">Todos</option>
+                {periodos.map((periodo) => (
+                  <option key={periodo.IdPeriodo} value={periodo.IdPeriodo}>
+                    {periodo.Año} - {periodo.Fase}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Búsqueda */}
             <div className="relative flex-1">
+              <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
+                Buscar
+              </label>
               <motion.input
                 initial={{ width: '80%', opacity: 0 }}
                 animate={{ width: '100%', opacity: 1 }}
+                id="search"
                 type="text"
                 placeholder="Buscar por matrícula o nombre de documento..."
                 value={searchTerm}
@@ -111,9 +186,6 @@ const DocumentManagement = () => {
                       Documento
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Fecha
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Estatus
                     </th>
                     <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -122,25 +194,28 @@ const DocumentManagement = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredDocuments.length > 0 ? (
+                  {loading ? (
+                    <tr>
+                      <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">
+                        Cargando...
+                      </td>
+                    </tr>
+                  ) : filteredDocuments.length > 0 ? (
                     filteredDocuments.map((doc) => (
-                      <tr key={doc.id} className="hover:bg-gray-50">
+                      <tr key={doc.id_Documento} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {doc.matricula}
+                          {doc.Matricula}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {doc.nombre}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {doc.fecha}
+                          {doc.Nombre_TipoDoc}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {doc.estatus === 'pendiente' && <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pendiente</span>}
-                          {doc.estatus === 'aprobado' && <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Aprobado</span>}
-                          {doc.estatus === 'rechazado' && (
+                          {doc.Estatus === 'Pendiente' && <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pendiente</span>}
+                          {doc.Estatus === 'Aprobado' && <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Aprobado</span>}
+                          {doc.Estatus === 'Rechazado' && (
                             <div className="flex items-center">
                               <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Rechazado</span>
-                              {doc.notaRechazo && (
+                              {doc.Comentarios && (
                                 <motion.div 
                                   whileHover={{ scale: 1.1 }}
                                   className="ml-2 cursor-pointer text-gray-500 hover:text-gray-700"
@@ -163,17 +238,19 @@ const DocumentManagement = () => {
                               whileTap={{ scale: 0.9 }}
                               className="text-blue-600 hover:text-blue-800"
                               onClick={() => handleViewDocument(doc)}
+                              disabled={loading}
                             >
                               <Eye size={18} />
                             </motion.button>
                             
-                            {doc.estatus === 'pendiente' && (
+                            {doc.Estatus === 'Pendiente' && (
                               <>
                                 <motion.button
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.9 }}
                                   className="text-green-600 hover:text-green-800"
-                                  onClick={() => handleApproveDocument(doc.id)}
+                                  onClick={() => openConfirmApproveModal(doc)}
+                                  disabled={loading}
                                 >
                                   <CheckCircle size={18} />
                                 </motion.button>
@@ -182,7 +259,8 @@ const DocumentManagement = () => {
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.9 }}
                                   className="text-red-600 hover:text-red-800"
-                                  onClick={() => openRejectionModal(doc)}
+                                  onClick={() => openConfirmRejectModal(doc)}
+                                  disabled={loading}
                                 >
                                   <XCircle size={18} />
                                 </motion.button>
@@ -194,7 +272,7 @@ const DocumentManagement = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                      <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">
                         No se encontraron documentos
                       </td>
                     </tr>
@@ -209,7 +287,7 @@ const DocumentManagement = () => {
             </div>
           </motion.div>
 
-          {/* Modal para rechazo o visualización de notas */}
+          {/* Modal para confirmaciones, rechazo o visualización de notas */}
           {modalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
               <motion.div 
@@ -219,7 +297,17 @@ const DocumentManagement = () => {
               >
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-medium flex items-center">
-                    {modalType === 'rejection' ? (
+                    {modalType === 'confirmApprove' ? (
+                      <>
+                        <CheckCircle className="text-green-500 mr-2" size={20} />
+                        Confirmar Aprobación
+                      </>
+                    ) : modalType === 'confirmReject' ? (
+                      <>
+                        <XCircle className="text-red-500 mr-2" size={20} />
+                        Confirmar Rechazo
+                      </>
+                    ) : modalType === 'rejection' ? (
                       <>
                         <XCircle className="text-red-500 mr-2" size={20} />
                         Rechazar Documento
@@ -239,7 +327,49 @@ const DocumentManagement = () => {
                   </button>
                 </div>
                 
-                {modalType === 'rejection' ? (
+                {modalType === 'confirmApprove' ? (
+                  <>
+                    <p className="text-gray-700 mb-4">
+                      ¿Estás seguro de que deseas aprobar el documento "{selectedDocument?.Nombre_TipoDoc}" de la matrícula {selectedDocument?.Matricula}?
+                    </p>
+                    <div className="flex justify-end space-x-2">
+                      <button
+                        onClick={() => setModalOpen(false)}
+                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={handleApproveDocument}
+                        className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+                        disabled={loading}
+                      >
+                        Aprobar
+                      </button>
+                    </div>
+                  </>
+                ) : modalType === 'confirmReject' ? (
+                  <>
+                    <p className="text-gray-700 mb-4">
+                      ¿Estás seguro de que deseas rechazar el documento "{selectedDocument?.Nombre_TipoDoc}" de la matrícula {selectedDocument?.Matricula}?
+                    </p>
+                    <div className="flex justify-end space-x-2">
+                      <button
+                        onClick={() => setModalOpen(false)}
+                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={openRejectionModal}
+                        className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+                        disabled={loading}
+                      >
+                        Continuar
+                      </button>
+                    </div>
+                  </>
+                ) : modalType === 'rejection' ? (
                   <>
                     <div className="mb-4">
                       <label htmlFor="rejection-note" className="block text-sm font-medium text-gray-700 mb-1">
@@ -264,7 +394,7 @@ const DocumentManagement = () => {
                       <button
                         onClick={handleRejectDocument}
                         className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
-                        disabled={!rejectionNote.trim()}
+                        disabled={!rejectionNote.trim() || loading}
                       >
                         Rechazar
                       </button>
@@ -273,7 +403,7 @@ const DocumentManagement = () => {
                 ) : (
                   <>
                     <div className="mb-4 bg-gray-50 p-3 rounded-md border border-gray-200">
-                      <p className="text-gray-700">{selectedDocument?.notaRechazo}</p>
+                      <p className="text-gray-700">{selectedDocument?.Comentarios}</p>
                     </div>
                     <div className="flex justify-end">
                       <button
