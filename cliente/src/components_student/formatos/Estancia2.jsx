@@ -29,7 +29,7 @@ const Estancia2 = () => {
         console.log("🔐 Registro encontrado (Estancia 2):", yaRegistrado);
         setIsRegistered(yaRegistrado);
       } catch (err) {
-        console.error("Error al verificar registro (Estancia 2):", err);
+        console.error("Error al verificar registros (Estancia 2):", err);
       }
     };
 
