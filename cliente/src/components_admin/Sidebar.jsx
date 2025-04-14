@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
+
 const Sidebar = ({ onNavigate }) => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -51,6 +52,7 @@ const Sidebar = ({ onNavigate }) => {
     <NavItem to="/Documentacionadmin" label="Documentacion" currentPath={location.pathname} onClick={handleNavigation} />
     <NavItem to="/registrosadmin" label="Registros" currentPath={location.pathname} onClick={handleNavigation} />
     <NavItem to="/perfiladmin" label="Perfil" currentPath={location.pathname} onClick={handleNavigation} />
+    <NavItem to="/" label="Cerrar Sesión" currentPath={location.pathname} onClick={handleNavigation} />
   </ul>
 </nav>  
       </aside>

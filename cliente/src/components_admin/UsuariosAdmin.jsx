@@ -6,6 +6,7 @@ import UserTable from '../components/admin/users/UserTable';
 import UserForm from '../components/admin/users/UserForm';
 import Sidebar from '../components_admin/Sidebar';
 
+
 const UserManagement = () => {
   const {
     filteredUsers,
@@ -21,31 +22,67 @@ const UserManagement = () => {
 
   const [formMode, setFormMode] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [confirmData, setConfirmData] = useState(null);
 
   const handleEdit = (user) => {
     setSelectedUser(user);
     setFormMode('edit');
   };
 
-  const handleSubmit = async (data) => {
+  const handleDelete = (userId) => {
+    setConfirmAction('delete');
+    setConfirmData(userId);
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmAction = async () => {
     try {
-      if (formMode === 'edit') {
-        await updateUser(selectedUser.id_user, data);
-      } else if (formMode === 'create') {
-        await createUser(data);
-      } else if (formMode === 'import') {
-        if (data.file) {
-          await onFileUpload(data.file);
+      if (confirmAction === 'delete') {
+        await deleteUser(confirmData);
+      } else if (confirmAction === 'update') {
+        await updateUser(selectedUser.id_user, confirmData);
+        setFormMode(null);
+        setSelectedUser(null);
+      } else if (confirmAction === 'create') {
+        await createUser(confirmData);
+        setFormMode(null);
+        setSelectedUser(null);
+      } else if (confirmAction === 'import') {
+        if (confirmData && confirmData.file) {
+          await onFileUpload(confirmData.file);
         } else {
           console.error('No se seleccionó un archivo CSV');
         }
+        setFormMode(null);
       }
-      
-      setFormMode(null);
-      setSelectedUser(null);
     } catch (err) {
       console.error(err);
     }
+    setShowConfirmation(false);
+    setConfirmAction(null);
+    setConfirmData(null);
+  };
+
+  const handleCancelAction = () => {
+    setShowConfirmation(false);
+    setConfirmAction(null);
+    setConfirmData(null);
+  };
+
+  const handleSubmit = async (data) => {
+    setConfirmData(data);
+    
+    if (formMode === 'edit') {
+      setConfirmAction('update');
+    } else if (formMode === 'create') {
+      setConfirmAction('create');
+    } else if (formMode === 'import') {
+      setConfirmAction('import');
+    }
+    
+    setShowConfirmation(true);
   };
 
   return (
@@ -124,7 +161,7 @@ const UserManagement = () => {
                   loading={loading}
                   error={error}
                   onEdit={handleEdit}
-                  onDelete={deleteUser}
+                  onDelete={handleDelete}
                 />
                 <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
                   <p className="text-sm text-gray-500">
@@ -160,6 +197,41 @@ const UserManagement = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal de Confirmación */}
+      {showConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-lg p-6 shadow-lg max-w-md w-full mx-4"
+          >
+            <h3 className="text-lg font-semibold mb-3">Confirmar Acción</h3>
+            <p className="text-gray-600 mb-6">
+              {confirmAction === 'delete' && '¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.'}
+              {confirmAction === 'update' && '¿Confirmas la actualización de los datos de este usuario?'}
+              {confirmAction === 'create' && '¿Confirmas la creación de este nuevo usuario?'}
+              {confirmAction === 'import' && '¿Confirmas la importación de usuarios desde el archivo seleccionado?'}
+            </p>
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={handleCancelAction}
+                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleConfirmAction}
+                className={`px-4 py-2 text-white rounded-md hover:bg-opacity-90 transition-colors ${
+                  confirmAction === 'delete' ? 'bg-red-500' : 'bg-purple-500'
+                }`}
+              >
+                Confirmar
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

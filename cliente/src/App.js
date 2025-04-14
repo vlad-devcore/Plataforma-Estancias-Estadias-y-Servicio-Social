@@ -18,10 +18,13 @@ import Documentacion from './components_admin/DocumentacionAdmin';
 import Empresas from './components_admin/EmpresasAdmin';
 import PerfilAdmin from './components_admin/PerfilAdmin';
 import Periodos from './components_admin/PeriodosAdmin';
+import Logout from './components_admin/Logout'; 
+
+ 
 
 
 // Vistas de estudiantes
-import Login from "./components_student/Login";
+import Login from "./components_student/Login"; 
 import Home from "./components_student/Home";
 import EmpresasS from "./components_student/Empresas";
 import PerfilStudent from "./components_student/Perfil";
@@ -181,6 +184,9 @@ function AnimatedRoutes() {
         <Route path="/periodosadmin" element={<PrivateRoute element={<Periodos />} allowedRoles={["administrador"]} />} />
         <Route path="/empresasadmin" element={<PrivateRoute element={<Empresas />} allowedRoles={["administrador"]} />} />
         <Route path="/perfiladmin" element={<PrivateRoute element={<PerfilAdmin />} allowedRoles={["administrador"]} />} />
+        <Route path="/loginadmin" element={<PrivateRoute element={<Login />} allowedRoles={["administrador"]} />} />
+
+        {/* Redirección por defecto */}
 
       </Routes>
     </AnimatePresence>
