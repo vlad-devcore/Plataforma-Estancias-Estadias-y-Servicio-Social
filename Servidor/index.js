@@ -4,43 +4,45 @@ import cors from "cors";
 import fs from "fs";
 import path from "path";
 import morgan from 'morgan';
-import { fileURLToPath } from "url"; // Importar fileURLToPath para obtener __dirname
-import userRouter from "./routes/users.js"; // Importa las rutas de usuarios
-import estudianteRouter from "./routes/estudiantes.js"; // Importa las rutas de estudiantes
-import empresaRouter from "./routes/empresas.js"; // Importa las rutas de empresas
-import documentoRouter from "./routes/documentos.js"; // Importa las rutas de documentos
-import authRouter from './routes/auth.js'; // Importa las rutas de autenticación
-import documentosAdminRouter from './routes/documentosAdmin.js'; // Importa las rutas de documentosAdmin
-import periodosRouter from './routes/periodos.js'; // Importa las rutas de periodos
-import procesoRouter from './routes/proceso.js'; // Importa las rutas de procesos
-import programasRouter from './routes/programas.js'; // Importa las rutas de programas
-import asesoresRouter from './routes/asesores.js'; // Importa las rutas de asesores
+import { fileURLToPath } from "url";
+import userRouter from "./routes/users.js";
+import estudianteRouter from "./routes/estudiantes.js";
+import empresaRouter from "./routes/empresas.js";
+import documentoRouter from "./routes/documentos.js";
+import authRouter from './routes/auth.js';
+import documentosAdminRouter from './routes/documentosAdmin.js';
+import periodosRouter from './routes/periodos.js';
+import procesoRouter from './routes/proceso.js';
+import programasRouter from './routes/programas.js';
+import asesoresRouter from './routes/asesores.js';
+import tareaActualizarPeriodos from "./cron/actualizarPeriodos.js";
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.SERVER_PORT || 9999; 
+const PORT = process.env.SERVER_PORT || 9999;
 
 // Obtener __dirname en módulos de ES
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Crear la carpeta "uploads" si no existe
-const uploadsDir = path.join(__dirname, "uploads");
+// Crear la carpeta "public/uploads/documentos" si no existe
+const uploadsDir = path.join(__dirname, "public", "uploads", "documentos");
 if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir);
-    console.log("Carpeta 'uploads' creada automáticamente.");
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    console.log("Carpeta 'public/uploads/documentos' creada automáticamente.");
 }
 
-// ✅ Configurar CORS para permitir peticiones desde el cliente
+tareaActualizarPeriodos();
+
+// Configurar CORS para permitir peticiones desde el cliente
 app.use(cors({
-    origin: "http://localhost:3000", 
+    origin: "http://localhost:3000",
     methods: "GET,POST,PUT,DELETE",
     credentials: true
 }));
 
 app.use(express.json()); // Para recibir JSON en las peticiones
-
 
 // Configurar Morgan para ver el body de las solicitudes
 app.use(morgan(':method :url :status - Body: :body'));
@@ -48,27 +50,29 @@ app.use(morgan(':method :url :status - Body: :body'));
 // Crear token personalizado para mostrar el body
 morgan.token('body', (req) => {
   return JSON.stringify(req.body);
-}); 
+});
 
-// ✅ Montar rutas
+// Servir archivos estáticos desde public/uploads
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+
+// Montar rutas
 app.use("/api/users", userRouter);
 app.use("/api/estudiantes", estudianteRouter);
 app.use("/api/empresas", empresaRouter);
 app.use("/api/documentos", documentoRouter);
-app.use("/api/documentosAdmin", documentosAdminRouter); // Montar las rutas de documentosAdmin
-app.use("/api/periodos", periodosRouter); 
-// Montar las rutas de autenticación
-app.use('/api/auth', authRouter);
-app.use("/api/proceso", procesoRouter); // Montar las rutas de procesos
-app.use("/api/programas", programasRouter); // Montar las rutas de programas
-app.use("/api/asesores", asesoresRouter); // Montar las rutas de asesores
+app.use("/api/documentosAdmin", documentosAdminRouter);
+app.use("/api/periodos", periodosRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/procesos", procesoRouter);
+app.use("/api/programas", programasRouter);
+app.use("/api/asesores", asesoresRouter);
 
-// ✅ Ruta de prueba
+// Ruta de prueba
 app.get("/", (req, res) => {
     res.send("¡Servidor funcionando! 🚀");
 });
 
-// ✅ Iniciar servidor
+// Iniciar servidor
 app.listen(PORT, () => {
     console.log(`Servidor activo en http://localhost:${PORT}`);
 });

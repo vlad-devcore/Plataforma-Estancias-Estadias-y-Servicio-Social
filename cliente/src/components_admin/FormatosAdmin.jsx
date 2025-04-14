@@ -17,7 +17,7 @@ const FormatosAdmin = () => {
     getFileExtension,
     resetMessages
   } = useFormatos();
-
+                                                                        
   const handleFileChange = async (e, nombreDocumento) => {
     if (e.target.files.length > 0) {
       try {
