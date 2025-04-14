@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Sidebar from './Sidebar';
 import useDocumentosAdmin from '../components/hooks/useDocumentosAdmin';
 
+//jeje
 const DocumentManagement = () => {
   const {
     documents,
@@ -22,37 +23,13 @@ const DocumentManagement = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState('');
   const [rejectionNote, setRejectionNote] = useState('');
-  
-  // Nuevos estados para los mensajes de confirmación
-  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
-  const [confirmModalType, setConfirmModalType] = useState('');
 
   const handleViewDocument = (document) => {
     console.log('Ver documento', document);
     window.open(`http://localhost:9999/api/documentos/download/${document.id_Documento}`, '_blank');
   };
 
-<<<<<<< Updated upstream
   const openConfirmApproveModal = (document) => {
-=======
-  // Modificado para mostrar confirmación antes de aprobar
-  const openApproveConfirmation = (document) => {
-    setSelectedDocument(document);
-    setConfirmModalType('approve');
-    setConfirmModalOpen(true);
-  };
-
-  const handleApproveDocument = () => {
-    setDocuments(prev => 
-      prev.map(doc => 
-        doc.id === selectedDocument.id ? { ...doc, estatus: 'aprobado' } : doc
-      )
-    );
-    setConfirmModalOpen(false);
-  };
-
-  const openRejectionModal = (document) => {
->>>>>>> Stashed changes
     setSelectedDocument(document);
     setModalType('confirmApprove');
     setModalOpen(true);
@@ -273,12 +250,8 @@ const DocumentManagement = () => {
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.9 }}
                                   className="text-green-600 hover:text-green-800"
-<<<<<<< Updated upstream
                                   onClick={() => openConfirmApproveModal(doc)}
                                   disabled={loading}
-=======
-                                  onClick={() => openApproveConfirmation(doc)}
->>>>>>> Stashed changes
                                 >
                                   <CheckCircle size={18} />
                                 </motion.button>
@@ -443,59 +416,6 @@ const DocumentManagement = () => {
                     </div>
                   </>
                 )}
-              </motion.div>
-            </div>
-          )}
-
-          {/* Modal de Confirmación para Aprobar/Rechazar */}
-          {confirmModalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-white rounded-lg shadow-lg p-6 border border-gray-200 w-full max-w-md"
-              >
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium flex items-center">
-                    {confirmModalType === 'approve' && (
-                      <>
-                        <CheckCircle className="text-green-500 mr-2" size={20} />
-                        Confirmar Aprobación
-                      </>
-                    )}
-                  </h3>
-                  <button 
-                    onClick={() => setConfirmModalOpen(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <XCircle size={20} />
-                  </button>
-                </div>
-                
-                <div className="mb-4">
-                  <p className="text-gray-700">
-                    {confirmModalType === 'approve' && 
-                      `¿Está seguro que desea aprobar el documento "${selectedDocument?.nombre}" con matrícula ${selectedDocument?.matricula}?`
-                    }
-                  </p>
-                </div>
-                
-                <div className="flex justify-end space-x-2">
-                  <button
-                    onClick={() => setConfirmModalOpen(false)}
-                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  {confirmModalType === 'approve' && (
-                    <button
-                      onClick={handleApproveDocument}
-                      className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
-                    >
-                      Confirmar
-                    </button>
-                  )}
-                </div>
               </motion.div>
             </div>
           )}
