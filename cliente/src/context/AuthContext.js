@@ -41,7 +41,6 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('user', JSON.stringify(response.data.user));
       setUser(response.data.user);
   
-      
       console.log("🔐 Usuario guardado en localStorage:", response.data.user);
   
       return { success: true, user: response.data.user };
@@ -52,7 +51,6 @@ export const AuthProvider = ({ children }) => {
       };
     }
   };
-  
 
   const logout = () => {
     localStorage.removeItem('token');

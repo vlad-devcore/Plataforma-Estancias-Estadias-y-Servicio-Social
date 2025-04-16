@@ -1,34 +1,32 @@
-// src/components/TablaDocumentos.js
 import React, { useRef } from 'react';
-import { Upload, Trash2, Download } from 'lucide-react';
+import { Upload, Trash2, Download, MessageSquare } from 'lucide-react';
 import useDocumentosEstudiante from '../components/hooks/useDocumentosEstudiante';
 
-const TablaDocumentos = ({ tipoProceso }) => {
+const TablaDocumentos = ({ tipoProceso, procesoId }) => {
   const fileInputRefs = useRef({});
   const {
     plantillas,
     documentos,
-    procesoId,
     loading,
     error,
     success,
     uploadDocumento,
     deleteDocumento,
     resetMessages,
-  } = useDocumentosEstudiante(tipoProceso);
+  } = useDocumentosEstudiante(tipoProceso, procesoId);
 
   const handleUpload = (idTipoDoc) => async (e) => {
     const file = e.target.files[0];
     if (file) {
       await uploadDocumento(idTipoDoc, file);
       if (fileInputRefs.current[idTipoDoc]) {
-        fileInputRefs.current[idTipoDoc].value = ''; // Resetear input
+        fileInputRefs.current[idTipoDoc].value = '';
       }
     }
   };
 
   const getDocumentoSubido = (idTipoDoc) =>
-    documentos.find((doc) => doc.IdTipoDoc === idTipoDoc);
+    documentos.find((doc) => doc.id_tipo_doc === idTipoDoc);
 
   if (!procesoId && !loading) {
     return (
@@ -45,16 +43,20 @@ const TablaDocumentos = ({ tipoProceso }) => {
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           {error}
+          <button onClick={resetMessages} className="ml-2 text-red-900 underline">
+            Cerrar
+          </button>
         </div>
       )}
       {success && (
         <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
           {success}
+          <button onClick={resetMessages} className="ml-2 text-green-900 underline">
+            Cerrar
+          </button>
         </div>
       )}
-      {loading && (
-        <div className="text-center text-gray-500">Cargando...</div>
-      )}
+      {loading && <div className="text-center text-gray-500">Cargando...</div>}
       {!loading && plantillas.length === 0 && (
         <div className="text-center text-gray-500">
           No hay plantillas disponibles.
@@ -67,6 +69,8 @@ const TablaDocumentos = ({ tipoProceso }) => {
               <th className="px-4 py-2">Nombre del Documento</th>
               <th className="px-4 py-2">Plantilla</th>
               <th className="px-4 py-2">Mi Documento</th>
+              <th className="px-4 py-2">Estatus</th>
+              <th className="px-4 py-2">Feedback</th>
               <th className="px-4 py-2">Acciones</th>
             </tr>
           </thead>
@@ -96,7 +100,7 @@ const TablaDocumentos = ({ tipoProceso }) => {
                   <td className="px-4 py-2">
                     {doc ? (
                       <a
-                        href={`http://localhost:9999${doc.RutaArchivo}`}
+                        href={`http://localhost:9999${doc.ruta_archivo}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-green-600 hover:underline flex items-center"
@@ -106,6 +110,33 @@ const TablaDocumentos = ({ tipoProceso }) => {
                       </a>
                     ) : (
                       <span className="text-gray-500 italic">No subido</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2">
+                    {doc ? (
+                      <span
+                        className={`px-2 py-1 rounded ${
+                          doc.estatus === 'Aprobado'
+                            ? 'bg-green-100 text-green-800'
+                            : doc.estatus === 'Rechazado'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}
+                      >
+                        {doc.estatus}
+                      </span>
+                    ) : (
+                      '-'
+                    )}
+                  </td>
+                  <td className="px-4 py-2">
+                    {doc && doc.feedback ? (
+                      <span className="flex items-center">
+                        <MessageSquare size={16} className="mr-1" />
+                        {doc.feedback}
+                      </span>
+                    ) : (
+                      '-'
                     )}
                   </td>
                   <td className="px-4 py-2 space-x-2">
@@ -127,7 +158,7 @@ const TablaDocumentos = ({ tipoProceso }) => {
                     </label>
                     {doc && (
                       <button
-                        onClick={() => deleteDocumento(doc.id_Documento)}
+                        onClick={() => deleteDocumento(doc.id_documento)}
                         className={`text-red-600 hover:underline flex items-center ${
                           loading ? 'opacity-50 cursor-not-allowed' : ''
                         }`}
