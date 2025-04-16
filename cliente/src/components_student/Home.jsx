@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { DocumentTextIcon, VideoCameraIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
-import Header from './HeaderEstudiante'; // Asegúrate de importar el componente Header
+import Header from './HeaderEstudiante';
+import useProgramas from '../components/hooks/useProgramasEducativos';
 
 // Page transition variants
 const pageVariants = {
@@ -78,39 +79,22 @@ export default function Home() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mounted, setMounted] = useState(false);
+  const { procesosPermitidos, loading, error } = useProgramas();
 
-  const services = [
-    {
-      title: 'Estancia I',
-      icon: <DocumentTextIcon className="w-7 h-7 text-white" />,
-      delay: 0.5,
-      path: '/formatos/Estancia1'
-    },
-    {
-      title: 'Estancia II',
-      icon: <DocumentTextIcon className="w-7 h-7 text-white" />,
-      delay: 0.6,
-      path: '/formatos/Estancia2'
-    },
-    {
-      title: 'Estadías',
-      icon: <DocumentTextIcon className="w-7 h-7 text-white" />,
-      delay: 0.7,
-      path: '/formatos/Estadias'
-    },
-    {
-      title: 'Servicio Social',
-      icon: <DocumentTextIcon className="w-7 h-7 text-white" />,
-      delay: 0.8,
-      path: '/formatos/ServicioSocial'
-    },
-    {
-      title: 'Estadías Nacionales',
-      icon: <DocumentTextIcon className="w-7 h-7 text-white" />,
-      delay: 0.9,
-      path: '/formatos/EstadiasNacionales'
-    }
-  ];
+  const procesoRoutes = {
+    'Estancia I': '/documentos/estancia1',
+    'Estancia II': '/documentos/estancia2',
+    'Estadía': '/documentos/estadia',
+    'Servicio Social': '/documentos/servicio',
+    'Estadia Nacional': '/documentos/estadia-nacional',
+  };
+
+  const services = procesosPermitidos.map((proceso, index) => ({
+    title: proceso,
+    icon: <DocumentTextIcon className="w-7 h-7 text-white" />,
+    delay: 0.5 + index * 0.1,
+    path: procesoRoutes[proceso] || '#',
+  }));
 
   useEffect(() => {
     setMounted(true);
@@ -159,15 +143,48 @@ export default function Home() {
             )}
           </AnimatePresence>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
-            {services.map((service) => (
-              <ServiceCard
-                key={service.title}
-                {...service}
-                navigate={navigate}
-              />
-            ))}
-          </div>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-8 text-center"
+            >
+              {error}
+            </motion.div>
+          )}
+
+          {loading ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center text-gray-600"
+            >
+              Cargando procesos...
+            </motion.div>
+          ) : services.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center text-gray-600"
+            >
+              No hay procesos disponibles para tu programa educativo.
+            </motion.div>
+          ) : (
+            <motion.div
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-20"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+            >
+              {services.map((service) => (
+                <ServiceCard
+                  key={service.title}
+                  {...service}
+                  navigate={navigate}
+                />
+              ))}
+            </motion.div>
+          )}
 
           <motion.section
             initial={{ opacity: 0 }}

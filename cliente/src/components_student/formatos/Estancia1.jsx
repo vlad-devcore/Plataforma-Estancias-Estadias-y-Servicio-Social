@@ -6,6 +6,8 @@ import ModalRegistroProceso from "../../components/estudiante/ModalRegistroProce
 import axios from "axios";
 import TablaDocumentos from "../../components_student/TablaDocumentoss";
 
+
+
 const storedUser = JSON.parse(localStorage.getItem("user"));
 
 const Estancia1 = () => {

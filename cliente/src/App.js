@@ -3,10 +3,10 @@ import {
   Route,
   useLocation,
   Navigate,
-  BrowserRouter as Router,
-} from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
-import { AuthProvider, useAuth } from "./context/AuthContext";
+} from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import ProgramaEducativoForm from './components/estudiante/ProgramaEducativoForm.jsx';
 
 // Vistas de administrador
 import Sidebar from './components_admin/Sidebar';
@@ -20,34 +20,31 @@ import PerfilAdmin from './components_admin/PerfilAdmin';
 import Periodos from './components_admin/PeriodosAdmin';
 import Logout from './components_admin/Logout'; 
 
- 
-
-
 // Vistas de estudiantes
-import Login from "./components_student/Login"; 
-import Home from "./components_student/Home";
-import EmpresasS from "./components_student/Empresas";
-import PerfilStudent from "./components_student/Perfil";
-import Estancia1 from "./components_student/formatos/Estancia1";
-import Estancia2 from "./components_student/formatos/Estancia2";
-import Estadias from "./components_student/formatos/Estadias";
-import ServicioSocial from "./components_student/formatos/ServicioSocial";
-import EstadiasNacionales from "./components_student/formatos/EstadiasNacionales";  
-import DocumentosView from "./components_student/DocumentosView";
+import Login from './components_student/Login'; 
+import Home from './components_student/Home';
+import EmpresasS from './components_student/Empresas';
+import PerfilStudent from './components_student/Perfil';
+import Estancia1 from './components_student/formatos/Estancia1';
+import Estancia2 from './components_student/formatos/Estancia2';
+import Estadias from './components_student/formatos/Estadias';
+import ServicioSocial from './components_student/formatos/ServicioSocial';
+import EstadiasNacionales from './components_student/formatos/EstadiasNacionales';  
+import DocumentosView from './components_student/DocumentosView';
 
 // Página de acceso denegado
-import Unauthorized from "./components/Unauthorized";
+import Unauthorized from './components/Unauthorized';
 
 // Componente PrivateRoute con validación de roles
 const PrivateRoute = ({ element, allowedRoles }) => {
   const { user } = useAuth();
 
   if (!user) {
-    return <Navigate to="/" replace />; // Redirige al login si no está autenticado
+    return <Navigate to="/" replace />;
   }
 
   if (!allowedRoles.includes(user.role)) {
-    return <Navigate to="/unauthorized" replace />; // Redirige si el rol no tiene acceso
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return element;
@@ -65,84 +62,37 @@ function AnimatedRoutes() {
 
         {/* Rutas protegidas para estudiantes */}
         <Route
+          path="/estudiante/programa"
+          element={
+            <PrivateRoute element={<ProgramaEducativoForm />} allowedRoles={['estudiante']} />
+          }
+        />
+        <Route
           path="/home"
           element={
-            <PrivateRoute element={<Home />} allowedRoles={["estudiante"]} />
+            <PrivateRoute element={<Home />} allowedRoles={['estudiante']} />
           }
         />
         <Route
           path="/empresas"
           element={
-            <PrivateRoute
-              element={<EmpresasS />}
-              allowedRoles={["estudiante"]}
-            />
+            <PrivateRoute element={<EmpresasS />} allowedRoles={['estudiante']} />
           }
         />
         <Route
           path="/perfil"
           element={
-            <PrivateRoute
-              element={<PerfilStudent />}
-              allowedRoles={["estudiante"]}
-            />
+            <PrivateRoute element={<PerfilStudent />} allowedRoles={['estudiante']} />
           }
         />
 
-        {/* Formatos antiguos (si decides mantenerlos) */}
-        <Route
-          path="/formatos/Estancia1"
-          element={
-            <PrivateRoute
-              element={<Estancia1 />}
-              allowedRoles={["estudiante"]}
-            />
-          }
-        />
-        <Route
-          path="/formatos/Estancia2"
-          element={
-            <PrivateRoute
-              element={<Estancia2 />}
-              allowedRoles={["estudiante"]}
-            />
-          }
-        />
-        <Route
-          path="/formatos/Estadias"
-          element={
-            <PrivateRoute
-              element={<Estadias />}
-              allowedRoles={["estudiante"]}
-            />
-          }
-        />
-        <Route
-          path="/formatos/ServicioSocial"
-          element={
-            <PrivateRoute
-              element={<ServicioSocial />}
-              allowedRoles={["estudiante"]}
-            />
-          }
-        />
-        <Route
-          path="/formatos/EstadiasNacionales"
-          element={
-            <PrivateRoute
-              element={<EstadiasNacionales />}
-              allowedRoles={["estudiante"]}
-            />
-          }
-        />
-
-        {/* NUEVAS rutas reutilizadas con DocumentosView */}
+        {/* Rutas de procesos (usando DocumentosView) */}
         <Route
           path="/documentos/estancia1"
           element={
             <PrivateRoute
               element={<DocumentosView tipoProceso="Estancia I" />}
-              allowedRoles={["estudiante"]}
+              allowedRoles={['estudiante']}
             />
           }
         />
@@ -151,7 +101,7 @@ function AnimatedRoutes() {
           element={
             <PrivateRoute
               element={<DocumentosView tipoProceso="Estancia II" />}
-              allowedRoles={["estudiante"]}
+              allowedRoles={['estudiante']}
             />
           }
         />
@@ -160,7 +110,7 @@ function AnimatedRoutes() {
           element={
             <PrivateRoute
               element={<DocumentosView tipoProceso="Estadía" />}
-              allowedRoles={["estudiante"]}
+              allowedRoles={['estudiante']}
             />
           }
         />
@@ -169,25 +119,104 @@ function AnimatedRoutes() {
           element={
             <PrivateRoute
               element={<DocumentosView tipoProceso="Servicio Social" />}
-              allowedRoles={["estudiante"]}
+              allowedRoles={['estudiante']}
+            />
+          }
+        />
+        <Route
+          path="/documentos/estadia-nacional"
+          element={
+            <PrivateRoute
+              element={<DocumentosView tipoProceso="Estadia Nacional" />}
+              allowedRoles={['estudiante']}
+            />
+          }
+        />
+
+        {/* Rutas antiguas (mantener por compatibilidad, opcional) */}
+        <Route
+          path="/formatos/Estancia1"
+          element={
+            <PrivateRoute
+              element={<Estancia1 />}
+              allowedRoles={['estudiante']}
+            />
+          }
+        />
+        <Route
+          path="/formatos/Estancia2"
+          element={
+            <PrivateRoute
+              element={<Estancia2 />}
+              allowedRoles={['estudiante']}
+            />
+          }
+        />
+        <Route
+          path="/formatos/Estadias"
+          element={
+            <PrivateRoute
+              element={<Estadias />}
+              allowedRoles={['estudiante']}
+            />
+          }
+        />
+        <Route
+          path="/formatos/ServicioSocial"
+          element={
+            <PrivateRoute
+              element={<ServicioSocial />}
+              allowedRoles={['estudiante']}
+            />
+          }
+        />
+        <Route
+          path="/formatos/EstadiasNacionales"
+          element={
+            <PrivateRoute
+              element={<EstadiasNacionales />}
+              allowedRoles={['estudiante']}
             />
           }
         />
 
         {/* Rutas protegidas para administrador */}
-
-        <Route path="/inicioadmin" element={<PrivateRoute element={<Inicio />} allowedRoles={["administrador"]} />} />
-        <Route path="/usuariosadmin" element={<PrivateRoute element={<Usuarios />} allowedRoles={["administrador"]} />} />
-        <Route path="/registrosadmin" element={<PrivateRoute element={<Registros />} allowedRoles={["administrador"]} />} />
-        <Route path="/formatosadmin" element={<PrivateRoute element={<Formatos />} allowedRoles={["administrador"]} />} />
-        <Route path="/documentacionadmin" element={<PrivateRoute element={<Documentacion />} allowedRoles={["administrador"]} />} />
-        <Route path="/periodosadmin" element={<PrivateRoute element={<Periodos />} allowedRoles={["administrador"]} />} />
-        <Route path="/empresasadmin" element={<PrivateRoute element={<Empresas />} allowedRoles={["administrador"]} />} />
-        <Route path="/perfiladmin" element={<PrivateRoute element={<PerfilAdmin />} allowedRoles={["administrador"]} />} />
-        <Route path="/loginadmin" element={<PrivateRoute element={<Login />} allowedRoles={["administrador"]} />} />
-
-        {/* Redirección por defecto */}
-
+        <Route
+          path="/inicioadmin"
+          element={<PrivateRoute element={<Inicio />} allowedRoles={['administrador']} />}
+        />
+        <Route
+          path="/usuariosadmin"
+          element={<PrivateRoute element={<Usuarios />} allowedRoles={['administrador']} />}
+        />
+        <Route
+          path="/registrosadmin"
+          element={<PrivateRoute element={<Registros />} allowedRoles={['administrador']} />}
+        />
+        <Route
+          path="/formatosadmin"
+          element={<PrivateRoute element={<Formatos />} allowedRoles={['administrador']} />}
+        />
+        <Route
+          path="/documentacionadmin"
+          element={<PrivateRoute element={<Documentacion />} allowedRoles={['administrador']} />}
+        />
+        <Route
+          path="/periodosadmin"
+          element={<PrivateRoute element={<Periodos />} allowedRoles={['administrador']} />}
+        />
+        <Route
+          path="/empresasadmin"
+          element={<PrivateRoute element={<Empresas />} allowedRoles={['administrador']} />}
+        />
+        <Route
+          path="/perfiladmin"
+          element={<PrivateRoute element={<PerfilAdmin />} allowedRoles={['administrador']} />}
+        />
+        <Route
+          path="/loginadmin"
+          element={<PrivateRoute element={<Login />} allowedRoles={['administrador']} />}
+        />
       </Routes>
     </AnimatePresence>
   );

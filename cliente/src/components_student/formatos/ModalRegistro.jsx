@@ -5,6 +5,7 @@ const ModalRegistro = ({ onClose }) => {
     empresa: '',
     periodo: '',
     tipoProceso: '',
+    
     // otros campos necesarios para el registro
   });
 
