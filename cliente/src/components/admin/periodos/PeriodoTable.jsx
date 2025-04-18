@@ -1,12 +1,26 @@
-// src/components/PeriodosTable.tsx
 import React from "react";
 import { motion } from "framer-motion";
 import { Edit2, Trash2 } from "lucide-react";
 
+// Función para formatear fechas en formato DD/MM/YYYY
+const formatDate = (dateString) => {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
 const PeriodosTable = ({ periodos, loading, error, onEdit, onDelete }) => {
-  if (loading) return <div className="text-center py-8">Cargando periodos...</div>;
+  // Depuración: inspeccionar los datos recibidos
+  console.log("Datos de periodos:", periodos);
+
+  if (loading) return <div className="text-center py-8 text-gray-500">Cargando periodos...</div>;
   if (error) return <div className="text-center py-8 text-red-500">Error: {error}</div>;
-  if (!periodos.length) return <div className="text-center py-8">No hay periodos registrados</div>;
+  if (!periodos.length) return <div className="text-center py-8 text-gray-500">No hay periodos registrados</div>;
 
   return (
     <div className="overflow-x-auto">
@@ -31,8 +45,8 @@ const PeriodosTable = ({ periodos, loading, error, onEdit, onDelete }) => {
               className="hover:bg-gray-50"
             >
               <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{periodo.Año}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-700">{periodo.FechaInicio}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-700">{periodo.FechaFin}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-gray-700">{formatDate(periodo.FechaInicio)}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-gray-700">{formatDate(periodo.FechaFin)}</td>
               <td className="px-6 py-4 whitespace-nowrap text-gray-700">{periodo.EstadoActivo}</td>
               <td className="px-6 py-4 whitespace-nowrap text-gray-700">{periodo.Fase}</td>
               <td className="px-6 py-4 whitespace-nowrap">

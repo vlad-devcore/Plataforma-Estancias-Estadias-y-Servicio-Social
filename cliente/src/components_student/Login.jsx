@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
 import './Login.css';
 import axios from 'axios';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -36,7 +38,6 @@ const Login = () => {
           setError('Error al verificar el programa educativo.');
         }
       } else {
-        // Redirección para otros roles
         switch (response.user.role) {
           case 'administrador':
             navigate('/inicioadmin');
@@ -63,7 +64,7 @@ const Login = () => {
         <div className="login-form-section">
           <div className="login-form-content">
             <h2>Bienvenidos a la Plataforma de Estancias, Estadías y Servicio Social</h2>
-            
+
             {error && <p className="error-message">{error}</p>}
 
             <form onSubmit={handleSubmit}>
@@ -77,21 +78,29 @@ const Login = () => {
                   required
                 />
               </div>
-              
+
               <div className="form-group">
                 <label>Contraseña</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="form-input"
-                  required
-                />
+                <div className="password-input-container">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="form-input"
+                    required
+                  />
+                  <span
+                    className="password-toggle-icon"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <FiEyeOff /> : <FiEye />}
+                  </span>
+                </div>
                 <div className="forgot-password">
                   <a href="/forgot-password">¿Olvidaste tu contraseña?</a>
                 </div>
               </div>
-              
+
               <button type="submit" className="login-button">
                 Iniciar Sesión
               </button>

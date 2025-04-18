@@ -31,6 +31,7 @@ const getEmpresaById = async (req, res) => {
   }
 };
 
+// Crear una nueva empresa
 const postEmpresa = async (req, res) => {
   const {
     empresa_rfc,
@@ -51,23 +52,19 @@ const postEmpresa = async (req, res) => {
   // Validar valores permitidos para empresa_tamano
   const tamanosPermitidos = ["Grande", "Mediana", "Pequeña"];
   if (!tamanosPermitidos.includes(empresa_tamano)) {
-    return res
-      .status(400)
-      .json({
-        error:
-          "Valor no válido para empresa_tamano. Los valores permitidos son: 'Grande', 'Mediana', 'Pequeña'",
-      });
+    return res.status(400).json({
+      error:
+        "Valor no válido para empresa_tamano. Los valores permitidos son: 'Grande', 'Mediana', 'Pequeña'",
+    });
   }
 
   // Validar valores permitidos para empresa_sociedad
-  const sociedadesPermitidas = ["Privada", "Publica"];
+  const sociedadesPermitidas = ["Privada", "Pública"];
   if (!sociedadesPermitidas.includes(empresa_sociedad)) {
-    return res
-      .status(400)
-      .json({
-        error:
-          "Valor no válido para empresa_sociedad. Los valores permitidos son: 'Privada', 'Publica'",
-      });
+    return res.status(400).json({
+      error:
+        "Valor no válido para empresa_sociedad. Los valores permitidos son: 'Privada', 'Pública'",
+    });
   }
 
   const connection = await pool.getConnection();
@@ -92,22 +89,23 @@ const postEmpresa = async (req, res) => {
       [
         empresa_rfc,
         empresa_nombre,
-        empresa_direccion,
-        empresa_email,
-        empresa_telefono,
+        empresa_direccion || null,
+        empresa_email || null,
+        empresa_telefono || null,
         empresa_tamano,
         empresa_sociedad,
-        empresa_pagina_web,
+        empresa_pagina_web || null,
       ]
     );
 
+    // Obtener la empresa creada
+    const [newEmpresa] = await connection.query(
+      "SELECT * FROM empresa WHERE id_empresa = ?",
+      [results.insertId]
+    );
+
     await connection.commit();
-    res
-      .status(201)
-      .json({
-        message: "Empresa añadida correctamente",
-        id_empresa: results.insertId,
-      });
+    res.status(201).json(newEmpresa[0]);
   } catch (error) {
     await connection.rollback();
     console.error("Error al agregar empresa:", error);
@@ -117,12 +115,11 @@ const postEmpresa = async (req, res) => {
   }
 };
 
+// Actualizar una empresa
 const updateEmpresa = async (req, res) => {
-  // 1. Mostrar parámetros y body recibidos
   console.log("📦 Parámetros recibidos:", req.params);
   console.log("📤 Body recibido:", req.body);
 
-  // 2. Resto del código (validaciones y lógica)
   const { id_empresa } = req.params;
   const {
     empresa_rfc,
@@ -134,6 +131,7 @@ const updateEmpresa = async (req, res) => {
     empresa_sociedad,
     empresa_pagina_web,
   } = req.body;
+
   // Validar campos obligatorios
   if (!empresa_rfc || !empresa_nombre || !empresa_tamano || !empresa_sociedad) {
     return res.status(400).json({ error: "Faltan campos obligatorios" });
@@ -142,23 +140,19 @@ const updateEmpresa = async (req, res) => {
   // Validar valores permitidos para empresa_tamano
   const tamanosPermitidos = ["Grande", "Mediana", "Pequeña"];
   if (!tamanosPermitidos.includes(empresa_tamano)) {
-    return res
-      .status(400)
-      .json({
-        error:
-          "Valor no válido para empresa_tamano. Los valores permitidos son: 'Grande', 'Mediana', 'Pequeña'",
-      });
+    return res.status(400).json({
+      error:
+        "Valor no válido para empresa_tamano. Los valores permitidos son: 'Grande', 'Mediana', 'Pequeña'",
+    });
   }
 
   // Validar valores permitidos para empresa_sociedad
-  const sociedadesPermitidas = ["Privada", "Publica"];
+  const sociedadesPermitidas = ["Privada", "Pública"];
   if (!sociedadesPermitidas.includes(empresa_sociedad)) {
-    return res
-      .status(400)
-      .json({
-        error:
-          "Valor no válido para empresa_sociedad. Los valores permitidos son: 'Privada', 'Publica'",
-      });
+    return res.status(400).json({
+      error:
+        "Valor no válido para empresa_sociedad. Los valores permitidos son: 'Privada', 'Pública'",
+    });
   }
 
   const connection = await pool.getConnection();
@@ -195,12 +189,12 @@ const updateEmpresa = async (req, res) => {
       [
         empresa_rfc,
         empresa_nombre,
-        empresa_direccion,
-        empresa_email,
-        empresa_telefono,
+        empresa_direccion || null,
+        empresa_email || null,
+        empresa_telefono || null,
         empresa_tamano,
         empresa_sociedad,
-        empresa_pagina_web,
+        empresa_pagina_web || null,
         id_empresa,
       ]
     );
@@ -210,8 +204,14 @@ const updateEmpresa = async (req, res) => {
       return res.status(404).json({ error: "Empresa no encontrada" });
     }
 
+    // Obtener la empresa actualizada
+    const [updatedEmpresa] = await connection.query(
+      "SELECT * FROM empresa WHERE id_empresa = ?",
+      [id_empresa]
+    );
+
     await connection.commit();
-    res.status(200).json({ message: "Empresa actualizada correctamente" });
+    res.status(200).json(updatedEmpresa[0]);
   } catch (error) {
     await connection.rollback();
     console.error("Error al actualizar empresa:", error);
