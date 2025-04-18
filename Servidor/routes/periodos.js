@@ -8,7 +8,7 @@ const getPeriodos = async (req, res) => {
     try {
         console.log('GET /api/periodos - Obtener todos los periodos');
         const [results] = await pool.query(`
-          SELECT IdPeriodo, Año, Fase, EstadoActivo
+          SELECT IdPeriodo, Año, FechaInicio, FechaFin, Fase, EstadoActivo
           FROM periodos
           ORDER BY Año DESC, Fase
         `);
@@ -18,7 +18,7 @@ const getPeriodos = async (req, res) => {
         console.error('Error al obtener periodos:', error.message);
         res.status(500).json({ error: error.message });
       }
-    };
+};
 
 // Obtener un periodo por ID
 const getPeriodoById = async (req, res) => {
@@ -86,8 +86,6 @@ const deletePeriodo = async (req, res) => {
     }
 };
 
-
-
 // Obtener el periodo activo
 const getPeriodoActivo = async (req, res) => {
     try {
@@ -103,7 +101,6 @@ const getPeriodoActivo = async (req, res) => {
         res.status(500).json({ error: "Error interno del servidor" });
     }
 };
-
 
 // Cambiar estado manualmente de un periodo (por el admin)
 const cambiarEstadoPeriodo = async (req, res) => {
@@ -131,7 +128,6 @@ const cambiarEstadoPeriodo = async (req, res) => {
     }
 };
 
-
 // Rutas
 router.get("/", getPeriodos);
 router.get("/activo", getPeriodoActivo);
@@ -141,5 +137,4 @@ router.put("/:IdPeriodo", updatePeriodo);
 router.delete("/:IdPeriodo", deletePeriodo);
 router.patch("/:IdPeriodo/estado", cambiarEstadoPeriodo);
 
-
-export default router; 
+export default router;

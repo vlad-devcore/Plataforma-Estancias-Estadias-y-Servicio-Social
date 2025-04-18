@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Upload } from 'lucide-react';
-import UserTable from '../components/admin/users/UserTable'
+import { Search, Upload, Plus, Edit2 } from 'lucide-react';
+import UserTable from '../components/admin/users/UserTable';
 import UserForm from '../components/admin/users/UserForm';
 import useUsers from '../components/hooks/useUsers';
+import Sidebar from '../components_admin/Sidebar';
 
 const UserManagement = () => {
   const {
@@ -23,6 +24,10 @@ const UserManagement = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmData, setConfirmData] = useState(null);
+  const [rolFilter, setRolFilter] = useState('Todos');
+
+  // Extraer roles únicos de los usuarios
+  const uniqueRoles = ['Todos', ...new Set(filteredUsers.map(user => user.role))];
 
   const handleSubmit = (data) => {
     setConfirmData(data);
@@ -62,135 +67,188 @@ const UserManagement = () => {
     setConfirmData(null);
   };
 
-  return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Gestión de Usuarios</h1>
+  // Filtrar usuarios por búsqueda y rol
+  const filteredUsersWithRol = filteredUsers.filter((user) => {
+    const matchesRol = rolFilter === 'Todos' || user.role === rolFilter;
+    return matchesRol;
+  });
 
-      <div className="mb-4 flex justify-between items-center">
-        <div className="relative w-1/3">
-          <input
-            type="text"
-            placeholder="Buscar por correo o rol..."
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-          <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
-        </div>
-        <div className="flex space-x-2">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setFormMode('create')}
-            className="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600"
+  return (
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Sidebar */}
+      <Sidebar />
+
+      {/* Main Content */}
+      <div className="flex-1 p-6">
+        <div className="w-full mx-auto">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
           >
-            Crear Usuario
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setFormMode('import')}
-            className="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 flex items-center"
-          >
-            <Upload className="mr-2" size={16} />
-            Importar CSV
-          </motion.button>
+            <h2 className="text-2xl font-semibold flex items-center text-gray-800">
+              <Search className="text-purple-600 mr-2" size={24} />
+              Gestión de Usuarios
+            </h2>
+          </motion.div>
+
+          {/* Search, Filter, and Actions */}
+          <div className="mb-6 flex flex-col md:flex-row justify-between gap-4">
+            <div className="flex flex-col md:flex-row gap-4 flex-1">
+              <div className="relative flex-1">
+                <motion.input
+                  initial={{ width: '80%', opacity: 0 }}
+                  animate={{ width: '100%', opacity: 1 }}
+                  type="text"
+                  placeholder="Buscar por correo..."
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+                <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+              </div>
+              <div className="relative">
+                <motion.select
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  value={rolFilter}
+                  onChange={(e) => setRolFilter(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  {uniqueRoles.map((role) => (
+                    <option key={role} value={role}>
+                      {role}
+                    </option>
+                  ))}
+                </motion.select>
+              </div>
+            </div>
+            <div className="flex space-x-2">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setFormMode('create')}
+                className="flex items-center px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors shadow-sm"
+              >
+                <Plus size={18} className="mr-1" />
+                Crear Usuario
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setFormMode('import')}
+                className="flex items-center px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors shadow-sm"
+              >
+                <Upload size={18} className="mr-1" />
+                Importar CSV
+              </motion.button>
+            </div>
+          </div>
+
+          {/* Messages */}
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              {error}
+              <button onClick={resetMessages} className="ml-2 text-red-900 underline">
+                Cerrar
+              </button>
+            </div>
+          )}
+          {success && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+              {success}
+              <button onClick={resetMessages} className="ml-2 text-green-900 underline">
+                Cerrar
+              </button>
+            </div>
+          )}
+
+          {/* Layout flexible: tabla y formulario */}
+          <div className="flex flex-col lg:flex-row gap-6 w-full">
+            <div className="flex-1 min-w-0">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-lg shadow-sm overflow-x-auto border border-gray-200"
+              >
+                <UserTable
+                  users={filteredUsersWithRol}
+                  loading={loading}
+                  error={error}
+                  onEdit={(user) => {
+                    setSelectedUser(user);
+                    setFormMode('edit');
+                  }}
+                  onDelete={(id_user) => {
+                    setConfirmData(id_user);
+                    setConfirmAction('delete');
+                  }}
+                />
+                <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
+                  <p className="text-sm text-gray-500">
+                    Mostrando {filteredUsersWithRol.length} de {filteredUsers.length} registros
+                  </p>
+                </div>
+              </motion.div>
+            </div>
+
+            {(formMode === 'create' || formMode === 'edit' || formMode === 'import') && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 w-full lg:w-2/5 overflow-y-auto max-h-[calc(100vh-100px)]"
+              >
+                <h3 className="text-lg font-medium mb-4 flex items-center">
+                  {formMode === 'create' && <Plus className="text-purple-600 mr-2" />}
+                  {formMode === 'edit' && <Edit2 className="text-orange-500 mr-2" />}
+                  {formMode === 'import' && <Upload className="text-yellow-500 mr-2" />}
+                  {formMode === 'create' ? 'Crear Usuario' : formMode === 'edit' ? 'Editar Usuario' : 'Importar Usuarios desde CSV'}
+                </h3>
+                <UserForm
+                  mode={formMode}
+                  initialData={selectedUser || {}}
+                  onSubmit={handleSubmit}
+                  onCancel={handleCancel}
+                />
+              </motion.div>
+            )}
+          </div>
+
+          {/* Confirmation Modal */}
+          {confirmAction && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="bg-white rounded-lg p-6 shadow-lg max-w-sm w-full mx-4"
+              >
+                <h3 className="text-lg font-semibold mb-3">Confirmar Acción</h3>
+                <p className="text-gray-600 mb-6">
+                  {confirmAction === 'delete'
+                    ? '¿Estás seguro de que deseas eliminar este usuario?'
+                    : confirmAction === 'import'
+                    ? '¿Confirmas la importación de usuarios desde el archivo seleccionado?'
+                    : `¿Confirmas ${confirmAction === 'create' ? 'la creación' : 'la actualización'} del usuario?`}
+                </p>
+                <div className="flex justify-end space-x-2">
+                  <button
+                    onClick={handleCancel}
+                    className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleConfirmAction}
+                    className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors"
+                  >
+                    Confirmar
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
         </div>
       </div>
-
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-          <button onClick={resetMessages} className="ml-2 text-red-900 underline">
-            Cerrar
-          </button>
-        </div>
-      )}
-      {success && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-          {success}
-          <button onClick={resetMessages} className="ml-2 text-green-900 underline">
-            Cerrar
-          </button>
-        </div>
-      )}
-
-      <UserTable
-        users={filteredUsers}
-        loading={loading}
-        error={error}
-        onEdit={(user) => {
-          setSelectedUser(user);
-          setFormMode('edit');
-        }}
-        onDelete={(id_user) => {
-          setConfirmData(id_user);
-          setConfirmAction('delete');
-        }}
-      />
-
-      {(formMode === 'create' || formMode === 'edit' || formMode === 'import') && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <motion.div
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white p-6 rounded-lg w-full max-w-md"
-          >
-            <h2 className="text-xl font-bold mb-4">
-              {formMode === 'create'
-                ? 'Crear Nuevo Usuario'
-                : formMode === 'edit'
-                ? 'Editar Usuario'
-                : 'Importar Usuarios desde CSV'}
-            </h2>
-            <UserForm
-              mode={formMode}
-              initialData={selectedUser || {}}
-              onSubmit={handleSubmit}
-            />
-            <div className="mt-4 flex justify-end space-x-2">
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400"
-              >
-                Cancelar
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {confirmAction && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white p-6 rounded-lg w-full max-w-sm"
-          >
-            <h2 className="text-lg font-bold mb-4">Confirmar Acción</h2>
-            <p>
-              {confirmAction === 'delete'
-                ? '¿Estás seguro de que deseas eliminar este usuario?'
-                : confirmAction === 'import'
-                ? '¿Confirmas la importación de usuarios desde el archivo seleccionado?'
-                : `¿Confirmas ${confirmAction === 'create' ? 'la creación' : 'la actualización'} del usuario?`}
-            </p>
-            <div className="mt-4 flex justify-end space-x-2">
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleConfirmAction}
-                className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600"
-              >
-                Confirmar
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
     </div>
   );
 };

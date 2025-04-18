@@ -618,3 +618,25 @@ label {
   z-index: 1;
   border-radius: 50%;
 } 
+
+.password-input-container {
+  position: relative;
+}
+
+.password-toggle-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #6c4c44;
+}
+
+.password-toggle-icon svg {
+  font-size: 20px;
+  transition: color 0.2s ease;
+}
+
+.password-toggle-icon:hover svg {
+  color: #ec5c04;
+}
