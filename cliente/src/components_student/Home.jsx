@@ -82,11 +82,11 @@ export default function Home() {
   const { procesosPermitidos, loading, error } = useProgramas();
 
   const procesoRoutes = {
-    'Estancia I': '/documentos/estancia1',
-    'Estancia II': '/documentos/estancia2',
-    'Estadía': '/documentos/estadia',
-    'Servicio Social': '/documentos/servicio',
-    'Estadia Nacional': '/documentos/estadia-nacional',
+    'Estancia I': '/formatos/Estancia1',
+    'Estancia II': '/formatos/Estancia2',
+    'Estadía': '/formatos/Estadias',
+    'Servicio Social': '/formatos/ServicioSocial',
+    'Estadia Nacional': '/formatos/EstadiasNacionales',
   };
 
   const services = procesosPermitidos.map((proceso, index) => ({
@@ -98,7 +98,8 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    console.log('Services:', services); // Depuración
+  }, [services]);
 
   return (
     <AnimatePresence mode="wait">

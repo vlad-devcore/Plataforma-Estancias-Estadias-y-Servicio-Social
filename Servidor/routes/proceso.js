@@ -75,6 +75,32 @@ router.post("/inicial", async (req, res) => {
   }
 });
 
+// Actualizar proceso existente
+router.put("/:id_proceso", async (req, res) => {
+  const { id_proceso } = req.params;
+  const { id_empresa, id_asesor_academico, id_asesor_empresarial, tipo_proceso } = req.body;
+
+  if (!id_empresa || !id_asesor_academico || !id_asesor_empresarial || !tipo_proceso) {
+    return res.status(400).json({ error: "Faltan campos obligatorios" });
+  }
+
+  try {
+    const [result] = await pool.query(
+      `UPDATE proceso SET id_empresa = ?, id_asesor_academico = ?, id_asesor_empresarial = ?, tipo_proceso = ? WHERE id_proceso = ?`,
+      [id_empresa, id_asesor_academico, id_asesor_empresarial, tipo_proceso, id_proceso]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Proceso no encontrado" });
+    }
+
+    res.status(200).json({ message: "Proceso actualizado correctamente" });
+  } catch (error) {
+    console.error("Error al actualizar proceso:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
 // Obtener proceso por id_estudiante y periodo
 router.get("/estudiante/:id_estudiante/periodo/:id_periodo", async (req, res) => {
   const { id_estudiante, id_periodo } = req.params;
@@ -142,7 +168,7 @@ router.get("/validar/:id_user/:id_periodo", async (req, res) => {
     if (proceso.length > 0) {
       return res.json({ registrado: true, proceso: proceso[0] });
     }
-    return res.json({ registrado: false });
+    return res.json({ registrado: false, proceso: proceso[0] || null });
   } catch (error) {
     console.error("Error al validar proceso:", error);
     res.status(500).json({ error: "Error interno del servidor" });
