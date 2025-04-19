@@ -41,7 +41,7 @@ app.use(cors({
     methods: "GET,POST,PUT,DELETE",
     credentials: true
 }));
-
+ 
 app.use(express.json()); // Para recibir JSON en las peticiones
 
 // Configurar Morgan para ver el body de las solicitudes

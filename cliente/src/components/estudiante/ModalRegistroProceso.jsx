@@ -1,128 +1,121 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import useEmpresas from "../hooks/useEmpresas";
 import useAsesoresAcademicos from "../hooks/useAsesoresAcademicos";
 import useAsesoresEmpresariales from "../hooks/useAsesoresEmpresariales";
-import useProgramasEducativos from "../hooks/useProgramasEducativos";
-import usePeriodos from "../hooks/usePeriodos";
-import useProcesos from "../hooks/useProcesos";
 import { motion } from "framer-motion";
 
-const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso }) => {
+const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoExistente }) => {
   const { companies } = useEmpresas();
   const { asesoresAcademicos } = useAsesoresAcademicos();
   const { asesoresEmpresariales } = useAsesoresEmpresariales();
-  const { programas } = useProgramasEducativos();
-  const { getPeriodoActivo } = usePeriodos();
-  const { createProceso, getProcesoByEstudiante, validarRegistroEnPeriodo } = useProcesos();
-
-  const [periodoActivo, setPeriodoActivo] = useState(null);
-  const [yaRegistrado, setYaRegistrado] = useState(false);
-  const [procesoExistente, setProcesoExistente] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [form, setForm] = useState({
     empresa: "",
     asesorAcademico: "",
     asesorEmpresarial: "",
-    programa: "",
-    periodo: "",
   });
 
-  useEffect(() => {
-    const fetchPeriodo = async () => {
-      try {
-        const periodo = await getPeriodoActivo();
-        setPeriodoActivo(periodo);
-        setForm((prev) => ({ ...prev, periodo: periodo.IdPeriodo }));
-      } catch (err) {
-        console.error("Error al obtener el periodo activo:", err);
-      }
-    };
-
-    if (open) {
-      fetchPeriodo();
-    }
-  }, [open]);
+  const user = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
-    const validar = async () => {
-      setLoading(true);
-      try {
-        if (periodoActivo) {
-          const validacion = await validarRegistroEnPeriodo(periodoActivo.IdPeriodo);
-          if (validacion.registrado) {
-            setYaRegistrado(true);
-            setProcesoExistente(validacion.proceso);
-          }
-        }
-      } catch (err) {
-        console.error("Error en validación de registro:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (periodoActivo && open) {
-      validar();
+    if (procesoExistente) {
+      setForm({
+        empresa: procesoExistente.id_empresa || "",
+        asesorAcademico: procesoExistente.id_asesor_academico || "",
+        asesorEmpresarial: procesoExistente.id_asesor_empresarial || "",
+      });
     }
-  }, [periodoActivo, open]);
+  }, [procesoExistente]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async () => {
+    if (!form.empresa || !form.asesorAcademico || !form.asesorEmpresarial) {
+      setError("Por favor, completa todos los campos.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
     try {
-      await createProceso(form, tipoProceso);
-      onClose();
-      if (onSuccess) onSuccess();
+      if (procesoExistente) {
+        // Actualizar proceso existente
+        await axios.put(`http://localhost:9999/api/procesos/${procesoExistente.id_proceso}`, {
+          id_empresa: form.empresa,
+          id_asesor_academico: form.asesorAcademico,
+          id_asesor_empresarial: form.asesorEmpresarial,
+          tipo_proceso: tipoProceso,
+        });
+      } else {
+        // Crear nuevo proceso
+        const { data: periodos } = await axios.get("http://localhost:9999/api/periodos");
+        const periodoActivo = periodos.find((p) => p.EstadoActivo === "Activo");
+        if (!periodoActivo) throw new Error("No hay periodo activo");
+
+        await axios.post("http://localhost:9999/api/procesos", {
+          id_user: user.id,
+          id_empresa: form.empresa,
+          id_asesor_academico: form.asesorAcademico,
+          id_asesor_empresarial: form.asesorEmpresarial,
+          id_programa: user.id_programa,
+          tipo_proceso: tipoProceso,
+          id_periodo: periodoActivo.IdPeriodo,
+        });
+      }
+      onSuccess();
     } catch (err) {
+      setError(err.response?.data?.error || "Error al registrar el proceso.");
       console.error("Error al registrar proceso:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-white p-6 rounded-xl shadow-xl w-full max-w-xl space-y-4"
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-xl space-y-6"
       >
-        <h2 className="text-xl font-semibold text-gray-800">
-          Registro en {tipoProceso}
-        </h2>
+        <div className="bg-gradient-to-r from-red-900 to-red-700 text-white p-4 rounded-t-lg">
+          <h2 className="text-xl font-semibold">Registro en {tipoProceso}</h2>
+        </div>
+
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg flex justify-between items-center"
+          >
+            <span>{error}</span>
+            <button onClick={() => setError(null)} className="text-red-900 hover:underline">
+              Cerrar
+            </button>
+          </motion.div>
+        )}
 
         {loading ? (
-          <p>Cargando...</p>
-        ) : yaRegistrado ? (
-          <div className="text-center">
-            <p>Ya estás registrado en el periodo activo.</p>
-            <p>Proceso: {procesoExistente.tipo_proceso}</p>
-            {/* Aquí puedes agregar el formulario de subida de documentos */}
+          <div className="text-center text-gray-500 animate-pulse">
+            Registrando proceso...
           </div>
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <select
-                name="periodo"
-                value={form.periodo}
-                onChange={handleChange}
-                className="border rounded px-3 py-2"
-              >
-                <option value="">Seleccionar periodo</option>
-                {periodoActivo && (
-                  <option value={periodoActivo.IdPeriodo}>
-                    {`${periodoActivo.Fase} ${periodoActivo.Año}`}
-                  </option>
-                )}
-              </select>
-
-              <select
                 name="empresa"
                 value={form.empresa}
                 onChange={handleChange}
-                className="border rounded px-3 py-2"
+                className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
+                required
               >
                 <option value="">Seleccionar empresa</option>
                 {companies.map((e) => (
@@ -136,7 +129,8 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso }) => {
                 name="asesorAcademico"
                 value={form.asesorAcademico}
                 onChange={handleChange}
-                className="border rounded px-3 py-2"
+                className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
+                required
               >
                 <option value="">Seleccionar asesor académico</option>
                 {asesoresAcademicos.map((a) => (
@@ -150,7 +144,8 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso }) => {
                 name="asesorEmpresarial"
                 value={form.asesorEmpresarial}
                 onChange={handleChange}
-                className="border rounded px-3 py-2"
+                className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
+                required
               >
                 <option value="">Seleccionar asesor empresarial</option>
                 {asesoresEmpresariales.map((a) => (
@@ -159,34 +154,21 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso }) => {
                   </option>
                 ))}
               </select>
-
-              <select
-                name="programa"
-                value={form.programa}
-                onChange={handleChange}
-                className="border rounded px-3 py-2"
-              >
-                <option value="">Seleccionar programa educativo</option>
-                {programas.map((p) => (
-                  <option key={p.id_programa} value={p.id_programa}>
-                    {p.nombre}
-                  </option>
-                ))}
-              </select>
             </div>
 
             <div className="flex justify-end gap-2">
               <button
                 onClick={onClose}
-                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSubmit}
-                className="px-4 py-2 bg-red-900 text-white rounded hover:bg-red-800"
+                className="px-4 py-2 bg-gradient-to-r from-red-900 to-red-700 text-white rounded-lg hover:from-red-800 hover:to-red-600 transition-colors disabled:opacity-50 shadow-md"
+                disabled={loading}
               >
-                Registrar
+                {loading ? "Registrando..." : "Registrar"}
               </button>
             </div>
           </>

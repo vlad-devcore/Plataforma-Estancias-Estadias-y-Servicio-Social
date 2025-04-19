@@ -6,10 +6,9 @@ import {
 } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import ProgramaEducativoForm from './components/estudiante/ProgramaEducativoForm.jsx';
+import ProgramaEducativoForm from './components/estudiante/ProgramaEducativoForm';
 
 // Vistas de administrador
-import Sidebar from './components_admin/Sidebar';
 import Inicio from './components_admin/InicioAdmin';
 import Usuarios from './components_admin/UsuariosAdmin';
 import Registros from './components_admin/RegistrosAdmin';
@@ -18,7 +17,7 @@ import Documentacion from './components_admin/DocumentacionAdmin';
 import Empresas from './components_admin/EmpresasAdmin';
 import PerfilAdmin from './components_admin/PerfilAdmin';
 import Periodos from './components_admin/PeriodosAdmin';
-import Logout from './components_admin/Logout'; 
+
 
 // Vistas de estudiantes
 import Login from './components_student/Login'; 
@@ -29,8 +28,7 @@ import Estancia1 from './components_student/formatos/Estancia1';
 import Estancia2 from './components_student/formatos/Estancia2';
 import Estadias from './components_student/formatos/Estadias';
 import ServicioSocial from './components_student/formatos/ServicioSocial';
-import EstadiasNacionales from './components_student/formatos/EstadiasNacionales';  
-import DocumentosView from './components_student/DocumentosView';
+import EstadiasNacionales from './components_student/formatos/EstadiasNacionales';
 
 // Página de acceso denegado
 import Unauthorized from './components/Unauthorized';
@@ -86,54 +84,7 @@ function AnimatedRoutes() {
           }
         />
 
-        {/* Rutas de procesos (usando DocumentosView) */}
-        <Route
-          path="/documentos/estancia1"
-          element={
-            <PrivateRoute
-              element={<DocumentosView tipoProceso="Estancia I" />}
-              allowedRoles={['estudiante']}
-            />
-          }
-        />
-        <Route
-          path="/documentos/estancia2"
-          element={
-            <PrivateRoute
-              element={<DocumentosView tipoProceso="Estancia II" />}
-              allowedRoles={['estudiante']}
-            />
-          }
-        />
-        <Route
-          path="/documentos/estadia"
-          element={
-            <PrivateRoute
-              element={<DocumentosView tipoProceso="Estadía" />}
-              allowedRoles={['estudiante']}
-            />
-          }
-        />
-        <Route
-          path="/documentos/servicio"
-          element={
-            <PrivateRoute
-              element={<DocumentosView tipoProceso="Servicio Social" />}
-              allowedRoles={['estudiante']}
-            />
-          }
-        />
-        <Route
-          path="/documentos/estadia-nacional"
-          element={
-            <PrivateRoute
-              element={<DocumentosView tipoProceso="Estadia Nacional" />}
-              allowedRoles={['estudiante']}
-            />
-          }
-        />
-
-        {/* Rutas antiguas (mantener por compatibilidad, opcional) */}
+        {/* Rutas de procesos (usando componentes específicos) */}
         <Route
           path="/formatos/Estancia1"
           element={

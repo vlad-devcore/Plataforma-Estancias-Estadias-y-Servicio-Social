@@ -5,7 +5,6 @@ import path from "path";
 import pool from "../config/config.db.js";
 import { fileURLToPath } from 'url';
 
-// Definir __dirname para módulos ES
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -14,7 +13,7 @@ const router = express.Router();
 // Configuración de Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = "public/uploads/documentos"; // Cambiado a minúscula
+    const uploadDir = "public/uploads/documentos";
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -31,7 +30,7 @@ const upload = multer({ storage });
 router.get("/", async (req, res) => {
   try {
     console.log("GET /api/documentos - Obtener todos los documentos");
-    const { estatus, idPeriodo } = req.query;
+    const { estatus, idPeriodo, id_proceso, id_usuario } = req.query;
 
     let query = `
       SELECT 
@@ -44,7 +43,7 @@ router.get("/", async (req, res) => {
         d.Estatus,
         d.id_proceso,
         e.Matricula,
-        t.Nombre_TipoDoc
+        t.Nombre_TipoDoc AS Nombre_TipoDoc
       FROM documentos d
       JOIN proceso p ON d.id_proceso = p.id_proceso
       JOIN estudiantes e ON p.id_estudiante = e.id_estudiante
@@ -54,7 +53,6 @@ router.get("/", async (req, res) => {
     
     const queryParams = [];
     
-    // Filtros
     const conditions = [];
     if (estatus && ['Pendiente', 'Aprobado', 'Rechazado'].includes(estatus)) {
       conditions.push('d.Estatus = ?');
@@ -63,6 +61,14 @@ router.get("/", async (req, res) => {
     if (idPeriodo && !isNaN(idPeriodo)) {
       conditions.push('per.IdPeriodo = ?');
       queryParams.push(Number(idPeriodo));
+    }
+    if (id_proceso && !isNaN(id_proceso)) {
+      conditions.push('d.id_proceso = ?');
+      queryParams.push(Number(id_proceso));
+    }
+    if (id_usuario && !isNaN(id_usuario)) {
+      conditions.push('d.id_usuario = ?');
+      queryParams.push(Number(id_usuario));
     }
     
     if (conditions.length > 0) {
@@ -97,13 +103,39 @@ router.post("/upload", upload.single("archivo"), async (req, res) => {
     }
 
     const nombreArchivo = decodeURIComponent(escape(file.originalname));
+    const rutaArchivo = `/uploads/documentos/${file.filename}`;
 
-    await pool.query(
-      "INSERT INTO documentos (NombreArchivo, RutaArchivo, IdTipoDoc, id_usuario, Comentarios, Estatus, id_proceso) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [nombreArchivo, `/uploads/documentos/${file.filename}`, IdTipoDoc, id_usuario, Comentarios, Estatus, id_proceso]
+    // Verificar si ya existe un documento
+    const [existing] = await pool.query(
+      `SELECT id_Documento, RutaArchivo FROM documentos WHERE id_proceso = ? AND IdTipoDoc = ? AND id_usuario = ?`,
+      [id_proceso, IdTipoDoc, id_usuario]
     );
 
-    console.log("Documento subido exitosamente");
+    if (existing.length > 0) {
+      // Eliminar archivo antiguo
+      const oldFilePath = path.join(__dirname, "..", "public", existing[0].RutaArchivo.replace(/^\/Uploads\//, 'uploads/'));
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+        console.log(`Archivo antiguo ${oldFilePath} eliminado`);
+      }
+
+      // Actualizar documento existente
+      await pool.query(
+        `UPDATE documentos SET NombreArchivo = ?, RutaArchivo = ?, Estatus = 'Pendiente', Comentarios = NULL
+         WHERE id_Documento = ?`,
+        [nombreArchivo, rutaArchivo, existing[0].id_Documento]
+      );
+      console.log(`Documento con ID ${existing[0].id_Documento} actualizado`);
+    } else {
+      // Insertar nuevo documento
+      await pool.query(
+        `INSERT INTO documentos (NombreArchivo, RutaArchivo, IdTipoDoc, id_usuario, Comentarios, Estatus, id_proceso)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [nombreArchivo, rutaArchivo, IdTipoDoc, id_usuario, Comentarios, Estatus, id_proceso]
+      );
+      console.log("Documento insertado");
+    }
+
     res.json({ success: true });
   } catch (error) {
     console.error("Error al subir documento:", error.message);
@@ -118,7 +150,7 @@ router.put("/approve/:id_Documento", async (req, res) => {
     const { id_Documento } = req.params;
 
     const [result] = await pool.query(
-      "UPDATE documentos SET Estatus = 'Aprobado' WHERE id_Documento = ?",
+      `UPDATE documentos SET Estatus = 'Aprobado', Comentarios = NULL WHERE id_Documento = ?`,
       [id_Documento]
     );
 
@@ -148,7 +180,7 @@ router.put("/reject/:id_Documento", async (req, res) => {
     }
 
     const [result] = await pool.query(
-      "UPDATE documentos SET Estatus = 'Rechazado', Comentarios = ? WHERE id_Documento = ?",
+      `UPDATE documentos SET Estatus = 'Rechazado', Comentarios = ? WHERE id_Documento = ?`,
       [comentarios, id_Documento]
     );
 
@@ -171,8 +203,8 @@ router.get("/download/:id_Documento", async (req, res) => {
     console.log(`GET /api/documentos/download/:id_Documento - Descargar documento con ID ${req.params.id_Documento}`);
     const { id_Documento } = req.params;
     
-    const [documento] = await pool.query(      
-      "SELECT NombreArchivo, RutaArchivo FROM documentos WHERE id_Documento = ?", 
+    const [documento] = await pool.query(
+      `SELECT NombreArchivo, RutaArchivo FROM documentos WHERE id_Documento = ?`,
       [id_Documento]
     );
 
@@ -183,7 +215,7 @@ router.get("/download/:id_Documento", async (req, res) => {
 
     console.log("Documento encontrado:", documento[0]);
 
-    const filePath = path.join(__dirname, "..", "public", documento[0].RutaArchivo.replace(/^\/uploads\//, 'uploads/'));
+    const filePath = path.join(__dirname, "..", "public", documento[0].RutaArchivo.replace(/^\/Uploads\//, 'uploads/'));
 
     if (!fs.existsSync(filePath)) {
       console.log(`Archivo no encontrado en la ruta: ${filePath}`);
@@ -225,7 +257,7 @@ router.delete("/:id_Documento", async (req, res) => {
     const { id_Documento } = req.params;
 
     const [documento] = await pool.query(
-      "SELECT NombreArchivo, RutaArchivo FROM documentos WHERE id_Documento = ?",
+      `SELECT NombreArchivo, RutaArchivo FROM documentos WHERE id_Documento = ?`,
       [id_Documento]
     );
 
@@ -236,7 +268,7 @@ router.delete("/:id_Documento", async (req, res) => {
 
     console.log("Documento encontrado para eliminación:", documento[0]);
 
-    const filePath = path.join(__dirname, "..", "public", documento[0].RutaArchivo.replace(/^\/uploads\//, 'uploads/'));
+    const filePath = path.join(__dirname, "..", "public", documento[0].RutaArchivo.replace(/^\/Uploads\//, 'uploads/'));
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
       console.log(`Archivo ${filePath} eliminado correctamente`);
@@ -245,7 +277,7 @@ router.delete("/:id_Documento", async (req, res) => {
     }
 
     await pool.query(
-      "DELETE FROM documentos WHERE id_Documento = ?",
+      `DELETE FROM documentos WHERE id_Documento = ?`,
       [id_Documento]
     );
 

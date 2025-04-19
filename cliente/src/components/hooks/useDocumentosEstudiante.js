@@ -1,4 +1,3 @@
-// src/components/hooks/useDocumentosEstudiante.js
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -22,7 +21,6 @@ const useDocumentosEstudiante = (tipoProceso) => {
     'Reporte Mensual',
   ];
 
-  // Mapeo de nombres de documentos a IdTipoDoc (basado en la tabla tipo_documento)
   const tipoDocumentoMap = {
     'Carta de presentación': 1,
     'Carta de aceptación': 2,
@@ -33,7 +31,6 @@ const useDocumentosEstudiante = (tipoProceso) => {
     'Reporte Mensual': 7,
   };
 
-  // Obtener el proceso del usuario
   const fetchProceso = async () => {
     if (!user?.id) {
       setError('Usuario no autenticado');
@@ -68,7 +65,6 @@ const useDocumentosEstudiante = (tipoProceso) => {
     }
   };
 
-  // Obtener plantillas subidas por el admin
   const fetchPlantillas = async () => {
     setLoading(true);
     setError(null);
@@ -82,7 +78,7 @@ const useDocumentosEstudiante = (tipoProceso) => {
         const match = data.find((d) => d.nombre_documento === tipo);
         return {
           id_plantilla: match?.id || null,
-          id_tipo_doc: tipoDocumentoMap[tipo] || null, // Usar IdTipoDoc de tipo_documento
+          IdTipoDoc: tipoDocumentoMap[tipo] || null,
           nombre_documento: tipo,
           nombre_archivo: match?.nombre_archivo || null,
         };
@@ -97,22 +93,20 @@ const useDocumentosEstudiante = (tipoProceso) => {
     }
   };
 
-  // Obtener documentos subidos por el estudiante
   const fetchDocumentos = async () => {
-    if (!procesoId) {
-      console.log('No hay procesoId, omitiendo fetchDocumentos');
+    if (!procesoId || !user?.id) {
+      console.log('No hay procesoId o id_usuario, omitiendo fetchDocumentos');
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      console.log(`Fetching documentos for proceso ${procesoId}`);
-      const { data } = await axios.get(`http://localhost:9999/api/documentos`);
-      const docsFiltrados = data.filter(
-        (doc) => doc.id_usuario === user.id && doc.id_proceso === procesoId
-      );
-      console.log('Documentos filtrados:', docsFiltrados);
-      setDocumentos(docsFiltrados);
+      console.log(`Fetching documentos for proceso ${procesoId}, usuario ${user.id}`);
+      const { data } = await axios.get(`http://localhost:9999/api/documentos`, {
+        params: { id_proceso: procesoId, id_usuario: user.id }
+      });
+      console.log('Documentos recibidos:', data);
+      setDocumentos(data);
     } catch (err) {
       console.error('Error al obtener documentos:', err);
       setError(err.response?.data?.error || 'Error al obtener documentos subidos');
@@ -121,10 +115,9 @@ const useDocumentosEstudiante = (tipoProceso) => {
     }
   };
 
-  // Subir un documento
   const uploadDocumento = async (idTipoDoc, file) => {
-    if (!file || !procesoId) {
-      setError('No se seleccionó archivo o no hay proceso activo');
+    if (!file || !procesoId || !user?.id) {
+      setError('No se seleccionó archivo, no hay proceso activo o usuario no autenticado');
       return;
     }
 
@@ -149,7 +142,7 @@ const useDocumentosEstudiante = (tipoProceso) => {
     formData.append('id_proceso', procesoId);
 
     try {
-      console.log('Subiendo documento:', { idTipoDoc, id_usuario: user.id, id_proceso: procesoId });
+      console.log('Subiendo documento:', { IdTipoDoc: idTipoDoc, id_usuario: user.id, id_proceso: procesoId });
       await axios.post('http://localhost:9999/api/documentos/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -163,7 +156,6 @@ const useDocumentosEstudiante = (tipoProceso) => {
     }
   };
 
-  // Eliminar un documento
   const deleteDocumento = async (idDocumento) => {
     setLoading(true);
     setError(null);
@@ -181,13 +173,11 @@ const useDocumentosEstudiante = (tipoProceso) => {
     }
   };
 
-  // Obtener extensión del archivo
   const getFileExtension = (filename) => {
     if (!filename) return null;
     return filename.split('.').pop().toLowerCase();
   };
 
-  // Efectos para cargar datos iniciales
   useEffect(() => {
     fetchProceso();
   }, [tipoProceso, user?.id]);
