@@ -3,7 +3,7 @@ import { Upload, Trash2, Download, MessageSquare, FileText } from 'lucide-react'
 import useDocumentosEstudiante from '../components/hooks/useDocumentosEstudiante';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const TablaDocumentos = ({ tipoProceso }) => {
+const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
   const fileInputRefs = useRef({});
   const [modalSubirConfirm, setModalSubirConfirm] = useState({ open: false, idTipoDoc: null });
   const [modalSubir, setModalSubir] = useState({ open: false, idTipoDoc: null });
@@ -19,7 +19,7 @@ const TablaDocumentos = ({ tipoProceso }) => {
     uploadDocumento,
     deleteDocumento,
     resetMessages,
-  } = useDocumentosEstudiante(tipoProceso);
+  } = useDocumentosEstudiante(tipoProceso, procesoIdProp);
 
   const handleConfirmSubir = (idTipoDoc) => {
     setModalSubirConfirm({ open: false, idTipoDoc: null });
@@ -46,11 +46,11 @@ const TablaDocumentos = ({ tipoProceso }) => {
   const getDocumentoSubido = (idTipoDoc) =>
     documentos.find((doc) => doc.IdTipoDoc === idTipoDoc);
 
-  if (!procesoId && !loading) {
+  if (!procesoIdProp && !loading) {
     return (
       <div className="p-4">
         <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg">
-          No tienes un proceso activo para el tipo "{tipoProceso}". Por favor, contacta al administrador.
+          No tienes un proceso activo para el tipo "{tipoProceso}". Por favor, regístrate en el proceso.
         </div>
       </div>
     );
