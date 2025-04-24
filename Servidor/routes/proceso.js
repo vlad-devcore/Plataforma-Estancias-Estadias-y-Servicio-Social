@@ -101,6 +101,17 @@ router.put("/:id_proceso", async (req, res) => {
   }
 });
 
+// Obtener todos los procesos
+router.get("/", async (req, res) => {
+  try {
+    const [procesos] = await pool.query("SELECT * FROM proceso");
+    res.status(200).json(procesos);
+  } catch (error) {
+    console.error("Error al obtener procesos:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
 // Obtener proceso por id_estudiante y periodo
 router.get("/estudiante/:id_estudiante/periodo/:id_periodo", async (req, res) => {
   const { id_estudiante, id_periodo } = req.params;

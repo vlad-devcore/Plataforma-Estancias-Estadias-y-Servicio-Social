@@ -1,8 +1,9 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart2, Users, Flag, HeartHandshake } from 'lucide-react';
-import { useLocation } from "react-router-dom";
+import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import useEstadisticas from '../components/hooks/useEstadisticas';
 
 const StatCard = ({ title, value, subtitle, icon: Icon, delay }) => (
   <motion.div
@@ -59,11 +60,12 @@ const StatSection = ({ title, children, delay = 0 }) => (
 
 const EstadisticasGlobales = () => {
   const location = useLocation();
+  const { estadisticas, loading, error } = useEstadisticas();
 
-  return (    
+  return (
     <div className="flex bg-gray-100 min-h-screen">
-     <Sidebar/> 
-      {/* Main Content */}  
+      <Sidebar />
+      {/* Main Content */}
       <main className="flex-1 p-6 ml-0 md:ml-30">
         <AnimatePresence mode="wait">
           <motion.div
@@ -79,88 +81,118 @@ const EstadisticasGlobales = () => {
               transition={{ duration: 0.5 }}
               className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
             >
-              <StatSection title="Periodo Cuatrimestre Actual" delay={0.2}>
-                <StatCard
-                  title="Estancia I"
-                  value="0"
-                  subtitle="usuarios activos"
-                  icon={Users}
-                />
-                <StatCard
-                  title="Estancia II"
-                  value="0"
-                  subtitle="usuarios activos"
-                  icon={Users}
-                />
-                <StatCard
-                  title="Estadías"
-                  value="0"
-                  subtitle="usuarios activos"
-                  icon={Users}
-                />
-                <StatCard
-                  title="Servicio Social"
-                  value="0"
-                  subtitle="usuarios activos"
-                  icon={HeartHandshake}
-                />
-                <StatCard
-                  title="Estadías Nacionales"
-                  value="0"
-                  subtitle="usuarios activos"
-                  icon={Flag}
-                />
-              </StatSection>
-
-              <StatSection title="Estadísticas Globales" delay={0.4}>
+              {loading && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5, delay: 0.5 }}
-                  className="col-span-full bg-orange-50 rounded-lg p-4 mb-4 text-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center text-gray-500 animate-pulse"
                 >
-                  <h3 className="text-gray-700 mb-1">Total de Usuarios en Plataforma</h3>
-                  <motion.p
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.5, delay: 0.7 }}
-                    className="text-orange-500 text-4xl font-bold mb-1"
-                  >
-                    5
-                  </motion.p>
-                  <p className="text-gray-500 text-sm">usuarios registrados</p>
+                  Cargando estadísticas...
                 </motion.div>
-                <StatCard
-                  title="Estancia I"
-                  value="0"
-                  subtitle="usuarios totales"
-                  icon={Users}
-                />
-                <StatCard
-                  title="Estancia II"
-                  value="0"
-                  subtitle="usuarios totales"
-                  icon={Users}
-                />
-                <StatCard
-                  title="Estadías"
-                  value="0"
-                  subtitle="usuarios totales"
-                  icon={Users}
-                />
-                <StatCard
-                  title="Servicio Social"
-                  value="0"
-                  subtitle="usuarios totales"
-                  icon={HeartHandshake}
-                />
-                <StatCard
-                  title="Estadías Nacionales"
-                  value="0"
-                  subtitle="usuarios totales"
-                  icon={Flag}
-                />
-              </StatSection>
+              )}
+
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 flex justify-between items-center"
+                >
+                  <span>{error}</span>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="text-red-900 hover:underline"
+                  >
+                    Reintentar
+                  </button>
+                </motion.div>
+              )}
+
+              {!loading && !error && (
+                <>
+                  <StatSection title="Periodo Cuatrimestre Actual" delay={0.2}>
+                    <StatCard
+                      title="Estancia I"
+                      value={estadisticas.periodoActual.EstanciaI}
+                      subtitle="usuarios activos"
+                      icon={Users}
+                    />
+                    <StatCard
+                      title="Estancia II"
+                      value={estadisticas.periodoActual.EstanciaII}
+                      subtitle="usuarios activos"
+                      icon={Users}
+                    />
+                    <StatCard
+                      title="Estadías"
+                      value={estadisticas.periodoActual.Estadias}
+                      subtitle="usuarios activos"
+                      icon={Users}
+                    />
+                    <StatCard
+                      title="Servicio Social"
+                      value={estadisticas.periodoActual.ServicioSocial}
+                      subtitle="usuarios activos"
+                      icon={HeartHandshake}
+                    />
+                    <StatCard
+                      title="Estadías Nacionales"
+                      value={estadisticas.periodoActual.EstadiasNacionales}
+                      subtitle="usuarios activos"
+                      icon={Flag}
+                    />
+                  </StatSection>
+
+                  <StatSection title="Estadísticas Globales" delay={0.4}>
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.5, delay: 0.5 }}
+                      className="col-span-full bg-orange-50 rounded-lg p-4 mb-4 text-center"
+                    >
+                      <h3 className="text-gray-700 mb-1">Total de Usuarios en Plataforma</h3>
+                      <motion.p
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.5, delay: 0.7 }}
+                        className="text-orange-500 text-4xl font-bold mb-1"
+                      >
+                        {estadisticas.globales.totalUsuarios}
+                      </motion.p>
+                      <p className="text-gray-500 text-sm">usuarios registrados</p>
+                    </motion.div>
+                    <StatCard
+                      title="Estancia I"
+                      value={estadisticas.globales.EstanciaI}
+                      subtitle="usuarios totales"
+                      icon={Users}
+                    />
+                    <StatCard
+                      title="Estancia II"
+                      value={estadisticas.globales.EstanciaII}
+                      subtitle="usuarios totales"
+                      icon={Users}
+                    />
+                    <StatCard
+                      title="Estadías"
+                      value={estadisticas.globales.Estadias}
+                      subtitle="usuarios totales"
+                      icon={Users}
+                    />
+                    <StatCard
+                      title="Servicio Social"
+                      value={estadisticas.globales.ServicioSocial}
+                      subtitle="usuarios totales"
+                      icon={HeartHandshake}
+                    />
+                    <StatCard
+                      title="Estadías Nacionales"
+                      value={estadisticas.globales.EstadiasNacionales}
+                      subtitle="usuarios totales"
+                      icon={Flag}
+                    />
+                  </StatSection>
+                </>
+              )}
             </motion.div>
           </motion.div>
         </AnimatePresence>
