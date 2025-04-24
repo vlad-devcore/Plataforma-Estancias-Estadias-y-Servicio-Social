@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 
-const useDocumentosEstudiante = (tipoProceso) => {
+const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
   const [plantillas, setPlantillas] = useState([]);
   const [documentos, setDocumentos] = useState([]);
-  const [procesoId, setProcesoId] = useState(null);
+  const [procesoId, setProcesoId] = useState(procesoIdProp);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  const user = JSON.parse(localStorage.getItem('user'));
+  const user = useMemo(() => JSON.parse(localStorage.getItem('user')), []);
 
   const tiposDocumentos = [
     'Carta de presentación',
@@ -31,41 +31,11 @@ const useDocumentosEstudiante = (tipoProceso) => {
     'Reporte Mensual': 7,
   };
 
-  const fetchProceso = async () => {
+  const fetchPlantillas = async () => {
     if (!user?.id) {
       setError('Usuario no autenticado');
       return;
     }
-
-    setLoading(true);
-    setError(null);
-    try {
-      console.log(`Fetching procesos for user ${user.id}, tipoProceso: ${tipoProceso}`);
-      const { data } = await axios.get(
-        `http://localhost:9999/api/procesos/por-usuario/${user.id}`
-      );
-      console.log('Procesos recibidos:', data);
-
-      const proceso = data.find((p) =>
-        p.tipo_proceso.toLowerCase().includes(tipoProceso.toLowerCase().replace(/\s*[iI]+\s*$/, ''))
-      );
-
-      if (proceso) {
-        console.log('Proceso encontrado:', proceso);
-        setProcesoId(proceso.id_proceso);
-      } else {
-        console.log('No se encontró proceso para tipo:', tipoProceso);
-        setError(`No se encontró un proceso para el tipo "${tipoProceso}"`);
-      }
-    } catch (err) {
-      console.error('Error al obtener proceso:', err);
-      setError(err.response?.data?.error || 'Error al obtener proceso');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchPlantillas = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -96,12 +66,13 @@ const useDocumentosEstudiante = (tipoProceso) => {
   const fetchDocumentos = async () => {
     if (!procesoId || !user?.id) {
       console.log('No hay procesoId o id_usuario, omitiendo fetchDocumentos');
+      setError('No hay proceso activo o usuario no autenticado');
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      console.log(`Fetching documentos for proceso ${procesoId}, usuario ${user.id}`);
+      console.log(`Fetching documentos para proceso ${procesoId}, usuario ${user.id}`);
       const { data } = await axios.get(`http://localhost:9999/api/documentos`, {
         params: { id_proceso: procesoId, id_usuario: user.id }
       });
@@ -157,6 +128,10 @@ const useDocumentosEstudiante = (tipoProceso) => {
   };
 
   const deleteDocumento = async (idDocumento) => {
+    if (!procesoId || !user?.id) {
+      setError('No hay proceso activo o usuario no autenticado');
+      return;
+    }
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -179,12 +154,17 @@ const useDocumentosEstudiante = (tipoProceso) => {
   };
 
   useEffect(() => {
-    fetchProceso();
-  }, [tipoProceso, user?.id]);
+    setProcesoId(procesoIdProp);
+  }, [procesoIdProp]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchPlantillas();
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (procesoId) {
-      fetchPlantillas();
       fetchDocumentos();
     }
   }, [procesoId]);
