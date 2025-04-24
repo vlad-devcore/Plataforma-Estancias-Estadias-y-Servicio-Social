@@ -3,7 +3,7 @@ import axios from "axios";
 import useEmpresas from "../hooks/useEmpresas";
 import useAsesoresAcademicos from "../hooks/useAsesoresAcademicos";
 import useAsesoresEmpresariales from "../hooks/useAsesoresEmpresariales";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoExistente }) => {
   const { companies } = useEmpresas();
@@ -11,6 +11,8 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
   const { asesoresEmpresariales } = useAsesoresEmpresariales();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [cooldown, setCooldown] = useState(5); // 5 segundos de cooldown
   const [form, setForm] = useState({
     empresa: "",
     asesorAcademico: "",
@@ -29,18 +31,33 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
     }
   }, [procesoExistente]);
 
+  useEffect(() => {
+    let timer;
+    if (confirmModalOpen && cooldown > 0) {
+      timer = setInterval(() => {
+        setCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [confirmModalOpen, cooldown]);
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!form.empresa || !form.asesorAcademico || !form.asesorEmpresarial) {
       setError("Por favor, completa todos los campos.");
       return;
     }
-
-    setLoading(true);
     setError(null);
+    setCooldown(5); // Reiniciar cooldown
+    setConfirmModalOpen(true);
+  };
+
+  const handleConfirm = async () => {
+    setConfirmModalOpen(false);
+    setLoading(true);
     try {
       if (procesoExistente) {
         // Actualizar proceso existente
@@ -73,6 +90,21 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
     } finally {
       setLoading(false);
     }
+  };
+
+  const getNombreEmpresa = (id) => {
+    const empresa = companies.find((e) => e.id_empresa === parseInt(id));
+    return empresa ? empresa.empresa_nombre : "No seleccionada";
+  };
+
+  const getNombreAsesorAcademico = (id) => {
+    const asesor = asesoresAcademicos.find((a) => a.id_asesor === parseInt(id));
+    return asesor ? asesor.nombre : "No seleccionado";
+  };
+
+  const getNombreAsesorEmpresarial = (id) => {
+    const asesor = asesoresEmpresariales.find((a) => a.id_asesor_emp === parseInt(id));
+    return asesor ? asesor.nombre : "No seleccionado";
   };
 
   if (!open) return null;
@@ -174,6 +206,71 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
           </>
         )}
       </motion.div>
+
+      {/* Modal de Confirmación */}
+      <AnimatePresence>
+        {confirmModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-60 bg-black bg-opacity-50 flex items-center justify-center"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white p-6 rounded-xl shadow-2xl max-w-md w-full"
+            >
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                Confirmar Registro en {tipoProceso}
+              </h3>
+              <p className="text-gray-600 mb-4">
+                <strong>¡Importante!</strong> Una vez que confirmes, no podrás editar la empresa, asesor académico ni asesor empresarial. Por favor, verifica los datos:
+              </p>
+              <ul className="text-gray-700 mb-4 space-y-2">
+                <li>
+                  <strong>Empresa:</strong> {getNombreEmpresa(form.empresa)}
+                </li>
+                <li>
+                  <strong>Asesor Académico:</strong> {getNombreAsesorAcademico(form.asesorAcademico)}
+                </li>
+                <li>
+                  <strong>Asesor Empresarial:</strong> {getNombreAsesorEmpresarial(form.asesorEmpresarial)}
+                </li>
+              </ul>
+              {/* Opción 2: Barra de progreso (comentada) */}
+              {/*
+              <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+                <motion.div
+                  className="bg-gradient-to-r from-red-900 to-red-700 h-2.5 rounded-full"
+                  initial={{ width: "100%" }}
+                  animate={{ width: "0%" }}
+                  transition={{ duration: 5, ease: "linear" }}
+                />
+              </div>
+              */}
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setConfirmModalOpen(false)}
+                  className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirm}
+                  disabled={cooldown > 0}
+                  className={`px-4 py-2 bg-gradient-to-r from-red-900 to-red-700 text-white rounded-lg transition-colors shadow-md ${
+                    cooldown > 0 ? "opacity-50 cursor-not-allowed" : "hover:from-red-800 hover:to-red-600"
+                  }`}
+                >
+                  {cooldown > 0 ? `Confirmar (${cooldown}s)` : "Confirmar"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
