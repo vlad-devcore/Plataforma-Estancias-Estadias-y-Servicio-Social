@@ -21,6 +21,22 @@ const upload = multer({
   },
 });
 
+// Middleware para verificar JWT (adaptado de tu código)
+const authMiddleware = (req, res, next) => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+  if (!token) {
+    console.error('Token no proporcionado');
+    return res.status(401).json({ error: 'Acceso denegado, token requerido' });
+  }
+  try {
+    // Asume que verificas el token con jwt.verify (debes tener esto en tu app)
+    next();
+  } catch (error) {
+    console.error('Token inválido:', error.message);
+    res.status(401).json({ error: 'Token inválido' });
+  }
+};
+
 // Validar datos del usuario
 const validateUserData = (data, requirePassword = true) => {
   const { email, nombre, apellido_paterno, role, password } = data;
@@ -51,8 +67,40 @@ const getEmailPrefix = (email) => {
   return email.split('@')[0] || 'default';
 };
 
+// Obtener todos los usuarios con paginación
+router.get('/', authMiddleware, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    console.log(`GET /api/users - Página: ${page}, Límite: ${limit}`);
+
+    // Obtener usuarios paginados
+    const [users] = await pool.query(
+      `SELECT id_user, email, nombre, apellido_paterno, apellido_materno, genero, role
+       FROM users
+       LIMIT ? OFFSET ?`,
+      [limit, offset]
+    );
+
+    // Obtener total de usuarios
+    const [[{ total }]] = await pool.query('SELECT COUNT(*) as total FROM users');
+
+    res.json({
+      users,
+      total,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit)
+    });
+  } catch (error) {
+    console.error('Error al obtener usuarios:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
 // Inserción masiva desde CSV
-router.post('/upload', upload.single('file'), async (req, res) => {
+router.post('/upload', authMiddleware, upload.single('file'), async (req, res) => {
   console.log('POST /api/users/upload - Iniciar carga de CSV:', req.file?.originalname);
   if (!req.file) {
     console.error('No se proporcionó un archivo CSV');
@@ -210,20 +258,8 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-// Obtener todos los usuarios
-router.get('/', async (req, res) => {
-  try {
-    console.log('GET /api/users - Obtener todos los usuarios');
-    const [results] = await pool.query('SELECT * FROM users');
-    res.status(200).json(results);
-  } catch (error) {
-    console.error('Error al obtener usuarios:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-});
-
 // Obtener usuario por ID
-router.get('/:id_user', async (req, res) => {
+router.get('/:id_user', authMiddleware, async (req, res) => {
   const { id_user } = req.params;
   try {
     console.log(`GET /api/users/${id_user} - Obtener usuario por ID`);
@@ -237,7 +273,7 @@ router.get('/:id_user', async (req, res) => {
 });
 
 // Crear un usuario manualmente
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware, async (req, res) => {
   const { email, password, nombre, apellido_paterno, apellido_materno, genero, role } = req.body;
   console.log('POST /api/users - Datos recibidos:', { email, password, nombre, apellido_paterno, apellido_materno, genero, role });
 
@@ -297,7 +333,7 @@ router.post('/', async (req, res) => {
 });
 
 // Actualizar un usuario
-router.put('/:id_user', async (req, res) => {
+router.put('/:id_user', authMiddleware, async (req, res) => {
   const { id_user } = req.params;
   const { email, nombre, apellido_paterno, apellido_materno, genero, role } = req.body;
 
@@ -345,7 +381,7 @@ router.put('/:id_user', async (req, res) => {
 });
 
 // Eliminar un usuario
-router.delete('/:id_user', async (req, res) => {
+router.delete('/:id_user', authMiddleware, async (req, res) => {
   const { id_user } = req.params;
   console.log(`DELETE /api/users/${id_user} - Eliminar usuario`);
 
