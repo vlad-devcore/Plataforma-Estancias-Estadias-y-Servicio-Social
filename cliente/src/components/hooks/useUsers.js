@@ -2,164 +2,175 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const useUsers = () => {
-  const [state, setState] = useState({
-    users: [],
-    loading: false,
-    error: null,
-    success: null,
-    searchTerm: '',
-  });
+  const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const usersPerPage = 10;
 
-  const setData = (newState) => {
-    setState((prev) => ({ ...prev, ...newState }));
-  };
+  // Obtener usuarios con paginación
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`http://localhost:9999/api/users?page=${currentPage}&limit=${usersPerPage}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUsers(response.data.users);
+        setFilteredUsers(response.data.users);
+        setTotalPages(response.data.totalPages);
+        setTotalUsers(response.data.total);
+      } catch (err) {
+        setError(err.response?.data?.error || 'Error al cargar usuarios');
+        setUsers([]);
+        setFilteredUsers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const fetchUsers = async () => {
+    fetchUsers();
+  }, [currentPage]);
+
+  // Filtrar usuarios por búsqueda
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setFilteredUsers(users);
+    } else {
+      const filtered = users.filter(user =>
+        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredUsers(filtered);
+    }
+  }, [searchTerm, users]);
+
+  // Crear usuario
+  const createUser = async (userData) => {
     try {
-      setData({ loading: true, error: null, success: null });
-      const { data } = await axios.get('http://localhost:9999/api/users');
-      setData({ users: data, loading: false });
-    } catch (err) {
-      setData({
-        error: 'No se pudieron cargar los usuarios. Por favor, intenta de nuevo.',
-        loading: false,
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      const response = await axios.post('http://localhost:9999/api/users', userData, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      throw err;
+      setUsers(prev => [...prev, { ...userData, id_user: response.data.id_user }]);
+      setFilteredUsers(prev => [...prev, { ...userData, id_user: response.data.id_user }]);
+      setSuccess(response.data.message);
+      setTotalUsers(prev => prev + 1);
+      setTotalPages(Math.ceil((totalUsers + 1) / usersPerPage));
+    } catch (err) {
+      setError(err.response?.data?.error || 'Error al crear usuario');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getAsesores = () => {
-    return state.users.filter((user) => user.role === 'asesor_academico');
-  };
-
-  const updateUser = async (id_user, updatedData) => {
+  // Actualizar usuario
+  const updateUser = async (id_user, userData) => {
     try {
-      setData({ loading: true, error: null, success: null });
-      const currentUser = state.users.find((user) => user.id_user === id_user);
-      const fullData = { ...currentUser, ...updatedData };
-
-      const { data } = await axios.put(`http://localhost:9999/api/users/${id_user}`, fullData);
-      setData({
-        users: state.users.map((user) => (user.id_user === id_user ? fullData : user)),
-        loading: false,
-        success: 'Usuario actualizado con éxito.',
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      const response = await axios.put(`http://localhost:9999/api/users/${id_user}`, userData, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      return data;
+      setUsers(prev =>
+        prev.map(user => (user.id_user === id_user ? { ...user, ...userData } : user))
+      );
+      setFilteredUsers(prev =>
+        prev.map(user => (user.id_user === id_user ? { ...user, ...userData } : user))
+      );
+      setSuccess(response.data.message);
     } catch (err) {
-      setData({
-        error: err.response?.data?.error || 'No se pudo actualizar el usuario. Por favor, intenta de nuevo.',
-        loading: false,
-      });
-      throw err;
+      setError(err.response?.data?.error || 'Error al actualizar usuario');
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Eliminar usuario
   const deleteUser = async (id_user) => {
     try {
-      setData({ loading: true, error: null, success: null });
-      await axios.delete(`http://localhost:9999/api/users/${id_user}`);
-      setData({
-        users: state.users.filter((user) => user.id_user !== id_user),
-        loading: false,
-        success: 'Usuario eliminado con éxito.',
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      await axios.delete(`http://localhost:9999/api/users/${id_user}`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
+      setUsers(prev => prev.filter(user => user.id_user !== id_user));
+      setFilteredUsers(prev => prev.filter(user => user.id_user !== id_user));
+      setSuccess('Usuario eliminado correctamente');
+      setTotalUsers(prev => prev - 1);
+      setTotalPages(Math.ceil((totalUsers - 1) / usersPerPage));
     } catch (err) {
-      setData({
-        error: err.response?.data?.error || 'No se pudo eliminar el usuario. Por favor, intenta de nuevo.',
-        loading: false,
-      });
-      throw err;
+      setError(err.response?.data?.error || 'Error al eliminar usuario');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const createUser = async (newUser) => {
-    try {
-      console.log('Creando usuario con datos:', newUser);
-      setData({ loading: true, error: null, success: null });
-      const { data } = await axios.post('http://localhost:9999/api/users', newUser);
-      await fetchUsers();
-      setData({ loading: false, success: 'Usuario creado con éxito.' });
-      return data;
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || 'No se pudo crear el usuario. Por favor, verifica los datos e intenta de nuevo.';
-      console.error('Error al crear usuario:', errorMessage);
-      setData({
-        error: errorMessage,
-        loading: false,
-      });
-      throw err;
-    }
-  };
-
+  // Importar usuarios desde CSV
   const createUsersFromCSV = async (file) => {
     try {
-      console.log('Iniciando carga de CSV:', file.name);
-      setData({ loading: true, error: null, success: null });
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
       const formData = new FormData();
       formData.append('file', file);
-      console.log('FormData contiene:', Array.from(formData.entries()));
-
-      const { data } = await axios.post('http://localhost:9999/api/users/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const response = await axios.post('http://localhost:9999/api/users/upload', formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
       });
-
-      await fetchUsers();
-
-      // Construir mensaje amigable
-      let successMessage = `Se importaron ${data.insertedCount || 0} usuarios con éxito.`;
-      const maxDisplay = 5; // Limitar a 5 correos en la lista
-      if (data.existingEmails?.length > 0) {
-        const displayedEmails = data.existingEmails.slice(0, maxDisplay);
-        successMessage += `\n${data.existingEmails.length} usuarios ya estaban registrados: ${displayedEmails.join(', ')}${data.existingEmails.length > maxDisplay ? ' y otros.' : '.'}`;
-      }
-      if (data.duplicateEmails?.length > 0) {
-        const displayedEmails = data.duplicateEmails.slice(0, maxDisplay);
-        successMessage += `\n${data.duplicateEmails.length} usuarios estaban repetidos en el archivo: ${displayedEmails.join(', ')}${data.duplicateEmails.length > maxDisplay ? ' y otros.' : '.'}`;
-      }
-      if (data.errors?.length > 0) {
-        successMessage += `\n${data.errors.length} registros tenían problemas en los datos. Por favor, revisa el archivo.`;
-      }
-
-      setData({
-        loading: false,
-        success: successMessage,
-      });
-      return data;
+      const newUsers = response.data.insertedEmails.map(email => ({
+        email,
+        id_user: Math.random().toString(), // ID temporal, idealmente obtén IDs reales
+        nombre: 'Usuario',
+        apellido_paterno: 'Importado',
+        role: 'estudiante' // Asume estudiante por defecto, ajusta según tu lógica
+      }));
+      setUsers(prev => [...newUsers, ...prev]);
+      setFilteredUsers(prev => [...newUsers, ...prev]);
+      setSuccess(response.data.message);
+      setTotalUsers(prev => prev + response.data.insertedCount);
+      setTotalPages(Math.ceil((totalUsers + response.data.insertedCount) / usersPerPage));
     } catch (err) {
-      const errorMessage = err.response?.data?.error || 'No se pudieron importar los usuarios. Por favor, revisa el archivo e intenta de nuevo.';
-      setData({
-        error: errorMessage,
-        loading: false,
-      });
-      throw err;
+      setError(err.response?.data?.error || 'Error al importar usuarios');
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Resetear mensajes
   const resetMessages = () => {
-    setData({ error: null, success: null });
+    setError(null);
+    setSuccess(null);
   };
 
-  const filteredUsers = state.users.filter(
-    (user) =>
-      user.email.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
-      (user.role && user.role.toLowerCase().includes(state.searchTerm.toLowerCase()))
-  );
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
   return {
-    ...state,
     filteredUsers,
-    setSearchTerm: (searchTerm) => setData({ searchTerm }),
-    fetchUsers,
+    loading,
+    error,
+    success,
+    setSearchTerm,
+    createUser,
     updateUser,
     deleteUser,
-    createUser,
     createUsersFromCSV,
-    getAsesores,
     resetMessages,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    totalUsers,
+    usersPerPage
   };
 };
 

@@ -7,19 +7,6 @@ import {
 import { AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProgramaEducativoForm from './components/estudiante/ProgramaEducativoForm';
-
-// Vistas de administrador
-import Inicio from './components_admin/InicioAdmin';
-import Usuarios from './components_admin/UsuariosAdmin';
-import Registros from './components_admin/RegistrosAdmin';
-import Formatos from './components_admin/FormatosAdmin';
-import Documentacion from './components_admin/DocumentacionAdmin';
-import Empresas from './components_admin/EmpresasAdmin';
-import PerfilAdmin from './components_admin/PerfilAdmin';
-import Periodos from './components_admin/PeriodosAdmin';
-
-
-// Vistas de estudiantes
 import Login from './components_student/Login'; 
 import Home from './components_student/Home';
 import EmpresasS from './components_student/Empresas';
@@ -29,23 +16,25 @@ import Estancia2 from './components_student/formatos/Estancia2';
 import Estadias from './components_student/formatos/Estadias';
 import ServicioSocial from './components_student/formatos/ServicioSocial';
 import EstadiasNacionales from './components_student/formatos/EstadiasNacionales';
-
-// Página de acceso denegado
+import Inicio from './components_admin/InicioAdmin';
+import Usuarios from './components_admin/UsuariosAdmin';
+import Registros from './components_admin/RegistrosAdmin';
+import Formatos from './components_admin/FormatosAdmin';
+import Documentacion from './components_admin/DocumentacionAdmin';
+import Empresas from './components_admin/EmpresasAdmin';
+import PerfilAdmin from './components_admin/PerfilAdmin';
+import Periodos from './components_admin/PeriodosAdmin';
 import Unauthorized from './components/Unauthorized';
+import Logout from './components_admin/Logout';
+import PrivateRoute from './components/PrivateRoute';
 
-// Componente PrivateRoute con validación de roles
-const PrivateRoute = ({ element, allowedRoles }) => {
+// Componente para manejar la redirección en la raíz
+const RootRedirect = () => {
   const { user } = useAuth();
-
-  if (!user) {
-    return <Navigate to="/" replace />;
+  if (user) {
+    return <Navigate to={user.role === 'estudiante' ? '/home' : '/inicioadmin'} replace />;
   }
-
-  if (!allowedRoles.includes(user.role)) {
-    return <Navigate to="/unauthorized" replace />;
-  }
-
-  return element;
+  return <Login />;
 };
 
 function AnimatedRoutes() {
@@ -55,80 +44,46 @@ function AnimatedRoutes() {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         {/* Rutas públicas */}
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<RootRedirect />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route path="/logout" element={<Logout />} />
 
         {/* Rutas protegidas para estudiantes */}
         <Route
           path="/estudiante/programa"
-          element={
-            <PrivateRoute element={<ProgramaEducativoForm />} allowedRoles={['estudiante']} />
-          }
+          element={<PrivateRoute element={<ProgramaEducativoForm />} allowedRoles={['estudiante']} />}
         />
         <Route
           path="/home"
-          element={
-            <PrivateRoute element={<Home />} allowedRoles={['estudiante']} />
-          }
+          element={<PrivateRoute element={<Home />} allowedRoles={['estudiante']} />}
         />
         <Route
           path="/empresas"
-          element={
-            <PrivateRoute element={<EmpresasS />} allowedRoles={['estudiante']} />
-          }
+          element={<PrivateRoute element={<EmpresasS />} allowedRoles={['estudiante']} />}
         />
         <Route
           path="/perfil"
-          element={
-            <PrivateRoute element={<PerfilStudent />} allowedRoles={['estudiante']} />
-          }
+          element={<PrivateRoute element={<PerfilStudent />} allowedRoles={['estudiante']} />}
         />
-
-        {/* Rutas de procesos (usando componentes específicos) */}
         <Route
           path="/formatos/Estancia1"
-          element={
-            <PrivateRoute
-              element={<Estancia1 />}
-              allowedRoles={['estudiante']}
-            />
-          }
+          element={<PrivateRoute element={<Estancia1 />} allowedRoles={['estudiante']} />}
         />
         <Route
           path="/formatos/Estancia2"
-          element={
-            <PrivateRoute
-              element={<Estancia2 />}
-              allowedRoles={['estudiante']}
-            />
-          }
+          element={<PrivateRoute element={<Estancia2 />} allowedRoles={['estudiante']} />}
         />
         <Route
           path="/formatos/Estadias"
-          element={
-            <PrivateRoute
-              element={<Estadias />}
-              allowedRoles={['estudiante']}
-            />
-          }
+          element={<PrivateRoute element={<Estadias />} allowedRoles={['estudiante']} />}
         />
         <Route
           path="/formatos/ServicioSocial"
-          element={
-            <PrivateRoute
-              element={<ServicioSocial />}
-              allowedRoles={['estudiante']}
-            />
-          }
+          element={<PrivateRoute element={<ServicioSocial />} allowedRoles={['estudiante']} />}
         />
         <Route
           path="/formatos/EstadiasNacionales"
-          element={
-            <PrivateRoute
-              element={<EstadiasNacionales />}
-              allowedRoles={['estudiante']}
-            />
-          }
+          element={<PrivateRoute element={<EstadiasNacionales />} allowedRoles={['estudiante']} />}
         />
 
         {/* Rutas protegidas para administrador */}
@@ -163,10 +118,6 @@ function AnimatedRoutes() {
         <Route
           path="/perfiladmin"
           element={<PrivateRoute element={<PerfilAdmin />} allowedRoles={['administrador']} />}
-        />
-        <Route
-          path="/loginadmin"
-          element={<PrivateRoute element={<Login />} allowedRoles={['administrador']} />}
         />
       </Routes>
     </AnimatePresence>

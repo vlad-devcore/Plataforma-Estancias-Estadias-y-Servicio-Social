@@ -1,4 +1,3 @@
-// src/components/admin/users/UsuariosAdmin.jsx
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Upload, Plus, Edit2 } from 'lucide-react';
@@ -6,7 +5,7 @@ import UserTable from '../components/admin/users/UserTable';
 import UserForm from '../components/admin/users/UserForm';
 import CSVUsuarios from '../components/admin/users/CSVUsuarios';
 import useUsers from '../components/hooks/useUsers';
-import Sidebar from '../components_admin/Sidebar';
+import Sidebar from './Sidebar';
 
 const UserManagement = () => {
   const {
@@ -20,6 +19,11 @@ const UserManagement = () => {
     deleteUser,
     createUsersFromCSV,
     resetMessages,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    totalUsers,
+    usersPerPage
   } = useUsers();
 
   const [formMode, setFormMode] = useState(null);
@@ -69,11 +73,30 @@ const UserManagement = () => {
     setConfirmData(null);
   };
 
-  // Filtrar usuarios por búsqueda y rol
+  // Filtrar usuarios por rol
   const filteredUsersWithRol = filteredUsers.filter((user) => {
     const matchesRol = rolFilter === 'Todos' || user.role === rolFilter;
     return matchesRol;
   });
+
+  // Cambiar página
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  // Generar números de página
+  const getPageNumbers = () => {
+    const maxPagesToShow = 5;
+    const startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+    const pages = [];
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -167,7 +190,8 @@ const UserManagement = () => {
 
           {/* Layout flexible: tabla y formulario */}
           <div className="flex flex-col lg:flex-row gap-6 w-full">
-            <div className="flex-1 min-w-0">
+            <div className="fle
+x-1 min-w-0">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -188,9 +212,57 @@ const UserManagement = () => {
                 />
                 <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
                   <p className="text-sm text-gray-500">
-                    Mostrando {filteredUsersWithRol.length} de {filteredUsers.length} registros
+                    Mostrando {filteredUsersWithRol.length} de {totalUsers} registros
                   </p>
                 </div>
+                {/* Controles de paginación */}
+                {totalPages > 1 && (
+                  <div className="px-6 py-4 flex justify-between items-center">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                        currentPage === 1
+                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                          : 'bg-purple-500 text-white hover:bg-purple-600'
+                      }`}
+                    >
+                      Anterior
+                    </motion.button>
+                    <div className="flex space-x-2">
+                      {getPageNumbers().map(page => (
+                        <motion.button
+                          key={page}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => handlePageChange(page)}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                            currentPage === page
+                              ? 'bg-purple-600 text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {page}
+                        </motion.button>
+                      ))}
+                    </div>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                        currentPage === totalPages
+                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                          : 'bg-purple-500 text-white hover:bg-purple-600'
+                      }`}
+                    >
+                      Siguiente
+                    </motion.button>
+                  </div>
+                )}
               </motion.div>
             </div>
 

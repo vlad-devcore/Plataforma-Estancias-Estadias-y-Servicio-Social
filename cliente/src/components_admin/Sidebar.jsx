@@ -1,16 +1,24 @@
-import { Link, useLocation, Outlet } from "react-router-dom";
+import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
-
+import { useAuth } from "../context/AuthContext";
 
 const Sidebar = ({ onNavigate }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleNavigation = () => {
     setIsMobileMenuOpen(false);
     if (onNavigate) onNavigate();
+  };
+
+  const handleLogout = () => {
+    logout();
+    handleNavigation();
+    navigate('/login', { replace: true });
   };
 
   return (
@@ -43,18 +51,27 @@ const Sidebar = ({ onNavigate }) => {
 
         {/* Menú */}
         <nav>
-  <ul className="space-y-2">
-    <NavItem to="/inicioadmin" label="Inicio" currentPath={location.pathname} onClick={handleNavigation} />
-    <NavItem to="/usuariosadmin" label="Usuarios" currentPath={location.pathname} onClick={handleNavigation} />
-    <NavItem to="/empresasadmin" label="Empresas" currentPath={location.pathname} onClick={handleNavigation} />
-    <NavItem to="/periodosadmin" label="Periodos" currentPath={location.pathname} onClick={handleNavigation} />
-    <NavItem to="/formatosadmin" label="Formatos" currentPath={location.pathname} onClick={handleNavigation} />
-    <NavItem to="/Documentacionadmin" label="Documentacion" currentPath={location.pathname} onClick={handleNavigation} />
-    <NavItem to="/registrosadmin" label="Registros" currentPath={location.pathname} onClick={handleNavigation} />
-    <NavItem to="/perfiladmin" label="Perfil" currentPath={location.pathname} onClick={handleNavigation} />
-    <NavItem to="/" label="Cerrar Sesión" currentPath={location.pathname} onClick={handleNavigation} />
-  </ul>
-</nav>  
+          <ul className="space-y-2">
+            <NavItem to="/inicioadmin" label="Inicio" currentPath={location.pathname} onClick={handleNavigation} />
+            <NavItem to="/usuariosadmin" label="Usuarios" currentPath={location.pathname} onClick={handleNavigation} />
+            <NavItem to="/empresasadmin" label="Empresas" currentPath={location.pathname} onClick={handleNavigation} />
+            <NavItem to="/periodosadmin" label="Periodos" currentPath={location.pathname} onClick={handleNavigation} />
+            <NavItem to="/formatosadmin" label="Formatos" currentPath={location.pathname} onClick={handleNavigation} />
+            <NavItem to="/Documentacionadmin" label="Documentacion" currentPath={location.pathname} onClick={handleNavigation} />
+            <NavItem to="/registrosadmin" label="Registros" currentPath={location.pathname} onClick={handleNavigation} />
+            <NavItem to="/perfiladmin" label="Perfil" currentPath={location.pathname} onClick={handleNavigation} />
+            <li>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleLogout}
+                className="block w-full text-left py-3 px-4 rounded-md hover:bg-white/10"
+              >
+                Cerrar Sesión
+              </motion.button>
+            </li>
+          </ul>
+        </nav>  
       </aside>
 
       {/* Contenido principal */}
