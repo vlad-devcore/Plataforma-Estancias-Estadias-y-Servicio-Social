@@ -7,10 +7,10 @@ const UserForm = ({
   mode = 'create',
   initialData = {},
   onSubmit,
-  onCancel, // Añadimos onCancel como prop
-  onFileUpload, // Mantenemos por compatibilidad, pero no lo usaremos
+  onCancel,
+  onFileUpload,
 }) => {
-  const [formData, setFormData] = useState(initialData);
+  const [formData, setFormData] = useState({});
   const [fileName, setFileName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -20,8 +20,8 @@ const UserForm = ({
     if (mode === 'edit' || mode === 'create') {
       setFormData({
         email: initialData.email || '',
-        password: initialData.password || '',
-        confirmPassword: '', // Nuevo campo para confirmar contraseña
+        password: mode === 'create' ? '' : initialData.password || '',
+        confirmPassword: mode === 'create' ? '' : '',
         nombre: initialData.nombre || '',
         apellido_paterno: initialData.apellido_paterno || '',
         apellido_materno: initialData.apellido_materno || '',
@@ -118,6 +118,7 @@ const UserForm = ({
       } else {
         // Excluir confirmPassword del objeto enviado
         const { confirmPassword, ...submitData } = formData;
+        console.log('Datos enviados desde UserForm:', submitData);
         onSubmit(submitData);
       }
     }
@@ -272,8 +273,8 @@ const UserForm = ({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="">Seleccionar género</option>
-              <option value="Masculino">Masculino</option>
-              <option value="Femenino">Femenino</option>
+              <option value="masculino">Masculino</option>
+              <option value="femenino">Femenino</option>
             </motion.select>
           </div>
           <div>

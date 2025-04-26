@@ -1,8 +1,10 @@
+// src/components/admin/users/UsuariosAdmin.jsx
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Upload, Plus, Edit2 } from 'lucide-react';
 import UserTable from '../components/admin/users/UserTable';
 import UserForm from '../components/admin/users/UserForm';
+import CSVUsuarios from '../components/admin/users/CSVUsuarios';
 import useUsers from '../components/hooks/useUsers';
 import Sidebar from '../components_admin/Sidebar';
 
@@ -202,14 +204,22 @@ const UserManagement = () => {
                   {formMode === 'create' && <Plus className="text-purple-600 mr-2" />}
                   {formMode === 'edit' && <Edit2 className="text-orange-500 mr-2" />}
                   {formMode === 'import' && <Upload className="text-yellow-500 mr-2" />}
-                  {formMode === 'create' ? 'Crear Usuario' : formMode === 'edit' ? 'Editar Usuario' : 'Importar Usuarios desde CSV'}
+                  {formMode === 'create'
+                    ? 'Crear Usuario'
+                    : formMode === 'edit'
+                    ? 'Editar Usuario'
+                    : 'Importar Usuarios desde CSV'}
                 </h3>
-                <UserForm
-                  mode={formMode}
-                  initialData={selectedUser || {}}
-                  onSubmit={handleSubmit}
-                  onCancel={handleCancel}
-                />
+                {formMode === 'import' ? (
+                  <CSVUsuarios onSubmit={handleSubmit} onCancel={handleCancel} />
+                ) : (
+                  <UserForm
+                    mode={formMode}
+                    initialData={selectedUser || {}}
+                    onSubmit={handleSubmit}
+                    onCancel={handleCancel}
+                  />
+                )}
               </motion.div>
             )}
           </div>
