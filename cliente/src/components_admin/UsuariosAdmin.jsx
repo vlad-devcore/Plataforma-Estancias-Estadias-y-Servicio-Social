@@ -23,17 +23,18 @@ const UserManagement = () => {
     setCurrentPage,
     totalPages,
     totalUsers,
-    usersPerPage
+    usersPerPage,
+    rolFilter,
+    setRolFilter
   } = useUsers();
 
   const [formMode, setFormMode] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmData, setConfirmData] = useState(null);
-  const [rolFilter, setRolFilter] = useState('Todos');
 
-  // Extraer roles únicos de los usuarios
-  const uniqueRoles = ['Todos', ...new Set(filteredUsers.map(user => user.role))];
+  // Roles estáticos para el dropdown
+  const uniqueRoles = ['Todos', 'estudiante', 'administrador', 'asesor_academico', 'asesor_empresarial'];
 
   const handleSubmit = (data) => {
     setConfirmData(data);
@@ -72,12 +73,6 @@ const UserManagement = () => {
     setConfirmAction(null);
     setConfirmData(null);
   };
-
-  // Filtrar usuarios por rol
-  const filteredUsersWithRol = filteredUsers.filter((user) => {
-    const matchesRol = rolFilter === 'Todos' || user.role === rolFilter;
-    return matchesRol;
-  });
 
   // Cambiar página
   const handlePageChange = (page) => {
@@ -190,15 +185,14 @@ const UserManagement = () => {
 
           {/* Layout flexible: tabla y formulario */}
           <div className="flex flex-col lg:flex-row gap-6 w-full">
-            <div className="fle
-x-1 min-w-0">
+            <div className="flex-1 min-w-0">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-white rounded-lg shadow-sm overflow-x-auto border border-gray-200"
               >
                 <UserTable
-                  users={filteredUsersWithRol}
+                  users={filteredUsers}
                   loading={loading}
                   error={error}
                   onEdit={(user) => {
@@ -212,7 +206,7 @@ x-1 min-w-0">
                 />
                 <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
                   <p className="text-sm text-gray-500">
-                    Mostrando {filteredUsersWithRol.length} de {totalUsers} registros
+                    Mostrando {filteredUsers.length} de {totalUsers} registros
                   </p>
                 </div>
                 {/* Controles de paginación */}

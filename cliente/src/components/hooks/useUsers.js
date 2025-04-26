@@ -5,6 +5,7 @@ const useUsers = () => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [rolFilter, setRolFilter] = useState('Todos');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -13,15 +14,23 @@ const useUsers = () => {
   const [totalUsers, setTotalUsers] = useState(0);
   const usersPerPage = 10;
 
-  // Obtener usuarios con paginación
+  // Obtener usuarios con paginación, búsqueda y filtro por rol
   useEffect(() => {
     const fetchUsers = async () => {
       setLoading(true);
       setError(null);
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`http://localhost:9999/api/users?page=${currentPage}&limit=${usersPerPage}`, {
-          headers: { Authorization: `Bearer ${token}` }
+        const params = {
+          page: currentPage,
+          limit: usersPerPage,
+          search: searchTerm || undefined,
+          role: rolFilter !== 'Todos' ? rolFilter : undefined
+        };
+        console.log('Fetching users with params:', params);
+        const response = await axios.get('http://localhost:9999/api/users', {
+          headers: { Authorization: `Bearer ${token}` },
+          params
         });
         setUsers(response.data.users);
         setFilteredUsers(response.data.users);
@@ -31,25 +40,15 @@ const useUsers = () => {
         setError(err.response?.data?.error || 'Error al cargar usuarios');
         setUsers([]);
         setFilteredUsers([]);
+        setTotalPages(1);
+        setTotalUsers(0);
       } finally {
         setLoading(false);
       }
     };
 
     fetchUsers();
-  }, [currentPage]);
-
-  // Filtrar usuarios por búsqueda
-  useEffect(() => {
-    if (searchTerm.trim() === '') {
-      setFilteredUsers(users);
-    } else {
-      const filtered = users.filter(user =>
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredUsers(filtered);
-    }
-  }, [searchTerm, users]);
+  }, [currentPage, searchTerm, rolFilter]);
 
   // Crear usuario
   const createUser = async (userData) => {
@@ -60,11 +59,9 @@ const useUsers = () => {
       const response = await axios.post('http://localhost:9999/api/users', userData, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setUsers(prev => [...prev, { ...userData, id_user: response.data.id_user }]);
-      setFilteredUsers(prev => [...prev, { ...userData, id_user: response.data.id_user }]);
+      // Refrescar datos para reflejar el nuevo usuario
+      setCurrentPage(1); // Volver a la primera página
       setSuccess(response.data.message);
-      setTotalUsers(prev => prev + 1);
-      setTotalPages(Math.ceil((totalUsers + 1) / usersPerPage));
     } catch (err) {
       setError(err.response?.data?.error || 'Error al crear usuario');
     } finally {
@@ -81,12 +78,8 @@ const useUsers = () => {
       const response = await axios.put(`http://localhost:9999/api/users/${id_user}`, userData, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setUsers(prev =>
-        prev.map(user => (user.id_user === id_user ? { ...user, ...userData } : user))
-      );
-      setFilteredUsers(prev =>
-        prev.map(user => (user.id_user === id_user ? { ...user, ...userData } : user))
-      );
+      // Refrescar datos
+      setCurrentPage(1);
       setSuccess(response.data.message);
     } catch (err) {
       setError(err.response?.data?.error || 'Error al actualizar usuario');
@@ -104,11 +97,9 @@ const useUsers = () => {
       await axios.delete(`http://localhost:9999/api/users/${id_user}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setUsers(prev => prev.filter(user => user.id_user !== id_user));
-      setFilteredUsers(prev => prev.filter(user => user.id_user !== id_user));
+      // Refrescar datos
+      setCurrentPage(1);
       setSuccess('Usuario eliminado correctamente');
-      setTotalUsers(prev => prev - 1);
-      setTotalPages(Math.ceil((totalUsers - 1) / usersPerPage));
     } catch (err) {
       setError(err.response?.data?.error || 'Error al eliminar usuario');
     } finally {
@@ -130,18 +121,9 @@ const useUsers = () => {
           'Content-Type': 'multipart/form-data'
         }
       });
-      const newUsers = response.data.insertedEmails.map(email => ({
-        email,
-        id_user: Math.random().toString(), // ID temporal, idealmente obtén IDs reales
-        nombre: 'Usuario',
-        apellido_paterno: 'Importado',
-        role: 'estudiante' // Asume estudiante por defecto, ajusta según tu lógica
-      }));
-      setUsers(prev => [...newUsers, ...prev]);
-      setFilteredUsers(prev => [...newUsers, ...prev]);
+      // Refrescar datos
+      setCurrentPage(1);
       setSuccess(response.data.message);
-      setTotalUsers(prev => prev + response.data.insertedCount);
-      setTotalPages(Math.ceil((totalUsers + response.data.insertedCount) / usersPerPage));
     } catch (err) {
       setError(err.response?.data?.error || 'Error al importar usuarios');
     } finally {
@@ -170,7 +152,9 @@ const useUsers = () => {
     setCurrentPage,
     totalPages,
     totalUsers,
-    usersPerPage
+    usersPerPage,
+    rolFilter,
+    setRolFilter
   };
 };
 

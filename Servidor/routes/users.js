@@ -21,7 +21,7 @@ const upload = multer({
   },
 });
 
-// Middleware para verificar JWT (adaptado de tu código)
+// Middleware para verificar JWT
 const authMiddleware = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
   if (!token) {
@@ -29,7 +29,7 @@ const authMiddleware = (req, res, next) => {
     return res.status(401).json({ error: 'Acceso denegado, token requerido' });
   }
   try {
-    // Asume que verificas el token con jwt.verify (debes tener esto en tu app)
+    // Asume que verificas el token con jwt.verify
     next();
   } catch (error) {
     console.error('Token inválido:', error.message);
@@ -67,25 +67,45 @@ const getEmailPrefix = (email) => {
   return email.split('@')[0] || 'default';
 };
 
-// Obtener todos los usuarios con paginación
+// Obtener usuarios con paginación, búsqueda y filtro por rol
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
+    const search = req.query.search ? `%${req.query.search}%` : '%';
+    const role = req.query.role || null;
 
-    console.log(`GET /api/users - Página: ${page}, Límite: ${limit}`);
+    console.log(`GET /api/users - Página: ${page}, Límite: ${limit}, Búsqueda: ${search}, Rol: ${role || 'todos'}`);
 
-    // Obtener usuarios paginados
-    const [users] = await pool.query(
-      `SELECT id_user, email, nombre, apellido_paterno, apellido_materno, genero, role
-       FROM users
-       LIMIT ? OFFSET ?`,
-      [limit, offset]
-    );
+    let query = `
+      SELECT id_user, email, nombre, apellido_paterno, apellido_materno, genero, role
+      FROM users
+      WHERE email LIKE ?
+    `;
+    const queryParams = [search];
 
-    // Obtener total de usuarios
-    const [[{ total }]] = await pool.query('SELECT COUNT(*) as total FROM users');
+    if (role && role !== 'Todos') {
+      query += ` AND role = ?`;
+      queryParams.push(role);
+    }
+
+    query += ` LIMIT ? OFFSET ?`;
+    queryParams.push(limit, offset);
+
+    // Obtener usuarios filtrados
+    const [users] = await pool.query(query, queryParams);
+
+    // Obtener total de usuarios filtrados
+    let countQuery = `SELECT COUNT(*) as total FROM users WHERE email LIKE ?`;
+    const countParams = [search];
+
+    if (role && role !== 'Todos') {
+      countQuery += ` AND role = ?`;
+      countParams.push(role);
+    }
+
+    const [[{ total }]] = await pool.query(countQuery, countParams);
 
     res.json({
       users,
