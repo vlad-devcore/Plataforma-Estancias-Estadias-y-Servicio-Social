@@ -4,6 +4,7 @@ import { useState } from 'react';
 import useEmpresas from '../components/hooks/useEmpresas';
 import EmpresaTable from '../components/admin/empresas/EmpresaTable';
 import EmpresaForm from '../components/admin/empresas/EmpresaForm';
+import CSVEmpresas from '../components/admin/empresas/CSVEmpresas';
 import Sidebar from '../components_admin/Sidebar';
 
 const EmpresaManagement = () => {
@@ -11,9 +12,12 @@ const EmpresaManagement = () => {
     companies: empresas,
     loading,
     error,
+    success,
     createEmpresa,
     updateEmpresa,
     deleteEmpresa,
+    createEmpresasFromCSV,
+    resetMessages,
   } = useEmpresas();
 
   const [formMode, setFormMode] = useState(null);
@@ -43,6 +47,8 @@ const EmpresaManagement = () => {
         await updateEmpresa(selectedEmpresa.id_empresa, confirmData);
       } else if (confirmAction === 'create') {
         await createEmpresa(confirmData);
+      } else if (confirmAction === 'import') {
+        await createEmpresasFromCSV(confirmData.file);
       }
       setFormMode(null);
       setSelectedEmpresa(null);
@@ -66,6 +72,8 @@ const EmpresaManagement = () => {
       setConfirmAction('update');
     } else if (formMode === 'create') {
       setConfirmAction('create');
+    } else if (formMode === 'import') {
+      setConfirmAction('import');
     }
     setShowConfirmation(true);
   };
@@ -159,10 +167,21 @@ const EmpresaManagement = () => {
             </div>
           </div>
 
-          {/* Error Message */}
+          {/* Messages */}
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
+              <span>{error}</span>
+              <button onClick={resetMessages} className="ml-2 text-red-900 underline">
+                Cerrar
+              </button>
+            </div>
+          )}
+          {success && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+              <span dangerouslySetInnerHTML={{ __html: success }} />
+              <button onClick={resetMessages} className="ml-2 text-green-900 underline">
+                Cerrar
+              </button>
             </div>
           )}
 
@@ -187,7 +206,7 @@ const EmpresaManagement = () => {
           </motion.div>
 
           {/* Form Modal */}
-          {(formMode === 'create' || formMode === 'edit') && (
+          {(formMode === 'create' || formMode === 'edit' || formMode === 'import') && (
             <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -201,10 +220,15 @@ const EmpresaManagement = () => {
                         <Plus className="text-blue-600 mr-2" />
                         Crear Nueva Empresa
                       </>
-                    ) : (
+                    ) : formMode === 'edit' ? (
                       <>
                         <Edit2 className="text-orange-500 mr-2" />
                         Editar Empresa
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="text-yellow-500 mr-2" />
+                        Importar Empresas desde CSV
                       </>
                     )}
                   </h3>
@@ -218,14 +242,24 @@ const EmpresaManagement = () => {
                     <X size={20} />
                   </button>
                 </div>
-                <EmpresaForm
-                  initialData={selectedEmpresa || {}}
-                  onSubmit={handleSubmit}
-                  onCancel={() => {
-                    setFormMode(null);
-                    setSelectedEmpresa(null);
-                  }}
-                />
+                {formMode === 'import' ? (
+                  <CSVEmpresas
+                    onSubmit={handleSubmit}
+                    onCancel={() => {
+                      setFormMode(null);
+                      setSelectedEmpresa(null);
+                    }}
+                  />
+                ) : (
+                  <EmpresaForm
+                    initialData={selectedEmpresa || {}}
+                    onSubmit={handleSubmit}
+                    onCancel={() => {
+                      setFormMode(null);
+                      setSelectedEmpresa(null);
+                    }}
+                  />
+                )}
               </motion.div>
             </div>
           )}
@@ -246,6 +280,8 @@ const EmpresaManagement = () => {
                     '¿Confirmas la actualización de los datos de esta empresa?'}
                   {confirmAction === 'create' &&
                     '¿Confirmas la creación de esta nueva empresa?'}
+                  {confirmAction === 'import' &&
+                    '¿Confirmas la importación de empresas desde el archivo seleccionado?'}
                 </p>
                 <div className="flex justify-end gap-3">
                   <button
