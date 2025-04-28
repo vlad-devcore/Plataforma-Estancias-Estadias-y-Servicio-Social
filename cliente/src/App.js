@@ -7,7 +7,8 @@ import {
 import { AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProgramaEducativoForm from './components/estudiante/ProgramaEducativoForm';
-import Login from './components_student/Login'; 
+import Login from './components_student/Login';
+import ResetPassword from './components/ResetPassword'; // Nuevo import
 import Home from './components_student/Home';
 import EmpresasS from './components_student/Empresas';
 import PerfilStudent from './components_student/Perfil';
@@ -45,6 +46,8 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         {/* Rutas públicas */}
         <Route path="/" element={<RootRedirect />} />
+        <Route path="/login" element={<Login />} /> {/* Añadida explícitamente */}
+        <Route path="/reset-password" element={<ResetPassword />} /> {/* Nueva ruta */}
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="/logout" element={<Logout />} />
 
