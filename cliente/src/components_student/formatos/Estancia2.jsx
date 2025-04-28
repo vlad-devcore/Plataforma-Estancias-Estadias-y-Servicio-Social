@@ -69,11 +69,30 @@ const Estancia2 = () => {
     setShowModal(false);
   };
 
+  useEffect(() => {
+    const checkRegistro = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem("user"));
+        console.log("🔐 Usuario guardado en localStorage (Estancia 2):", user);
+        const { data } = await axios.get(`http://localhost:9999/api/procesos/por-usuario/${user.id}`);
+        console.log("🔐 Procesos encontrados (Estancia 2):", data);
+        const yaRegistrado = data.some(p => p.tipo_proceso === "Estancia II");
+        console.log("🔐 Registro encontrado (Estancia 2):", yaRegistrado);
+        setIsRegistered(yaRegistrado);
+      } catch (err) {
+        console.error("Error al verificar registros (Estancia 2):", err);
+      }
+    };
+
+    checkRegistro();
+  }, []); // Solo se ejecuta una vez cuando el componente se monta
+
   const handleSuccess = async () => {
     setIsRegistered(true);
     await fetchProcesoActivo(); // Refrescar procesoActivo
     handleCloseModal();
   };
+
 
   return (
     <PlantillaServicio
@@ -126,7 +145,7 @@ const Estancia2 = () => {
             {/* Sección de documentos */}
             <div className="bg-white rounded-xl shadow-lg mb-6 overflow-hidden border border-gray-100">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-gradient-to-r from-red-900 to-red-700 text-white">
-                <h2 className="text-xl sm:text-2xl font-semibold">
+                <h2 className="text-white sm:text-2xl font-semibold">
                   Documentos Requeridos
                 </h2>
               </div>

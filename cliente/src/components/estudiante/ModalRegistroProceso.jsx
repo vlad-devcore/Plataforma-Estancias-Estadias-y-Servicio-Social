@@ -118,7 +118,7 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
         className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-xl space-y-6"
       >
         <div className="bg-gradient-to-r from-red-900 to-red-700 text-white p-4 rounded-t-lg">
-          <h2 className="text-xl font-semibold">Registro en {tipoProceso}</h2>
+          <h2 className="text-white font-semibold">Registro en {tipoProceso}</h2>
         </div>
 
         {error && (
