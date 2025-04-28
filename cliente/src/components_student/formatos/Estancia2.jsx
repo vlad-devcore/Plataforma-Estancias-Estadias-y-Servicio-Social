@@ -145,7 +145,7 @@ const Estancia2 = () => {
             {/* Sección de documentos */}
             <div className="bg-white rounded-xl shadow-lg mb-6 overflow-hidden border border-gray-100">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-gradient-to-r from-red-900 to-red-700 text-white">
-                <h2 className="text-xl sm:text-2xl font-semibold">
+                <h2 className="text-white sm:text-2xl font-semibold">
                   Documentos Requeridos
                 </h2>
               </div>

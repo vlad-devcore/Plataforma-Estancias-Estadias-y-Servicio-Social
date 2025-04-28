@@ -99,9 +99,9 @@ const Estancia1 = () => {
           </motion.button>
         )}
 
-        <div className="bg-white rounded-lg shadow-lg mb-6 overflow-hidden">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b gap-4">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
+              <div className="bg-white rounded-xl shadow-lg mb-6 overflow-hidden border border-gray-100">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-gradient-to-r from-red-900 to-red-700 text-white">
+                <h2 className="text-white sm:text-2xl font-semibold"> 
               Documentos Requeridos
             </h2>
           </div>
