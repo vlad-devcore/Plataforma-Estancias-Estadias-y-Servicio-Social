@@ -27,6 +27,32 @@ const getEstudianteById = async (req, res) => {
     }
 };
 
+// Obtener estudiante por id_user, incluyendo id_programa del último proceso
+const getEstudianteByUserId = async (req, res) => {
+    const { id_user } = req.params;
+    try {
+        const [estudiantes] = await pool.query(
+            "SELECT id_estudiante FROM estudiantes WHERE id_user = ?",
+            [id_user]
+        );
+        if (estudiantes.length === 0) {
+            return res.status(404).json({ error: "Estudiante no encontrado" });
+        }
+        const id_estudiante = estudiantes[0].id_estudiante;
+
+        const [procesos] = await pool.query(
+            "SELECT id_programa FROM proceso WHERE id_estudiante = ? ORDER BY id_proceso DESC LIMIT 1",
+            [id_estudiante]
+        );
+        const id_programa = procesos.length > 0 ? procesos[0].id_programa : null;
+
+        res.status(200).json({ id_estudiante, id_programa });
+    } catch (error) {
+        console.error("Error al obtener estudiante por id_user:", error);
+        res.status(500).json({ error: "Error interno del servidor" });
+    }
+};
+
 // Agregar un nuevo estudiante
 const postEstudiante = async (req, res) => {
     const { id_user, matricula } = req.body;
@@ -83,6 +109,7 @@ const deleteEstudiante = async (req, res) => {
 // Definir rutas
 router.get("/", getEstudiantes);
 router.get("/:id_estudiante", getEstudianteById);
+router.get("/by-user/:id_user", getEstudianteByUserId);
 router.post("/", postEstudiante);
 router.put("/:id_estudiante", updateEstudiante);
 router.delete("/:id_estudiante", deleteEstudiante);

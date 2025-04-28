@@ -1,168 +1,160 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const useUsers = () => {
-  const [state, setState] = useState({
-    users: [],
-    loading: true,
-    error: null,
-    searchTerm: ''
-  });
+  const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [rolFilter, setRolFilter] = useState('Todos');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const usersPerPage = 10;
 
-  const setData = (newState) => {
-    setState(prev => ({ ...prev, ...newState }));
-  };
-
-  const fetchUsers = async () => {
-    try {
-      setData({ loading: true, error: null });
-      const response = await fetch('http://localhost:9999/api/users');
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+  // Obtener usuarios con paginación, búsqueda y filtro por rol
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem('token');
+        const params = {
+          page: currentPage,
+          limit: usersPerPage,
+          search: searchTerm || undefined,
+          role: rolFilter !== 'Todos' ? rolFilter : undefined
+        };
+        console.log('Fetching users with params:', params);
+        const response = await axios.get('http://localhost:9999/api/users', {
+          headers: { Authorization: `Bearer ${token}` },
+          params
+        });
+        setUsers(response.data.users);
+        setFilteredUsers(response.data.users);
+        setTotalPages(response.data.totalPages);
+        setTotalUsers(response.data.total);
+      } catch (err) {
+        setError(err.response?.data?.error || 'Error al cargar usuarios');
+        setUsers([]);
+        setFilteredUsers([]);
+        setTotalPages(1);
+        setTotalUsers(0);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      const data = await response.json();
-      setData({ users: data, loading: false });
-      
-    } catch (err) {
-      setData({ 
-        error: err.message || 'Error al obtener usuarios',
-        loading: false 
+    fetchUsers();
+  }, [currentPage, searchTerm, rolFilter]);
+
+  // Crear usuario
+  const createUser = async (userData) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      const response = await axios.post('http://localhost:9999/api/users', userData, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      throw err;
+      // Refrescar datos para reflejar el nuevo usuario
+      setCurrentPage(1); // Volver a la primera página
+      setSuccess(response.data.message);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Error al crear usuario');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getAsesores = () => {
-    return state.users.filter(user => user.role === 'asesor_academico');
-  };
-
-  const updateUser = async (id_user, updatedData) => {
+  // Actualizar usuario
+  const updateUser = async (id_user, userData) => {
     try {
-      setData({ loading: true, error: null });
-      
-      const currentUser = state.users.find(user => user.id_user === id_user);
-      const fullData = { ...currentUser, ...updatedData };
-
-      const response = await fetch(`http://localhost:9999/api/users/${id_user}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(fullData)
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      const response = await axios.put(`http://localhost:9999/api/users/${id_user}`, userData, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Error al actualizar usuario");
-      }
-
-      setData({
-        users: state.users.map(user => 
-          user.id_user === id_user ? fullData : user
-        ),
-        loading: false
-      });
-
-      return await response.json();
-      
+      // Refrescar datos
+      setCurrentPage(1);
+      setSuccess(response.data.message);
     } catch (err) {
-      setData({ error: err.message, loading: false });
-      throw err;
+      setError(err.response?.data?.error || 'Error al actualizar usuario');
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Eliminar usuario
   const deleteUser = async (id_user) => {
     try {
-      setData({ loading: true, error: null });
-      
-      const response = await fetch(`http://localhost:9999/api/users/${id_user}`, {
-        method: 'DELETE'
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      await axios.delete(`http://localhost:9999/api/users/${id_user}`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al eliminar usuario');
-      }
-
-      setData({
-        users: state.users.filter(user => user.id_user !== id_user),
-        loading: false
-      });
-
+      // Refrescar datos
+      setCurrentPage(1);
+      setSuccess('Usuario eliminado correctamente');
     } catch (err) {
-      setData({ error: err.message, loading: false });
-      throw err;
+      setError(err.response?.data?.error || 'Error al eliminar usuario');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const createUser = async (newUser) => {
-    try {
-      setData({ loading: true, error: null });
-  
-      const response = await fetch('http://localhost:9999/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUser)
-      });
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Error al crear usuario");
-      }
-  
-      const created = await response.json();
-      await fetchUsers();
-      return created;
-    } catch (err) {
-      setData({ error: err.message, loading: false });
-      throw err;
-    }
-  };
-
+  // Importar usuarios desde CSV
   const createUsersFromCSV = async (file) => {
     try {
-      setData({ loading: true, error: null });
-  
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
       const formData = new FormData();
       formData.append('file', file);
-  
-      const response = await fetch('http://localhost:9999/api/users/upload', {
-        method: 'POST',
-        body: formData
+      const response = await axios.post('http://localhost:9999/api/users/upload', formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
       });
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Error al subir archivo CSV");
-      }
-  
-      const result = await response.json();
-      await fetchUsers();
-      return result;
+      // Refrescar datos
+      setCurrentPage(1);
+      setSuccess(response.data.message);
     } catch (err) {
-      setData({ error: err.message, loading: false });
-      throw err;
+      setError(err.response?.data?.error || 'Error al importar usuarios');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const filteredUsers = state.users.filter(user => 
-    user.email.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
-    (user.role && user.role.toLowerCase().includes(state.searchTerm.toLowerCase()))
-  );
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  // Resetear mensajes
+  const resetMessages = () => {
+    setError(null);
+    setSuccess(null);
+  };
 
   return {
-    ...state,
     filteredUsers,
-    setSearchTerm: (searchTerm) => setData({ searchTerm }),
-    fetchUsers,
+    loading,
+    error,
+    success,
+    setSearchTerm,
+    createUser,
     updateUser,
     deleteUser,
-    createUser,
     createUsersFromCSV,
-    getAsesores // <-- aquí exportamos la función para obtener los asesores
+    resetMessages,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    totalUsers,
+    usersPerPage,
+    rolFilter,
+    setRolFilter
   };
 };
 

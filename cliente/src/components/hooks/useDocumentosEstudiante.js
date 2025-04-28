@@ -1,16 +1,15 @@
-// src/components/hooks/useDocumentosEstudiante.js
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 
-const useDocumentosEstudiante = (tipoProceso) => {
+const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
   const [plantillas, setPlantillas] = useState([]);
   const [documentos, setDocumentos] = useState([]);
-  const [procesoId, setProcesoId] = useState(null);
+  const [procesoId, setProcesoId] = useState(procesoIdProp);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  const user = JSON.parse(localStorage.getItem('user'));
+  const user = useMemo(() => JSON.parse(localStorage.getItem('user')), []);
 
   const tiposDocumentos = [
     'Carta de presentación',
@@ -22,7 +21,6 @@ const useDocumentosEstudiante = (tipoProceso) => {
     'Reporte Mensual',
   ];
 
-  // Mapeo de nombres de documentos a IdTipoDoc (basado en la tabla tipo_documento)
   const tipoDocumentoMap = {
     'Carta de presentación': 1,
     'Carta de aceptación': 2,
@@ -33,43 +31,11 @@ const useDocumentosEstudiante = (tipoProceso) => {
     'Reporte Mensual': 7,
   };
 
-  // Obtener el proceso del usuario
-  const fetchProceso = async () => {
+  const fetchPlantillas = async () => {
     if (!user?.id) {
       setError('Usuario no autenticado');
       return;
     }
-
-    setLoading(true);
-    setError(null);
-    try {
-      console.log(`Fetching procesos for user ${user.id}, tipoProceso: ${tipoProceso}`);
-      const { data } = await axios.get(
-        `http://localhost:9999/api/procesos/por-usuario/${user.id}`
-      );
-      console.log('Procesos recibidos:', data);
-
-      const proceso = data.find((p) =>
-        p.tipo_proceso.toLowerCase().includes(tipoProceso.toLowerCase().replace(/\s*[iI]+\s*$/, ''))
-      );
-
-      if (proceso) {
-        console.log('Proceso encontrado:', proceso);
-        setProcesoId(proceso.id_proceso);
-      } else {
-        console.log('No se encontró proceso para tipo:', tipoProceso);
-        setError(`No se encontró un proceso para el tipo "${tipoProceso}"`);
-      }
-    } catch (err) {
-      console.error('Error al obtener proceso:', err);
-      setError(err.response?.data?.error || 'Error al obtener proceso');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Obtener plantillas subidas por el admin
-  const fetchPlantillas = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -82,7 +48,7 @@ const useDocumentosEstudiante = (tipoProceso) => {
         const match = data.find((d) => d.nombre_documento === tipo);
         return {
           id_plantilla: match?.id || null,
-          id_tipo_doc: tipoDocumentoMap[tipo] || null, // Usar IdTipoDoc de tipo_documento
+          IdTipoDoc: tipoDocumentoMap[tipo] || null,
           nombre_documento: tipo,
           nombre_archivo: match?.nombre_archivo || null,
         };
@@ -97,22 +63,21 @@ const useDocumentosEstudiante = (tipoProceso) => {
     }
   };
 
-  // Obtener documentos subidos por el estudiante
   const fetchDocumentos = async () => {
-    if (!procesoId) {
-      console.log('No hay procesoId, omitiendo fetchDocumentos');
+    if (!procesoId || !user?.id) {
+      console.log('No hay procesoId o id_usuario, omitiendo fetchDocumentos');
+      setError('No hay proceso activo o usuario no autenticado');
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      console.log(`Fetching documentos for proceso ${procesoId}`);
-      const { data } = await axios.get(`http://localhost:9999/api/documentos`);
-      const docsFiltrados = data.filter(
-        (doc) => doc.id_usuario === user.id && doc.id_proceso === procesoId
-      );
-      console.log('Documentos filtrados:', docsFiltrados);
-      setDocumentos(docsFiltrados);
+      console.log(`Fetching documentos para proceso ${procesoId}, usuario ${user.id}`);
+      const { data } = await axios.get(`http://localhost:9999/api/documentos`, {
+        params: { id_proceso: procesoId, id_usuario: user.id }
+      });
+      console.log('Documentos recibidos:', data);
+      setDocumentos(data);
     } catch (err) {
       console.error('Error al obtener documentos:', err);
       setError(err.response?.data?.error || 'Error al obtener documentos subidos');
@@ -121,10 +86,9 @@ const useDocumentosEstudiante = (tipoProceso) => {
     }
   };
 
-  // Subir un documento
   const uploadDocumento = async (idTipoDoc, file) => {
-    if (!file || !procesoId) {
-      setError('No se seleccionó archivo o no hay proceso activo');
+    if (!file || !procesoId || !user?.id) {
+      setError('No se seleccionó archivo, no hay proceso activo o usuario no autenticado');
       return;
     }
 
@@ -149,7 +113,7 @@ const useDocumentosEstudiante = (tipoProceso) => {
     formData.append('id_proceso', procesoId);
 
     try {
-      console.log('Subiendo documento:', { idTipoDoc, id_usuario: user.id, id_proceso: procesoId });
+      console.log('Subiendo documento:', { IdTipoDoc: idTipoDoc, id_usuario: user.id, id_proceso: procesoId });
       await axios.post('http://localhost:9999/api/documentos/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -163,8 +127,11 @@ const useDocumentosEstudiante = (tipoProceso) => {
     }
   };
 
-  // Eliminar un documento
   const deleteDocumento = async (idDocumento) => {
+    if (!procesoId || !user?.id) {
+      setError('No hay proceso activo o usuario no autenticado');
+      return;
+    }
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -181,20 +148,23 @@ const useDocumentosEstudiante = (tipoProceso) => {
     }
   };
 
-  // Obtener extensión del archivo
   const getFileExtension = (filename) => {
     if (!filename) return null;
     return filename.split('.').pop().toLowerCase();
   };
 
-  // Efectos para cargar datos iniciales
   useEffect(() => {
-    fetchProceso();
-  }, [tipoProceso, user?.id]);
+    setProcesoId(procesoIdProp);
+  }, [procesoIdProp]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchPlantillas();
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (procesoId) {
-      fetchPlantillas();
       fetchDocumentos();
     }
   }, [procesoId]);

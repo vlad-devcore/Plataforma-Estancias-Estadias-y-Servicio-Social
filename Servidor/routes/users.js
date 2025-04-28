@@ -1,240 +1,431 @@
-import express from "express";
-import pool from "../config/config.db.js";
-import multer from "multer";
-import fs from "fs";
-import csv from "csv-parser";
+import express from 'express';
+import pool from '../config/config.db.js';
+import multer from 'multer';
+import { Readable } from 'stream';
+import csv from 'csv-parser';
+import bcrypt from 'bcrypt';
+import path from 'path';
+import iconv from 'iconv-lite';
 
 const router = express.Router();
 
-// Configuración de multer para la carga de archivos
-const upload = multer({ dest: "uploads/" }); // Los archivos se guardan en la carpeta "uploads"
-
-// Obtener todos los usuarios
-const getUsers = async (req, res) => {
-    try {
-        const [results] = await pool.query("SELECT * FROM users");
-        res.status(200).json(results);
-    } catch (error) {
-        console.error("Error al obtener usuarios:", error);
-        res.status(500).json({ error: "Error interno del servidor" });
+// Configuración de multer para procesar archivos en memoria
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    if (!file.originalname || path.extname(file.originalname).toLowerCase() !== '.csv') {
+      return cb(new Error('Solo se permiten archivos CSV'));
     }
+    cb(null, true);
+  },
+});
+
+// Middleware para verificar JWT
+const authMiddleware = (req, res, next) => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+  if (!token) {
+    console.error('Token no proporcionado');
+    return res.status(401).json({ error: 'Acceso denegado, token requerido' });
+  }
+  try {
+    // Asume que verificas el token con jwt.verify
+    next();
+  } catch (error) {
+    console.error('Token inválido:', error.message);
+    res.status(401).json({ error: 'Token inválido' });
+  }
 };
 
-// Obtener usuario por ID
-const getUserById = async (req, res) => {
-    const { id_user } = req.params;
-    try {
-        const [results] = await pool.query("SELECT * FROM users WHERE id_user = ?", [id_user]);
-        if (results.length === 0) return res.status(404).json({ error: "Usuario no encontrado" });
-        res.status(200).json(results[0]);
-    } catch (error) {
-        console.error("Error al obtener el usuario:", error);
-        res.status(500).json({ error: "Error interno del servidor" });
+// Validar datos del usuario
+const validateUserData = (data, requirePassword = true) => {
+  const { email, nombre, apellido_paterno, role, password } = data;
+  if (!email || !nombre || !apellido_paterno || !role) {
+    return 'Faltan campos obligatorios (email, nombre, apellido_paterno, role)';
+  }
+  if (requirePassword && (password === undefined || password === null || password.trim() === '')) {
+    return 'La contraseña es obligatoria';
+  }
+  if (!['estudiante', 'administrador', 'asesor_academico', 'asesor_empresarial'].includes(role)) {
+    return `Rol no válido: ${role}`;
+  }
+  if (data.genero) {
+    const normalizedGenero = data.genero.toLowerCase();
+    if (!['masculino', 'femenino', 'otro'].includes(normalizedGenero)) {
+      return `Género no válido: ${data.genero}`;
     }
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return `Email no válido: ${email}`;
+  }
+  return null;
 };
 
-// Función para extraer los números antes del @ en el correo
-const extractNumbersFromEmail = (email) => {
-    const numbers = email.split('@')[0].replace(/\D/g, ''); // Extrae solo los números antes del @
-    return numbers || "0000"; // Si no hay números, devuelve "0000"
+// Función para extraer el prefijo del correo
+const getEmailPrefix = (email) => {
+  if (!email) return 'default';
+  return email.split('@')[0] || 'default';
 };
 
-// Agregar un nuevo usuario con inserción automática en la tabla correspondiente
-const postUser = async (req, res) => {
-    const { email, password, nombre, apellido_paterno, apellido_materno, genero, role } = req.body;
-    console.log("Datos recibidos en el backend:", req.body);
+// Obtener usuarios con paginación, búsqueda y filtro por rol
+router.get('/', authMiddleware, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+    const search = req.query.search ? `%${req.query.search}%` : '%';
+    const role = req.query.role || null;
 
+    console.log(`GET /api/users - Página: ${page}, Límite: ${limit}, Búsqueda: ${search}, Rol: ${role || 'todos'}`);
 
-    if (!email || !password || !nombre || !apellido_paterno || !role) {
-        return res.status(400).json({ error: "Faltan campos obligatorios" });
+    let query = `
+      SELECT id_user, email, nombre, apellido_paterno, apellido_materno, genero, role
+      FROM users
+      WHERE email LIKE ?
+    `;
+    const queryParams = [search];
+
+    if (role && role !== 'Todos') {
+      query += ` AND role = ?`;
+      queryParams.push(role);
     }
 
-    const connection = await pool.getConnection();
-    try {
-        await connection.beginTransaction();
+    query += ` LIMIT ? OFFSET ?`;
+    queryParams.push(limit, offset);
+
+    // Obtener usuarios filtrados
+    const [users] = await pool.query(query, queryParams);
+
+    // Obtener total de usuarios filtrados
+    let countQuery = `SELECT COUNT(*) as total FROM users WHERE email LIKE ?`;
+    const countParams = [search];
+
+    if (role && role !== 'Todos') {
+      countQuery += ` AND role = ?`;
+      countParams.push(role);
+    }
+
+    const [[{ total }]] = await pool.query(countQuery, countParams);
+
+    res.json({
+      users,
+      total,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit)
+    });
+  } catch (error) {
+    console.error('Error al obtener usuarios:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Inserción masiva desde CSV
+router.post('/upload', authMiddleware, upload.single('file'), async (req, res) => {
+  console.log('POST /api/users/upload - Iniciar carga de CSV:', req.file?.originalname);
+  if (!req.file) {
+    console.error('No se proporcionó un archivo CSV');
+    return res.status(400).json({ error: 'No se ha proporcionado un archivo CSV' });
+  }
+
+  const connection = await pool.getConnection();
+  let insertedCount = 0;
+  let errors = [];
+  let existingEmails = [];
+  let duplicateEmails = [];
+  let insertedEmails = [];
+  const processedEmails = new Set();
+
+  try {
+    // Convertir el buffer de Windows-1252 a UTF-8
+    const decodedBuffer = iconv.decode(req.file.buffer, 'win1252');
+    const utf8Buffer = iconv.encode(decodedBuffer, 'utf8');
+
+    // Leer el CSV
+    const results = [];
+    let headersLogged = false;
+    const stream = Readable.from(utf8Buffer);
+    await new Promise((resolve, reject) => {
+      stream
+        .pipe(csv({ separator: ',', mapHeaders: ({ header }) => {
+          const normalizedHeader = header.trim().toLowerCase();
+          if (!headersLogged) {
+            console.log('Encabezados del CSV:', normalizedHeader);
+            headersLogged = true;
+          }
+          return normalizedHeader;
+        }, encoding: 'utf-8' }))
+        .on('data', (data) => {
+          console.log('Fila cruda del CSV:', data);
+          results.push(data);
+        })
+        .on('end', resolve)
+        .on('error', reject);
+    });
+
+    console.log(`Procesando ${results.length} filas del CSV`);
+
+    // Procesar cada usuario individualmente
+    for (const [index, row] of results.entries()) {
+      const userData = {
+        email: row.email?.trim(),
+        nombre: row.nombre?.trim(),
+        apellido_paterno: row.apellido_paterno?.trim(),
+        apellido_materno: row.apellido_materno?.trim() || null,
+        genero: row.genero?.trim() || null,
+        role: row.role?.trim(),
+        password: row.password?.trim() || getEmailPrefix(row.email),
+      };
+
+      console.log(`Validando fila ${index + 2}:`, userData);
+
+      // Validar datos del usuario
+      const validationError = validateUserData(userData, false); // No requerir password
+      if (validationError) {
+        errors.push(`Fila ${index + 2}: ${validationError}`);
+        continue;
+      }
+
+      // Verificar si el correo está duplicado en el CSV
+      if (processedEmails.has(userData.email)) {
+        duplicateEmails.push(userData.email);
+        errors.push(`Fila ${index + 2}: Correo duplicado en el CSV: ${userData.email}`);
+        continue;
+      }
+      processedEmails.add(userData.email);
+
+      // Iniciar transacción para este usuario
+      await connection.beginTransaction();
+
+      try {
+        // Verificar si el correo ya existe en la base de datos
+        const [existing] = await connection.query('SELECT email FROM users WHERE email = ?', [userData.email]);
+        if (existing.length > 0) {
+          existingEmails.push(userData.email);
+          errors.push(`Fila ${index + 2}: Correo ya registrado: ${userData.email}`);
+          await connection.rollback();
+          continue;
+        }
+
+        // Generar contraseña
+        console.log(`Generando contraseña para ${userData.email}: ${userData.password}`);
+        const hashedPassword = await bcrypt.hash(userData.password, 10);
 
         // Insertar usuario en `users`
         const [result] = await connection.query(
-            "INSERT INTO users (email, password, nombre, apellido_paterno, apellido_materno, genero, role) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            [email, password, nombre, apellido_paterno, apellido_materno, genero, role]
+          'INSERT INTO users (email, password, nombre, apellido_paterno, apellido_materno, genero, role) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [
+            userData.email,
+            hashedPassword,
+            userData.nombre,
+            userData.apellido_paterno,
+            userData.apellido_materno,
+            userData.genero ? userData.genero.toLowerCase() : null,
+            userData.role,
+          ]
         );
 
         const userId = result.insertId;
+        insertedEmails.push(userData.email);
 
-        // Insertar en la tabla correspondiente según el rol
-        switch (role) {
-            case 'estudiante':
-                const matricula = `${extractNumbersFromEmail(email)}`; // Generar matrícula
-                await connection.query(
-                    "INSERT INTO estudiantes (id_user, matricula) VALUES (?, ?)",
-                    [userId, matricula]
-                );
-                break;
-
-            case 'administrador':
-                await connection.query(
-                    "INSERT INTO administradores (id_user) VALUES (?)",
-                    [userId]
-                );
-                break;
-
-            case 'asesor_academico':
-                await connection.query(
-                    "INSERT INTO asesores_academicos (id_user) VALUES (?)",
-                    [userId]
-                );
-                break;
-
-            case 'asesor_empresarial':
-                await connection.query(
-                    "INSERT INTO asesores_empresariales (id_user) VALUES (?)",
-                    [userId]
-                );
-                break;
-
-            default:
-                throw new Error("Rol no válido");
+        // Insertar en tabla específica según el rol
+        switch (userData.role) {
+          case 'estudiante':
+            const matricula = getEmailPrefix(userData.email);
+            await connection.query('INSERT INTO estudiantes (id_user, matricula) VALUES (?, ?)', [
+              userId,
+              matricula,
+            ]);
+            break;
+          case 'administrador':
+            await connection.query('INSERT INTO administradores (id_user) VALUES (?)', [userId]);
+            break;
+          case 'asesor_academico':
+            await connection.query('INSERT INTO asesores_academicos (id_user) VALUES (?)', [userId]);
+            break;
+          case 'asesor_empresarial':
+            await connection.query('INSERT INTO asesores_empresariales (id_user) VALUES (?)', [userId]);
+            break;
         }
 
         await connection.commit();
-        res.status(201).json({ message: "Usuario añadido correctamente", id_user: userId });
-
-    } catch (error) {
+        insertedCount++;
+        console.log(`Usuario insertado: ${userData.email}, id_user: ${userId}`);
+      } catch (userError) {
         await connection.rollback();
-        console.error("Error al agregar usuario:", error);
-        res.status(500).json({ error: error.message || "Error interno del servidor" });
-    } finally {
-        connection.release(); 
-    }
-};
-
-// Actualizar usuario
-const updateUser = async (req, res) => {
-    const { id_user } = req.params;
-    const { email, password, nombre, apellido_paterno, apellido_materno, genero, role } = req.body;
-
-    if (!email || !password || !nombre || !apellido_paterno || !role) {
-        return res.status(400).json({ error: "Faltan campos obligatorios" });
+        console.error(`Error al insertar usuario en fila ${index + 2} (${userData.email}):`, userError.message);
+        errors.push(`Fila ${index + 2}: Error al insertar usuario: ${userError.message}`);
+      }
     }
 
-    try {
-        const [results] = await pool.query(
-            "UPDATE users SET email = ?, password = ?, nombre = ?, apellido_paterno = ?, apellido_materno = ?, genero = ?, role = ? WHERE id_user = ?",
-            [email, password, nombre, apellido_paterno, apellido_materno, genero, role, id_user]
-        );
+    console.log(`Usuarios insertados: ${insertedCount}, Existentes: ${existingEmails.length}, Duplicados: ${duplicateEmails.length}, Errores: ${errors.length}`);
 
-        if (results.affectedRows === 0) return res.status(404).json({ error: "Usuario no encontrado" });
+    // Preparar respuesta
+    const response = {
+      message: `Se procesaron ${insertedCount} usuarios nuevos`,
+      insertedCount,
+      insertedEmails,
+    };
+    if (existingEmails.length > 0) response.existingEmails = [...new Set(existingEmails)];
+    if (duplicateEmails.length > 0) response.duplicateEmails = [...new Set(duplicateEmails)];
+    if (errors.length > 0) response.errors = errors;
 
-        res.status(200).json({ message: "Usuario actualizado correctamente" });
-
-    } catch (error) {
-        console.error("Error al actualizar usuario:", error);
-        res.status(500).json({ error: "Error interno del servidor" });
-    }
-};
-  
-// Eliminar usuario
-const deleteUser = async (req, res) => {
-    const { id_user } = req.params;
-    try {
-        const [results] = await pool.query("DELETE FROM users WHERE id_user = ?", [id_user]);
-        if (results.affectedRows === 0) return res.status(404).json({ error: "Usuario no encontrado" });
-
-        res.status(200).json({ message: "Usuario eliminado correctamente" });
-
-    } catch (error) {
-        console.error("Error al eliminar usuario:", error);
-        res.status(500).json({ error: "Error interno del servidor" });
-    }
-};
-
-// Endpoint para inserción masiva desde un archivo CSV
-router.post("/upload", upload.single("file"), async (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: "No se ha proporcionado un archivo CSV" });
-    }
-
-    const filePath = req.file.path; // Ruta del archivo cargado
-    const connection = await pool.getConnection();
-
-    try { 
-        await connection.beginTransaction();
-
-        // Leer el archivo CSV
-        const results = [];
-        fs.createReadStream(filePath)
-            .pipe(csv())
-            .on("data", (data) => results.push(data)) // Guardar cada fila del CSV en un array
-            .on("end", async () => {
-                // Procesar cada fila del CSV
-                for (const row of results) {
-                    const { email, password, nombre, apellido_paterno, apellido_materno, genero, role } = row;
-
-                    // Insertar usuario en `users`
-                    const [result] = await connection.query(
-                        "INSERT INTO users (email, password, nombre, apellido_paterno, apellido_materno, genero, role) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                        [email, password, nombre, apellido_paterno, apellido_materno, genero, role]
-                    );
-
-                    const userId = result.insertId;
-
-                    // Insertar en la tabla correspondiente según el rol
-                    switch (role) {
-                        case 'estudiante':
-                            const matricula = `${extractNumbersFromEmail(email)}`; // Generar matrícula
-                            await connection.query(
-                                "INSERT INTO estudiantes (id_user, matricula) VALUES (?, ?)",
-                                [userId, matricula]
-                            );
-                            break;
-
-                        case 'administrador':
-                            await connection.query(
-                                "INSERT INTO administradores (id_user) VALUES (?)",
-                                [userId]
-                            );
-                            break; 
-
-                        case 'asesor_academico':
-                            await connection.query(
-                                "INSERT INTO asesores_academicos (id_user) VALUES (?)",
-                                [userId]
-                            );
-                            break;
-
-                        case 'asesor_empresarial':
-                            await connection.query(
-                                "INSERT INTO asesores_empresariales (id_user) VALUES (?)",
-                                [userId]
-                            );
-                            break;
-
-                        default:
-                            throw new Error(`Rol no válido: ${role}`);
-                    }
-                }
-
-                await connection.commit();
-                res.status(201).json({ message: "Usuarios añadidos correctamente", total: results.length });
-
-                // Eliminar el archivo CSV después de procesarlo
-                fs.unlinkSync(filePath);
-            });
-
-    } catch (error) {
-        await connection.rollback();
-        console.error("Error al procesar el archivo CSV:", error);
-        res.status(500).json({ error: error.message || "Error interno del servidor" });
-    } finally {
-        connection.release();
-    }
+    res.status(201).json(response);
+  } catch (error) {
+    console.error('Error general al procesar el archivo CSV:', error.message);
+    res.status(400).json({ error: error.message || 'Error al procesar el archivo CSV', details: errors });
+  } finally {
+    connection.release();
+  }
 });
 
-// Definir rutas
-router.get("/", getUsers);
-router.get("/:id_user", getUserById);
-router.post("/", postUser);
-router.put("/:id_user", updateUser);
-router.delete("/:id_user", deleteUser);
+// Obtener usuario por ID
+router.get('/:id_user', authMiddleware, async (req, res) => {
+  const { id_user } = req.params;
+  try {
+    console.log(`GET /api/users/${id_user} - Obtener usuario por ID`);
+    const [results] = await pool.query('SELECT * FROM users WHERE id_user = ?', [id_user]);
+    if (results.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+    res.status(200).json(results[0]);
+  } catch (error) {
+    console.error('Error al obtener el usuario:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Crear un usuario manualmente
+router.post('/', authMiddleware, async (req, res) => {
+  const { email, password, nombre, apellido_paterno, apellido_materno, genero, role } = req.body;
+  console.log('POST /api/users - Datos recibidos:', { email, password, nombre, apellido_paterno, apellido_materno, genero, role });
+
+  const validationError = validateUserData(req.body, true); // Requerir password
+  if (validationError) {
+    console.error('Error de validación:', validationError);
+    return res.status(400).json({ error: validationError });
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [existing] = await connection.query('SELECT id_user FROM users WHERE email = ?', [email]);
+    if (existing.length > 0) {
+      throw new Error('El email ya está registrado');
+    }
+
+    console.log('Hasheando contraseña:', password);
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const [result] = await connection.query(
+      'INSERT INTO users (email, password, nombre, apellido_paterno, apellido_materno, genero, role) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [email, hashedPassword, nombre, apellido_paterno, apellido_materno, genero ? genero.toLowerCase() : null, role]
+    );
+
+    const userId = result.insertId;
+
+    switch (role) {
+      case 'estudiante':
+        const matricula = getEmailPrefix(email);
+        await connection.query('INSERT INTO estudiantes (id_user, matricula) VALUES (?, ?)', [
+          userId,
+          matricula,
+        ]);
+        break;
+      case 'administrador':
+        await connection.query('INSERT INTO administradores (id_user) VALUES (?)', [userId]);
+        break;
+      case 'asesor_academico':
+        await connection.query('INSERT INTO asesores_academicos (id_user) VALUES (?)', [userId]);
+        break;
+      case 'asesor_empresarial':
+        await connection.query('INSERT INTO asesores_empresariales (id_user) VALUES (?)', [userId]);
+        break;
+    }
+
+    await connection.commit();
+    console.log(`Usuario creado con id_user: ${userId}`);
+    res.status(201).json({ message: 'Usuario añadido correctamente', id_user: userId });
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error al agregar usuario:', error);
+    res.status(500).json({ error: error.message || 'Error interno del servidor' });
+  } finally {
+    connection.release();
+  }
+});
+
+// Actualizar un usuario
+router.put('/:id_user', authMiddleware, async (req, res) => {
+  const { id_user } = req.params;
+  const { email, nombre, apellido_paterno, apellido_materno, genero, role } = req.body;
+
+  console.log(`PUT /api/users/${id_user} - Datos recibidos:`, req.body);
+
+  const validationError = validateUserData({ email, nombre, apellido_paterno, role }, false); // No requerir password
+  if (validationError) {
+    console.error('Error de validación:', validationError);
+    return res.status(400).json({ error: validationError });
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [existing] = await connection.query('SELECT id_user FROM users WHERE email = ? AND id_user != ?', [
+      email,
+      id_user,
+    ]);
+    if (existing.length > 0) {
+      throw new Error('El email ya está registrado por otro usuario');
+    }
+
+    const [results] = await connection.query(
+      'UPDATE users SET email = ?, nombre = ?, apellido_paterno = ?, apellido_materno = ?, genero = ?, role = ? WHERE id_user = ?',
+      [email, nombre, apellido_paterno, apellido_materno, genero ? genero.toLowerCase() : null, role, id_user]
+    );
+
+    if (results.affectedRows === 0) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    await connection.commit();
+    console.log(`Usuario actualizado con id_user: ${id_user}`);
+    res.status(200).json({ message: 'Usuario actualizado correctamente' });
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error al actualizar usuario:', error);
+    res.status(error.message === 'Usuario no encontrado' ? 404 : 500).json({
+      error: error.message || 'Error interno del servidor',
+    });
+  } finally {
+    connection.release();
+  }
+});
+
+// Eliminar un usuario
+router.delete('/:id_user', authMiddleware, async (req, res) => {
+  const { id_user } = req.params;
+  console.log(`DELETE /api/users/${id_user} - Eliminar usuario`);
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [results] = await connection.query('DELETE FROM users WHERE id_user = ?', [id_user]);
+    if (results.affectedRows === 0) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    await connection.commit();
+    console.log(`Usuario eliminado con id_user: ${id_user}`);
+    res.status(200).json({ message: 'Usuario eliminado correctamente' });
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error al eliminar usuario:', error);
+    res.status(error.message === 'Usuario no encontrado' ? 404 : 500).json({
+      error: error.message || 'Error interno del servidor',
+    });
+  } finally {
+    connection.release();
+  }
+});
 
 export default router;

@@ -34,6 +34,8 @@ const useProcesos = () => {
         return "Estadía";
       case "Servicio Social":
         return "Servicio Social";
+      case "Estadía Nacional":
+        return "Estadía Nacional";
       default:
         return null;
     }

@@ -13,14 +13,17 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token');
       const userData = localStorage.getItem('user');
-      
+
       if (token && userData) {
         try {
-          await axios.get('http://localhost:9999/api/auth/verify', {
+          const response = await axios.get('http://localhost:9999/api/auth/verify', {
             headers: { Authorization: `Bearer ${token}` }
           });
-          setUser(JSON.parse(userData));
+          const verifiedUser = response.data.user;
+          localStorage.setItem('user', JSON.stringify(verifiedUser));
+          setUser(verifiedUser);
         } catch (error) {
+          console.error('Error al verificar token:', error);
           logout();
         }
       }
@@ -36,23 +39,22 @@ export const AuthProvider = ({ children }) => {
         email,
         password
       });
-  
+
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       setUser(response.data.user);
-  
-      
+
       console.log("🔐 Usuario guardado en localStorage:", response.data.user);
-  
+
       return { success: true, user: response.data.user };
     } catch (error) {
+      console.error('Error en login:', error);
       return { 
         success: false, 
         error: error.response?.data?.error || 'Error al iniciar sesión' 
       };
     }
   };
-  
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -61,8 +63,53 @@ export const AuthProvider = ({ children }) => {
     navigate('/login');
   };
 
+  const updateUser = async (userData) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.put(`http://localhost:9999/api/users/${userData.id}`, userData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const updatedUser = {
+        id: userData.id,
+        email: userData.email,
+        nombre: userData.nombre,
+        apellido_paterno: userData.apellido_paterno,
+        apellido_materno: userData.apellido_materno,
+        role: userData.role,
+        genero: userData.genero,
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      return { success: true, message: response.data.message };
+    } catch (error) {
+      console.error('Error al actualizar usuario:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Error al actualizar perfil'
+      };
+    }
+  };
+
+  const changePassword = async (oldPassword, newPassword) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        'http://localhost:9999/api/auth/change-password',
+        { oldPassword, newPassword },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return { success: true, message: response.data.message };
+    } catch (error) {
+      console.error('Error al cambiar contraseña:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Error al cambiar contraseña'
+      };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, updateUser, changePassword }}>
       {!loading && children}
     </AuthContext.Provider>
   );

@@ -1,16 +1,52 @@
-import React from "react";
-import { Navigate } from "react-router-dom";
-import { useAuth } from "./context/AuthContext"; // Asegúrate de que este contexto funcione correctamente
+import React, { useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
 
 const PrivateRoute = ({ element, allowedRoles }) => {
-  const { user } = useAuth(); // Obtiene el usuario autenticado
+  const { user, logout } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  if (!user) {
-    return <Navigate to="/" replace />; // Si no está autenticado, redirige al login
+  useEffect(() => {
+    const verifyAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (!user || !token) {
+        setIsAuthenticated(false);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        await axios.get('http://localhost:9999/api/auth/verify', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!allowedRoles.includes(user.role)) {
+          setIsAuthenticated(false);
+        } else {
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.error('Error al verificar token:', error);
+        logout();
+        setIsAuthenticated(false);
+      }
+      setIsLoading(false);
+    };
+
+    verifyAuth();
+  }, [user, allowedRoles, logout]);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+        <div className="text-gray-600 text-lg animate-pulse">Cargando...</div>
+      </div>
+    );
   }
 
-  if (!allowedRoles.includes(user.role)) {
-    return <Navigate to="/unauthorized" replace />; // Si el rol no está permitido, redirige
+  if (!isAuthenticated) {
+    return <Navigate to={user && !allowedRoles.includes(user.role) ? "/unauthorized" : "/"} replace />;
   }
 
   return element;

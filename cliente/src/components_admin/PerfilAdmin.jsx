@@ -1,12 +1,71 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { useAuth } from '../context/AuthContext';  // Asegúrate de que la ruta sea correcta
-import { User, Mail, Key, Book, Globe, Accessibility, GraduationCap, Eye, EyeOff } from 'lucide-react';
-import Sidebar from '../components_admin/Sidebar';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
+import { User, Mail, Key, Eye, EyeOff } from 'lucide-react';
+import Sidebar from './Sidebar';
+
+// Toast Component
+const Toast = ({ message, type, onClose }) => (
+  <AnimatePresence>
+    {message && (
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 50 }}
+        className={`fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg flex items-center ${
+          type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        } text-white`}
+      >
+        <span>{message}</span>
+        <button onClick={onClose} className="ml-4 text-white hover:text-gray-200">
+          ×
+        </button>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
+
+// Confirmation Modal Component
+const ConfirmationModal = ({ isOpen, onConfirm, onCancel }) => (
+  <AnimatePresence>
+    {isOpen && (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      >
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.8, opacity: 0 }}
+          className="bg-white rounded-lg p-6 max-w-md w-full"
+        >
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Confirmar Cambio de Contraseña</h2>
+          <p className="text-gray-600 mb-6">¿Estás seguro de que deseas cambiar tu contraseña?</p>
+          <div className="flex justify-end space-x-4">
+            <button
+              onClick={onCancel}
+              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={onConfirm}
+              className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+            >
+              Confirmar
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
 
 // FormInput Component
-const FormInput = ({ icon: Icon, label, type = "text", value, onChange, options = [] }) => {
+const FormInput = ({ icon: Icon, label, type = "text", value, onChange, options = [], readOnly = false }) => {
   const [showPassword, setShowPassword] = useState(false);
   const inputType = type === "password" ? (showPassword ? "text" : "password") : type;
 
@@ -25,10 +84,13 @@ const FormInput = ({ icon: Icon, label, type = "text", value, onChange, options 
           <select
             value={value}
             onChange={onChange}
-            className="form-select block w-full pl-10 pr-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all"
+            disabled={readOnly}
+            className={`form-select block w-full pl-10 pr-4 py-2.5 text-gray-700 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all ${
+              readOnly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+            }`}
           >
             {options.map(option => (
-              <option key={option} value={option}>{option}</option>
+              <option key={option} value={option.toLowerCase()}>{option}</option>
             ))}
           </select>
         ) : (
@@ -37,7 +99,10 @@ const FormInput = ({ icon: Icon, label, type = "text", value, onChange, options 
               type={inputType}
               value={value}
               onChange={onChange}
-              className="block w-full pl-10 pr-4 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all"
+              readOnly={readOnly}
+              className={`block w-full pl-10 pr-4 py-2.5 text-gray-700 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all ${
+                readOnly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+              }`}
             />
             {type === "password" && (
               <button
@@ -61,38 +126,21 @@ const FormInput = ({ icon: Icon, label, type = "text", value, onChange, options 
 
 // Profile Component
 export default function Profile() {
-  const { user, loading, updateUser } = useAuth();  // Obtén los datos del usuario desde el contexto
+  const { user, loading, changePassword } = useAuth();
   const navigate = useNavigate();
-
   const [formData, setFormData] = useState({
-    nombre: '',
-    apellidos: '',
-    matricula: '',
-    genero: '',
-    discapacidad: '',
-    lenguaIndigena: '',
-    programaEducativo: '',
-    correo: '',
-    contrasena: '',
     antiguaContrasena: '',
-    nuevaContrasena: ''
+    nuevaContrasena: '',
   });
+  const [toast, setToast] = useState({ message: '', type: '' });
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Cargar datos del usuario
   useEffect(() => {
     if (user) {
       setFormData({
-        nombre: user.name,
-        apellidos: user.surname,
-        matricula: user.matricula,
-        genero: user.gender,
-        discapacidad: user.disability,
-        lenguaIndigena: user.indigenousLanguage,
-        programaEducativo: user.program,
-        correo: user.email,
-        contrasena: '********',
         antiguaContrasena: '',
-        nuevaContrasena: ''
+        nuevaContrasena: '',
       });
     }
   }, [user]);
@@ -101,22 +149,55 @@ export default function Profile() {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const validateForm = () => {
+    if (!formData.antiguaContrasena || !formData.nuevaContrasena) {
+      setToast({ message: 'Ambas contraseñas son obligatorias', type: 'error' });
+      return false;
+    }
+    if (formData.nuevaContrasena.length < 8) {
+      setToast({ message: 'La nueva contraseña debe tener al menos 8 caracteres', type: 'error' });
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Lógica para guardar cambios
-    updateUser(formData);
+    if (!validateForm()) return;
+
+    setToast({ message: '', type: '' });
+    setIsModalOpen(true); // Abrir modal
+  };
+
+  const handleConfirm = async () => {
+    setIsModalOpen(false);
+    const passwordResult = await changePassword(formData.antiguaContrasena, formData.nuevaContrasena);
+    if (!passwordResult.success) {
+      setToast({ message: passwordResult.error, type: 'error' });
+      return;
+    }
+    setFormData({
+      antiguaContrasena: '',
+      nuevaContrasena: '',
+    });
+    setToast({ message: 'Contraseña cambiada correctamente', type: 'success' });
+  };
+
+  const handleCancel = () => {
+    setIsModalOpen(false);
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+        <div className="text-gray-600 text-lg animate-pulse">Cargando...</div>
+      </div>
+    );
   }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
       <Sidebar />
-      
-      {/* Main Content */}
       <div className="flex-1 p-8">
         <div className="max-w-4xl mx-auto">
           <motion.div
@@ -125,73 +206,42 @@ export default function Profile() {
             transition={{ delay: 0.2 }}
             className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 p-8"
           >
-            <h1 className="text-2xl font-semibold text-gray-800 mb-8">Perfil de Usuario</h1>
+            <h1 className="text-2xl font-semibold text-gray-800 mb-8">Perfil de Administrador</h1>
             
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormInput
                   icon={User}
                   label="Nombre"
-                  value={formData.nombre}
-                  onChange={handleChange('nombre')}
+                  value={user.nombre || ''}
+                  readOnly={true}
                 />
                 <FormInput
                   icon={User}
-                  label="Apellidos"
-                  value={formData.apellidos}
-                  onChange={handleChange('apellidos')}
+                  label="Apellido Paterno"
+                  value={user.apellido_paterno || ''}
+                  readOnly={true}
                 />
                 <FormInput
-                  icon={GraduationCap}
-                  label="Matrícula"
-                  value={formData.matricula}
-                  onChange={handleChange('matricula')}
+                  icon={User}
+                  label="Apellido Materno"
+                  value={user.apellido_materno || ''}
+                  readOnly={true}
+                />
+                <FormInput
+                  icon={Mail}
+                  label="Email"
+                  type="email"
+                  value={user.email || ''}
+                  readOnly={true}
                 />
                 <FormInput
                   icon={User}
                   label="Género"
                   type="select"
-                  value={formData.genero}
-                  onChange={handleChange('genero')}
-                  options={['Hombre', 'Mujer', 'Otro']}
-                />
-                <FormInput
-                  icon={Accessibility}
-                  label="¿Tienes alguna discapacidad?"
-                  type="select"
-                  value={formData.discapacidad}
-                  onChange={handleChange('discapacidad')}
-                  options={['No', 'Sí']}
-                />
-                <FormInput
-                  icon={Globe}
-                  label="¿Hablas alguna lengua indígena?"
-                  type="select"
-                  value={formData.lenguaIndigena}
-                  onChange={handleChange('lenguaIndigena')}
-                  options={['No', 'Sí']}
-                />
-                <FormInput
-                  icon={Book}
-                  label="Programa Educativo"
-                  type="select"
-                  value={formData.programaEducativo}
-                  onChange={handleChange('programaEducativo')}
-                  options={[ 
-                    'Ingeniería Financiera',
-                    'Ingeniería en Software',
-                    'Licenciatura en Terapia Física',
-                    'Ingeniería en Biotecnología',
-                    'Licenciatura en Administración y Gestión Empresarial',
-                    'Ingeniería Biomédica'
-                  ]}
-                />
-                <FormInput
-                  icon={Mail}
-                  label="Correo Electrónico"
-                  type="email"
-                  value={formData.correo}
-                  onChange={handleChange('correo')}
+                  value={user.genero || ''}
+                  options={['Masculino', 'Femenino', 'Otro']}
+                  readOnly={true}
                 />
               </div>
 
@@ -229,12 +279,22 @@ export default function Profile() {
                   type="submit"
                   className="px-6 py-3 bg-orange-600 text-white rounded-lg shadow hover:bg-orange-700 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                 >
-                  Guardar Cambios
+                  Cambiar Contraseña
                 </button>
               </motion.div>
             </form>
           </motion.div>
         </div>
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ message: '', type: '' })}
+        />
+        <ConfirmationModal
+          isOpen={isModalOpen}
+          onConfirm={handleConfirm}
+          onCancel={handleCancel}
+        />
       </div>
     </div>
   );

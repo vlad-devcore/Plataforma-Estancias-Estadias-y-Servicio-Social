@@ -2,10 +2,7 @@ import { motion } from 'framer-motion';
 import { Plus, Save } from 'lucide-react';
 import { useState } from 'react';
 
-const EmpresaForm = ({ 
-  initialData = {}, 
-  onSubmit 
-}) => {
+const EmpresaForm = ({ initialData = {}, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     empresa_rfc: initialData.empresa_rfc || '',
     empresa_nombre: initialData.empresa_nombre || '',
@@ -13,17 +10,33 @@ const EmpresaForm = ({
     empresa_email: initialData.empresa_email || '',
     empresa_telefono: initialData.empresa_telefono || '',
     empresa_tamano: initialData.empresa_tamano || 'Mediana',
-    empresa_sociedad: initialData.empresa_sociedad || 'SA de CV',
+    empresa_sociedad: initialData.empresa_sociedad || 'Privada',
     empresa_pagina_web: initialData.empresa_pagina_web || '',
   });
+  const [errors, setErrors] = useState({});
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.empresa_rfc) newErrors.empresa_rfc = 'El RFC es obligatorio.';
+    if (!formData.empresa_nombre) newErrors.empresa_nombre = 'El nombre es obligatorio.';
+    if (!formData.empresa_tamano) newErrors.empresa_tamano = 'El tamaño es obligatorio.';
+    if (!formData.empresa_sociedad) newErrors.empresa_sociedad = 'La sociedad es obligatoria.';
+    return newErrors;
+  };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    setErrors({ ...errors, [name]: value ? '' : `${name.replace('empresa_', '').replace('_', ' ')} es obligatorio.` });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    const validationErrors = validateForm();
+    setErrors(validationErrors);
+    if (Object.keys(validationErrors).length === 0) {
+      onSubmit(formData);
+    }
   };
 
   return (
@@ -36,9 +49,12 @@ const EmpresaForm = ({
           name="empresa_rfc"
           value={formData.empresa_rfc}
           onChange={handleChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md bg-blue-50"
+          className={`w-full px-3 py-2 border rounded-md bg-blue-50 ${
+            errors.empresa_rfc ? 'border-red-500' : 'border-gray-300'
+          }`}
           required
         />
+        {errors.empresa_rfc && <p className="text-red-500 text-sm mt-1">{errors.empresa_rfc}</p>}
       </div>
 
       <div>
@@ -49,9 +65,12 @@ const EmpresaForm = ({
           name="empresa_nombre"
           value={formData.empresa_nombre}
           onChange={handleChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md bg-blue-50"
+          className={`w-full px-3 py-2 border rounded-md bg-blue-50 ${
+            errors.empresa_nombre ? 'border-red-500' : 'border-gray-300'
+          }`}
           required
         />
+        {errors.empresa_nombre && <p className="text-red-500 text-sm mt-1">{errors.empresa_nombre}</p>}
       </div>
 
       <div>
@@ -100,12 +119,17 @@ const EmpresaForm = ({
             name="empresa_tamano"
             value={formData.empresa_tamano}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-blue-50"
+            className={`w-full px-3 py-2 border rounded-md bg-blue-50 ${
+              errors.empresa_tamano ? 'border-red-500' : 'border-gray-300'
+            }`}
+            required
           >
+            <option value="">Seleccionar tamaño</option>
             <option value="Pequeña">Pequeña</option>
             <option value="Mediana">Mediana</option>
             <option value="Grande">Grande</option>
           </motion.select>
+          {errors.empresa_tamano && <p className="text-red-500 text-sm mt-1">{errors.empresa_tamano}</p>}
         </div>
 
         <div>
@@ -115,13 +139,16 @@ const EmpresaForm = ({
             name="empresa_sociedad"
             value={formData.empresa_sociedad}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-blue-50"
+            className={`w-full px-3 py-2 border rounded-md bg-blue-50 ${
+              errors.empresa_sociedad ? 'border-red-500' : 'border-gray-300'
+            }`}
+            required
           >
-            <option value="SA de CV">SA de CV</option>
-            <option value="S de RL">S de RL</option>
-            <option value="SC">SC</option>
-            <option value="Otro">Otro</option>
+            <option value="">Seleccionar sociedad</option>
+            <option value="Privada">Privada</option>
+            <option value="Pública">Pública</option>
           </motion.select>
+          {errors.empresa_sociedad && <p className="text-red-500 text-sm mt-1">{errors.empresa_sociedad}</p>}
         </div>
       </div>
 
@@ -137,24 +164,33 @@ const EmpresaForm = ({
         />
       </div>
 
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        type="submit"
-        className="w-full bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 transition-colors flex items-center justify-center"
-      >
-        {initialData.id_empresa ? (
-          <>
-            <Save className="mr-2" size={18} />
-            Guardar Cambios
-          </>
-        ) : (
-          <>
-            <Plus className="mr-2" size={18} />
-            Crear Empresa
-          </>
-        )}
-      </motion.button>
+      <div className="flex justify-end gap-3">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+        >
+          Cancelar
+        </button>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          type="submit"
+          className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors flex items-center"
+        >
+          {initialData.id_empresa ? (
+            <>
+              <Save className="mr-2" size={18} />
+              Guardar Cambios
+            </>
+          ) : (
+            <>
+              <Plus className="mr-2" size={18} />
+              Crear Empresa
+            </>
+          )}
+        </motion.button>
+      </div>
     </form>
   );
 };
