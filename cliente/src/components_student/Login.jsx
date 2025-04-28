@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
-import { Mail } from 'lucide-react';
+import { Mail, UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import './Login.css';
@@ -11,24 +11,19 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showAccessModal, setShowAccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorResetModal, setShowErrorResetModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [resetEmail, setResetEmail] = useState('');
-  const [toast, setToast] = useState({ message: '', type: '' });
+  const [errorResetMessage, setErrorResetMessage] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  // Limpiar toast después de 3 segundos
-  useEffect(() => {
-    if (toast.message) {
-      const timer = setTimeout(() => setToast({ message: '', type: '' }), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [toast]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
 
     const response = await login(email, password);
 
@@ -48,7 +43,8 @@ const Login = () => {
             navigate('/estudiante/programa');
           }
         } catch (err) {
-          setError('Error al verificar el programa educativo.');
+          setErrorMessage('Error al verificar el programa educativo.');
+          setShowErrorModal(true);
         }
       } else {
         switch (response.user.role) {
@@ -60,11 +56,13 @@ const Login = () => {
             navigate('/perfil');
             break;
           default:
-            setError('Rol no reconocido');
+            setErrorMessage('Rol no reconocido');
+            setShowErrorModal(true);
         }
       }
     } else {
-      setError(response.error);
+      setErrorMessage(response.error);
+      setShowErrorModal(true);
     }
   };
 
@@ -72,14 +70,12 @@ const Login = () => {
     e.preventDefault();
     try {
       await axios.post('http://localhost:9999/api/auth/request-password-reset', { email: resetEmail });
-      setToast({ message: 'Enlace de recuperación enviado al correo', type: 'success' });
       setShowForgotPassword(false);
       setResetEmail('');
+      setShowSuccessModal(true);
     } catch (error) {
-      setToast({
-        message: error.response?.data?.error || 'Error al enviar el enlace',
-        type: 'error'
-      });
+      setErrorResetMessage(error.response?.data?.error || 'Error al enviar el enlace');
+      setShowErrorResetModal(true);
     }
   };
 
@@ -92,8 +88,6 @@ const Login = () => {
         <div className="login-form-section">
           <div className="login-form-content">
             <h2>Bienvenidos a la Plataforma de Estancias, Estadías y Servicio Social</h2>
-
-            {error && <p className="error-message">{error}</p>}
 
             <form onSubmit={handleSubmit}>
               <div className="form-group">
@@ -142,7 +136,13 @@ const Login = () => {
 
             <div className="register-link">
               <span>¿No tienes cuenta o no puedes ingresar? </span>
-              <a href="/register">Obtener Acceso</a>
+              <button
+                type="button"
+                onClick={() => setShowAccessModal(true)}
+                className="text-orange-600 hover:underline"
+              >
+                Obtener Acceso
+              </button>
             </div>
           </div>
         </div>
@@ -203,18 +203,142 @@ const Login = () => {
         )}
       </AnimatePresence>
 
-      {/* Toast */}
+      {/* Modal de acceso */}
       <AnimatePresence>
-        {toast.message && (
+        {showAccessModal && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className={`fixed bottom-4 right-4 p-3 rounded-lg text-white ${
-              toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-            }`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
           >
-            {toast.message}
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="bg-white p-6 rounded-lg max-w-md w-full"
+            >
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <UserPlus className="h-5 w-5 mr-2 text-orange-600" />
+                Obtener Acceso
+              </h2>
+              <p className="text-gray-700 mb-6">
+                Por favor, contacta al administrador para obtener acceso a la plataforma.
+              </p>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowAccessModal(false)}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de error de login */}
+      <AnimatePresence>
+        {showErrorModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="bg-white p-6 rounded-lg max-w-md w-full"
+            >
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <AlertCircle className="h-5 w-5 mr-2 text-red-500" />
+                Error de Inicio de Sesión
+              </h2>
+              <p className="text-gray-700 mb-6">{errorMessage}</p>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowErrorModal(false)}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de éxito de recuperación */}
+      <AnimatePresence>
+        {showSuccessModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="bg-white p-6 rounded-lg max-w-md w-full"
+            >
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
+                Enlace Enviado
+              </h2>
+              <p className="text-gray-700 mb-6">
+                Enlace de recuperación enviado al correo.
+              </p>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowSuccessModal(false)}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de error de recuperación */}
+      <AnimatePresence>
+        {showErrorResetModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="bg-white p-6 rounded-lg max-w-md w-full"
+            >
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <AlertCircle className="h-5 w-5 mr-2 text-red-500" />
+                Error en Recuperación
+              </h2>
+              <p className="text-gray-700 mb-6">{errorResetMessage}</p>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowErrorResetModal(false)}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
