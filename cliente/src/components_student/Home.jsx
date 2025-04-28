@@ -86,7 +86,7 @@ export default function Home() {
     'Estancia II': '/formatos/Estancia2',
     'Estadía': '/formatos/Estadias',
     'Servicio Social': '/formatos/ServicioSocial',
-    'Estadia Nacional': '/formatos/EstadiasNacionales',
+    'Estadía Nacional': '/formatos/EstadiasNacionales',
   };
 
   const services = procesosPermitidos.map((proceso, index) => ({
