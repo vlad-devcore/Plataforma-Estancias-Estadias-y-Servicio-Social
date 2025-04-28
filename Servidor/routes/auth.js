@@ -1,6 +1,8 @@
 import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import nodemailer from "nodemailer";
+import crypto from "crypto";
 import pool from "../config/config.db.js";
 
 const router = express.Router();
@@ -23,6 +25,7 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
+// Login
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -89,6 +92,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// Verify
 router.get("/verify", authMiddleware, async (req, res) => {
   try {
     console.log(`GET /api/auth/verify - Verificando usuario: ${req.user.email}`);
@@ -122,6 +126,7 @@ router.get("/verify", authMiddleware, async (req, res) => {
   }
 });
 
+// Change Password
 router.post("/change-password", authMiddleware, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   const id_user = req.user.id;
@@ -172,6 +177,84 @@ router.post("/change-password", authMiddleware, async (req, res) => {
   } catch (error) {
     console.error("Error en change-password:", error);
     res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+// Nuevo: Solicitar enlace de recuperación
+router.post("/request-password-reset", async (req, res) => {
+  const { email } = req.body;
+  try {
+    const [users] = await pool.query('SELECT id_user FROM users WHERE email = ?', [email]);
+    if (users.length === 0) {
+      console.error(`Usuario no encontrado para recuperación: ${email}`);
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    const userId = users[0].id_user;
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 3600000); // 1 hora
+
+    await pool.query(
+      'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)',
+      [userId, token, expiresAt]
+    );
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Recuperación de Contraseña - UPQROO',
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; text-align: center;">
+          <img src="URL_TU_LOGO" alt="UPQROO Logo" style="height: 80px; margin-bottom: 20px;">
+          <h2>Restablecer tu contraseña</h2>
+          <p>Haz clic en el siguiente enlace para restablecer tu contraseña:</p>
+          <a href="http://localhost:3000/reset-password?token=${token}" style="display: inline-block; padding: 10px 20px; background-color: #f97316; color: white; text-decoration: none; border-radius: 5px;">Restablecer Contraseña</a>
+          <p>Este enlace expira en 1 hora.</p>
+          <p>Si no solicitaste esto, ignora este correo.</p>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`Enlace de recuperación enviado a: ${email}`);
+    res.status(200).json({ message: 'Enlace de recuperación enviado al correo' });
+  } catch (error) {
+    console.error('Error en solicitud de recuperación:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Nuevo: Restablecer contraseña
+router.post("/reset-password", async (req, res) => {
+  const { token, newPassword } = req.body;
+  try {
+    const [tokens] = await pool.query(
+      'SELECT user_id, expires_at, used FROM password_reset_tokens WHERE token = ?',
+      [token]
+    );
+    if (tokens.length === 0 || tokens[0].used || new Date() > new Date(tokens[0].expires_at)) {
+      console.error('Token inválido o expirado:', token);
+      return res.status(400).json({ error: 'Token inválido o expirado' });
+    }
+    if (newPassword.length < 8) {
+      console.error('Nueva contraseña demasiado corta');
+      return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 8 caracteres' });
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await pool.query('UPDATE users SET password = ? WHERE id_user = ?', [hashedPassword, tokens[0].user_id]);
+    await pool.query('UPDATE password_reset_tokens SET used = TRUE WHERE token = ?', [token]);
+    console.log(`Contraseña restablecida para user_id: ${tokens[0].user_id}`);
+    res.status(200).json({ message: 'Contraseña restablecida correctamente' });
+  } catch (error) {
+    console.error('Error en restablecimiento:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
