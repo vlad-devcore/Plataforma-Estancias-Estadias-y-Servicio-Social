@@ -9,6 +9,64 @@ import TablaDocumentos from "../../components_student/TablaDocumentoss";
 const EstadiasNacionales = () => {
   const [isRegistered, setIsRegistered] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [procesoActivo, setProcesoActivo] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  const fetchProcesoActivo = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      if (!user?.id) throw new Error("Usuario no autenticado");
+
+      // Obtener periodo activo
+      const { data: periodos } = await axios.get("http://localhost:9999/api/periodos");
+      const periodoActivo = periodos.find((p) => p.EstadoActivo === "Activo");
+      if (!periodoActivo) throw new Error("No hay periodo activo");
+
+      // Validar proceso en el periodo activo
+      const { data } = await axios.get(
+        `http://localhost:9999/api/procesos/validar/${user.id}/${periodoActivo.IdPeriodo}`
+      );
+      console.log("🔐 Validación proceso (Estadia Nacional):", data);
+
+      if (data.registrado) {
+        if (data.proceso.tipo_proceso === "Estadia Nacional") {
+          // Proceso registrado es Estadia Nacional, mostrar tabla
+          setIsRegistered(true);
+          setProcesoActivo(data.proceso);
+        } else if (data.proceso.tipo_proceso) {
+          // Registrado en otro proceso, mostrar error
+          setError(`Ya estás registrado en ${data.proceso.tipo_proceso} para este periodo.`);
+          setIsRegistered(false);
+          setProcesoActivo(null);
+        } else {
+          // Proceso incompleto (tipo_proceso es NULL)
+          setIsRegistered(false);
+          setProcesoActivo(data.proceso);
+          setShowModal(true);
+        }
+      } else {
+        // No hay proceso, mostrar modal para registrar
+        setIsRegistered(false);
+        setProcesoActivo(null);
+        setShowModal(true);
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || "Error al verificar el proceso.");
+      setIsRegistered(false);
+      setProcesoActivo(null);
+      console.error("Error al verificar registro (Estadia Nacional):", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProcesoActivo();
+  }, []);
 
   const handleOpenModal = () => {
     setShowModal(true);
@@ -18,23 +76,11 @@ const EstadiasNacionales = () => {
     setShowModal(false);
   };
 
-  useEffect(() => {
-    const checkRegistro = async () => {
-      try {
-        const user = JSON.parse(localStorage.getItem("user"));
-        console.log("🔐 Usuario guardado en localStorage:", user);
-        const { data } = await axios.get(`http://localhost:9999/api/procesos/por-usuario/${user.id}`);
-        console.log("🔐 Procesos encontrados:", data);
-        const yaRegistrado = data.some(p => p.tipo_proceso === "Estadía Nacional");
-        console.log("🔐 Registro encontrado:", yaRegistrado);
-        setIsRegistered(yaRegistrado);
-      } catch (err) {
-        console.error("Error al verificar registro:", err);
-      }
-    };
-
-    checkRegistro();
-  }, []);
+  const handleSuccess = async () => {
+    setIsRegistered(true);
+    await fetchProcesoActivo();
+    handleCloseModal();
+  };
 
   return (
     <PlantillaServicio
@@ -45,48 +91,70 @@ const EstadiasNacionales = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-6"
+        className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
       >
-        {!isRegistered && (
-          <motion.button
-            onClick={handleOpenModal}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="w-full sm:w-auto bg-red-900 hover:bg-red-800 text-white px-4 py-2 rounded-md transition-colors duration-200 flex items-center justify-center gap-2 mb-4"
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 flex justify-between items-center"
           >
-            <FileText className="w-4 h-4" />
-            <span>Registrar para subir documentos</span>
-          </motion.button>
+            <span>{error}</span>
+            <button onClick={() => setError(null)} className="text-red-900 hover:underline">
+              Cerrar
+            </button>
+          </motion.div>
         )}
 
-        <div className="bg-white rounded-lg shadow-lg mb-6 overflow-hidden">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b gap-4">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
-              Documentos Requeridos
-            </h2>
+        {loading && (
+          <div className="text-center text-gray-500 animate-pulse">
+            Verificando registro...
           </div>
+        )}
 
-          {isRegistered ? (
-            <div className="p-4">
-              <TablaDocumentos tipoProceso="Estadía Nacional" />
+        {!loading && (
+          <>
+            {!isRegistered && !error && (
+              <motion.button
+                onClick={handleOpenModal}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-full sm:w-auto bg-gradient-to-r from-red-900 to-red-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 flex items-center justify-center gap-3 mb-6 shadow-md hover:from-red-800 hover:to-red-600"
+              >
+                <FileText className="w-5 h-5" />
+                <span className="font-semibold">Registrar Estadía Nacional</span>
+              </motion.button>
+            )}
+
+            <div className="bg-white rounded-xl shadow-lg mb-6 overflow-hidden border border-gray-100">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-gradient-to-r from-red-900 to-red-700 text-white">
+                <h2 className="text-white sm:text-2xl font-semibold">
+                  Documentos Requeridos
+                </h2>
+              </div>
+
+              {isRegistered && procesoActivo ? (
+                <div className="p-4">
+                  <TablaDocumentos tipoProceso="Estadia Nacional" procesoId={procesoActivo.id_proceso} />
+                </div>
+              ) : (
+                <div className="p-4 text-gray-500 italic">
+                  Regístrate para comenzar a subir tus documentos de Estadía Nacional.
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="p-4 text-gray-500 italic">
-              Debes registrarte para poder subir documentos.
-            </div>
-          )}
-        </div>
+          </>
+        )}
       </motion.div>
 
       {showModal && (
         <ModalRegistroProceso
           open={showModal}
           onClose={handleCloseModal}
-          tipoProceso="Estadía Nacional"
-          onSuccess={() => {
-            setIsRegistered(true);
-            handleCloseModal();
-          }}
+          tipoProceso="Estadia Nacional"
+          procesoExistente={procesoActivo}
+          onSuccess={handleSuccess}
         />
       )}
     </PlantillaServicio>
