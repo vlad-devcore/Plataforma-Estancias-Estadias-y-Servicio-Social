@@ -48,7 +48,7 @@ router.post("/login", async (req, res) => {
 
     if (users.length === 0) {
       console.error(`Usuario no encontrado: ${email}`);
-      return res.status(401).json({ error: "Credenciales incorrectas" });
+      return res.status(401).json({ error: "Correo electrónico no registrado" });
     }
 
     const user = users[0];
@@ -57,7 +57,7 @@ router.post("/login", async (req, res) => {
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       console.error(`Contraseña incorrecta para: ${email}`);
-      return res.status(401).json({ error: "Credenciales incorrectas" });
+      return res.status(401).json({ error: "Contraseña incorrecta" });
     }
 
     // Generar token JWT
@@ -180,7 +180,7 @@ router.post("/change-password", authMiddleware, async (req, res) => {
   }
 });
 
-// Nuevo: Solicitar enlace de recuperación
+// Solicitar enlace de recuperación
 router.post("/request-password-reset", async (req, res) => {
   const { email } = req.body;
   try {
@@ -212,7 +212,7 @@ router.post("/request-password-reset", async (req, res) => {
       subject: 'Recuperación de Contraseña - UPQROO',
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; text-align: center;">
-          <img src="URL_TU_LOGO" alt="UPQROO Logo" style="height: 80px; margin-bottom: 20px;">
+          <img src="http://localhost:3000/logo512.png" alt="UPQROO Logo" style="height: 80px; margin-bottom: 20px;">
           <h2>Restablecer tu contraseña</h2>
           <p>Haz clic en el siguiente enlace para restablecer tu contraseña:</p>
           <a href="http://localhost:3000/reset-password?token=${token}" style="display: inline-block; padding: 10px 20px; background-color: #f97316; color: white; text-decoration: none; border-radius: 5px;">Restablecer Contraseña</a>
@@ -231,7 +231,7 @@ router.post("/request-password-reset", async (req, res) => {
   }
 });
 
-// Nuevo: Restablecer contraseña
+// Restablecer contraseña
 router.post("/reset-password", async (req, res) => {
   const { token, newPassword } = req.body;
   try {
