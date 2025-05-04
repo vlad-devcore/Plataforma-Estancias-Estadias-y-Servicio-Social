@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-// Importamos los iconos que necesitamos
 import { CheckCircle, AlertCircle, BookOpen, Calendar } from 'lucide-react';
 
 const ProgramaEducativoForm = () => {
@@ -13,6 +12,8 @@ const ProgramaEducativoForm = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmCooldown, setConfirmCooldown] = useState(5);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,10 +24,8 @@ const ProgramaEducativoForm = () => {
           axios.get('http://localhost:9999/api/periodos'),
         ]);
         setProgramas(programasRes.data);
-        // Filtrar periodos activos
         const periodosActivos = periodosRes.data.filter((p) => p.EstadoActivo === 'Activo');
         setPeriodos(periodosActivos);
-        // Seleccionar el primer periodo activo por defecto
         setIdPeriodo(periodosActivos[0]?.IdPeriodo || '');
       } catch (err) {
         setError('Error al cargar programas o periodos.');
@@ -38,29 +37,40 @@ const ProgramaEducativoForm = () => {
     fetchData();
   }, []);
 
-  const handleSubmit = async (e) => {
+  // Cooldown timer
+  useEffect(() => {
+    if (showConfirmModal && confirmCooldown > 0) {
+      const timer = setInterval(() => {
+        setConfirmCooldown((prev) => prev - 1);
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [showConfirmModal, confirmCooldown]);
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-    
     if (!idPrograma) {
       setError('Por favor selecciona un programa educativo');
       return;
     }
-    
-    setSubmitting(true);
     setError(null);
-    
+    console.log('handleSubmit:', { idPrograma, programas }); // Debug
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirm = async () => {
+    setSubmitting(true);
+    setShowConfirmModal(false);
     try {
       const user = JSON.parse(localStorage.getItem('user'));
       if (!user?.id) throw new Error('Usuario no autenticado');
 
-      // Crear proceso inicial
       await axios.post('http://localhost:9999/api/procesos/inicial', {
         id_user: user.id,
         id_programa: idPrograma,
         id_periodo: idPeriodo,
       });
 
-      // Actualizar localStorage
       localStorage.setItem(
         'user',
         JSON.stringify({ ...user, id_programa: idPrograma })
@@ -71,10 +81,21 @@ const ProgramaEducativoForm = () => {
       setError(err.response?.data?.error || 'Error al registrar el programa educativo.');
     } finally {
       setSubmitting(false);
+      setConfirmCooldown(5); // Reset cooldown
     }
   };
 
-  // Variantes para animaciones
+  const getProgramaNombre = () => {
+    console.log('getProgramaNombre:', { idPrograma, programas }); // Debug
+    const programa = programas.find((p) => p.id_programa == idPrograma); // Comparación no estricta
+    return programa ? programa.nombre : 'No seleccionado';
+  };
+
+  const getPeriodoNombre = () => {
+    const periodo = periodos.find((p) => p.IdPeriodo == idPeriodo); // Comparación no estricta
+    return periodo ? `${periodo.Fase} ${periodo.Año}` : 'No seleccionado';
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -91,7 +112,7 @@ const ProgramaEducativoForm = () => {
       y: 0,
       opacity: 1,
       transition: {
-        type: "spring",
+        type: 'spring',
         stiffness: 100,
       },
     },
@@ -104,9 +125,9 @@ const ProgramaEducativoForm = () => {
       transition={{ duration: 0.5 }}
       className="min-h-screen flex items-center justify-center bg-gradient-to-b from-red-50 to-white"
     >
-      <motion.div 
-        initial="hidden" 
-        animate="visible" 
+      <motion.div
+        initial="hidden"
+        animate="visible"
         variants={containerVariants}
         className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full border border-red-100"
       >
@@ -116,14 +137,12 @@ const ProgramaEducativoForm = () => {
               <BookOpen className="h-6 w-6 text-red-800" />
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-red-900">
-            Programa Educativo
-          </h2>
+          <h2 className="text-2xl font-bold text-red-900">Programa Educativo</h2>
           <p className="text-gray-600 mt-1">Selecciona tu programa y periodo académico</p>
         </motion.div>
 
         {error && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-md mb-4 flex items-start"
@@ -156,8 +175,17 @@ const ProgramaEducativoForm = () => {
                   ))}
                 </select>
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  <svg
+                    className="h-5 w-5 text-gray-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
               </div>
@@ -189,8 +217,17 @@ const ProgramaEducativoForm = () => {
                   ))}
                 </select>
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  <svg
+                    className="h-5 w-5 text-gray-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
               </div>
@@ -218,6 +255,68 @@ const ProgramaEducativoForm = () => {
           </motion.div>
         </form>
       </motion.div>
+
+      {/* Modal de confirmación */}
+      <AnimatePresence>
+        {showConfirmModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="bg-white p-6 rounded-lg max-w-md w-full"
+            >
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
+                Confirmar Selección
+              </h2>
+              <p className="text-gray-700 mb-6">
+                ¿Estás seguro de seleccionar el siguiente programa y periodo?
+                <ul className="mt-2">
+                  <li>
+                    <strong>Programa:</strong> {getProgramaNombre()}
+                  </li>
+                  <li>
+                    <strong>Periodo:</strong> {getPeriodoNombre()}
+                  </li>
+                </ul>
+              </p>
+              <div className="flex justify-end space-x-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowConfirmModal(false);
+                    setConfirmCooldown(5);
+                  }}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <motion.button
+                  whileHover={{ scale: confirmCooldown === 0 ? 1.02 : 1 }}
+                  whileTap={{ scale: confirmCooldown === 0 ? 0.98 : 1 }}
+                  type="button"
+                  onClick={handleConfirm}
+                  disabled={confirmCooldown > 0}
+                  className={`px-4 py-2 rounded-lg text-white transition-colors flex items-center gap-2 ${
+                    confirmCooldown > 0
+                      ? 'bg-orange-400 cursor-not-allowed'
+                      : 'bg-orange-600 hover:bg-orange-700'
+                  }`}
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  {confirmCooldown > 0 ? `Confirmar (${confirmCooldown}s)` : 'Confirmar'}
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
