@@ -49,7 +49,7 @@ const UserTable = ({ users, loading, error, onEdit, onDelete }) => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => onEdit(user)}
-                    className="inline-flex items-center px-3 py-1 text-xs font-medium rounded shadow-sm text-white bg-purple-500 hover:bg-purple-600 focus:outline-none"
+                    className="inline-flex items-center px-3 py-1 text-xs font-medium rounded shadow-sm text-white bg-orange-500 hover:bg-orange-600 focus:outline-none"
                   >
                     <Edit2 size={14} className="mr-1" />
                     Editar
