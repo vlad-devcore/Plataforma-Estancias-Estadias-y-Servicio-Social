@@ -68,7 +68,6 @@ const Sidebar = ({ onNavigate }) => {
             <NavItem to="/periodosadmin" label="Periodos" currentPath={location.pathname} onClick={handleNavigation} />
             <NavItem to="/formatosadmin" label="Formatos" currentPath={location.pathname} onClick={handleNavigation} />
             <NavItem to="/Documentacionadmin" label="Documentacion" currentPath={location.pathname} onClick={handleNavigation} />
-            <NavItem to="/registrosadmin" label="Registros" currentPath={location.pathname} onClick={handleNavigation} />
             <NavItem to="/perfiladmin" label="Perfil" currentPath={location.pathname} onClick={handleNavigation} />
             <li>
               <motion.button

@@ -17,8 +17,8 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     'Cédula de registro',
     'Definición de proyecto',
     'Carta de liberación',
-    'Guía de uso',
-    'Reporte Mensual',
+    //'Guía de uso',
+    //'Reporte Mensual',
   ];
 
   const tipoDocumentoMap = {
@@ -27,8 +27,8 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     'Cédula de registro': 3,
     'Definición de proyecto': 4,
     'Carta de liberación': 5,
-    'Guía de uso': 6,
-    'Reporte Mensual': 7,
+    //'Guía de uso': 6,
+    //'Reporte Mensual': 7,
   };
 
   const fetchPlantillas = async () => {

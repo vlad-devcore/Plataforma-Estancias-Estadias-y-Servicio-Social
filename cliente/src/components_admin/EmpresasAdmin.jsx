@@ -18,12 +18,19 @@ const EmpresaManagement = () => {
     deleteEmpresa,
     createEmpresasFromCSV,
     resetMessages,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    totalCompanies,
+    companiesPerPage,
+    searchTerm,
+    setSearchTerm,
+    sociedadFilter,
+    setSociedadFilter
   } = useEmpresas();
 
   const [formMode, setFormMode] = useState(null);
   const [selectedEmpresa, setSelectedEmpresa] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sociedadFilter, setSociedadFilter] = useState('Todas');
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmData, setConfirmData] = useState(null);
@@ -57,6 +64,7 @@ const EmpresaManagement = () => {
       setConfirmData(null);
     } catch (err) {
       console.error('Error al procesar la acción:', err);
+      // No establecemos error aquí porque useEmpresas ya lo hace
     }
   };
 
@@ -64,6 +72,7 @@ const EmpresaManagement = () => {
     setShowConfirmation(false);
     setConfirmAction(null);
     setConfirmData(null);
+    resetMessages(); // Resetear mensajes al cancelar
   };
 
   const handleSubmit = async (data) => {
@@ -78,14 +87,34 @@ const EmpresaManagement = () => {
     setShowConfirmation(true);
   };
 
-  const filteredEmpresas = empresas.filter((empresa) => {
+  // Filtrar empresas localmente (como respaldo, con verificación)
+  const filteredEmpresas = Array.isArray(empresas) ? empresas.filter((empresa) => {
     const matchesSearch =
       empresa.empresa_nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       empresa.empresa_rfc.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSociedad =
       sociedadFilter === 'Todas' || empresa.empresa_sociedad === sociedadFilter;
     return matchesSearch && matchesSociedad;
-  });
+  }) : [];
+
+  // Cambiar página
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  // Generar números de página
+  const getPageNumbers = () => {
+    const maxPagesToShow = 5;
+    const startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+    const pages = [];
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -149,6 +178,7 @@ const EmpresaManagement = () => {
                 onClick={() => {
                   setSelectedEmpresa(null);
                   setFormMode('create');
+                  resetMessages(); // Resetear mensajes al abrir el formulario
                 }}
                 className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors shadow-sm"
               >
@@ -158,8 +188,11 @@ const EmpresaManagement = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => setFormMode('import')}
-                className="flex items-center px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors shadow-sm"
+                onClick={() => {
+                  setFormMode('import');
+                  resetMessages(); // Resetear mensajes al abrir el formulario
+                }}
+                className="flex items-center px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors shadow-sm"
               >
                 <Upload size={18} className="mr-1" />
                 Importar CSV
@@ -200,9 +233,57 @@ const EmpresaManagement = () => {
             />
             <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
               <p className="text-sm text-gray-500">
-                Mostrando {filteredEmpresas.length} de {empresas.length} registros
+                Mostrando {filteredEmpresas.length} de {totalCompanies} registros
               </p>
             </div>
+            {/* Controles de paginación */}
+            {totalPages > 1 && (
+              <div className="px-6 py-4 flex justify-between items-center">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                    currentPage === 1
+                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                  }`}
+                >
+                  Anterior
+                </motion.button>
+                <div className="flex space-x-2">
+                  {getPageNumbers().map(page => (
+                    <motion.button
+                      key={page}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handlePageChange(page)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                        currentPage === page
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {page}
+                    </motion.button>
+                  ))}
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                    currentPage === totalPages
+                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                  }`}
+                >
+                  Siguiente
+                </motion.button>
+              </div>
+            )}
           </motion.div>
 
           {/* Form Modal */}
@@ -236,6 +317,7 @@ const EmpresaManagement = () => {
                     onClick={() => {
                       setFormMode(null);
                       setSelectedEmpresa(null);
+                      resetMessages(); // Resetear mensajes al cerrar el modal
                     }}
                     className="text-gray-500 hover:text-gray-700"
                   >
@@ -248,6 +330,7 @@ const EmpresaManagement = () => {
                     onCancel={() => {
                       setFormMode(null);
                       setSelectedEmpresa(null);
+                      resetMessages();
                     }}
                   />
                 ) : (
@@ -257,6 +340,7 @@ const EmpresaManagement = () => {
                     onCancel={() => {
                       setFormMode(null);
                       setSelectedEmpresa(null);
+                      resetMessages();
                     }}
                   />
                 )}

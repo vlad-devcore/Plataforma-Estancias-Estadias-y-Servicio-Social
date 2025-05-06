@@ -3,19 +3,59 @@ import axios from "axios";
 
 const useEmpresas = () => {
   const [companies, setCompanies] = useState([]);
+  const [allCompanies, setAllCompanies] = useState([]); // Almacena todas las empresas para paginación local
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCompanies, setTotalCompanies] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sociedadFilter, setSociedadFilter] = useState('Todas');
+  const companiesPerPage = 50;
 
   const fetchCompanies = async () => {
     try {
       setLoading(true);
       setError(null);
-      setSuccess(null);
-      const { data } = await axios.get("http://localhost:9999/api/empresas");
-      setCompanies(data);
+      // No reseteamos success aquí para que persista después de crear/importar
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación. Por favor, inicia sesión.');
+      }
+      const { data } = await axios.get("http://localhost:9999/api/empresas", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      console.log('API response:', data);
+      // Verificar que data sea un arreglo
+      if (!Array.isArray(data)) {
+        throw new Error('Formato de respuesta inválido: se esperaba un arreglo de empresas');
+      }
+      // Filtrar localmente por búsqueda y sociedad
+      const filtered = data.filter((empresa) => {
+        const matchesSearch =
+          (empresa.empresa_nombre?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+          (empresa.empresa_rfc?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+        const matchesSociedad =
+          sociedadFilter === 'Todas' || empresa.empresa_sociedad === sociedadFilter;
+        return matchesSearch && matchesSociedad;
+      });
+      // Calcular paginación local
+      const total = filtered.length;
+      const pages = Math.ceil(total / companiesPerPage);
+      const startIndex = (currentPage - 1) * companiesPerPage;
+      const paginatedCompanies = filtered.slice(startIndex, startIndex + companiesPerPage);
+      setAllCompanies(data); // Guardar todas las empresas
+      setCompanies(paginatedCompanies);
+      setTotalPages(pages || 1);
+      setTotalCompanies(total);
     } catch (err) {
-      setError('No se pudieron cargar las empresas. Por favor, intenta de nuevo.');
+      console.error('Error fetching companies:', err);
+      setError(err.response?.data?.error || err.message || 'No se pudieron cargar las empresas. Por favor, intenta de nuevo.');
+      setCompanies([]);
+      setAllCompanies([]);
+      setTotalPages(1);
+      setTotalCompanies(0);
     } finally {
       setLoading(false);
     }
@@ -26,6 +66,10 @@ const useEmpresas = () => {
       setLoading(true);
       setError(null);
       setSuccess(null);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación. Por favor, inicia sesión.');
+      }
       const payload = {
         empresa_rfc: data.empresa_rfc,
         empresa_nombre: data.empresa_nombre,
@@ -36,11 +80,15 @@ const useEmpresas = () => {
         empresa_sociedad: data.empresa_sociedad,
         empresa_pagina_web: data.empresa_pagina_web || "",
       };
-      const response = await axios.post("http://localhost:9999/api/empresas", payload);
-      setCompanies([...companies, response.data]);
+      const response = await axios.post("http://localhost:9999/api/empresas", payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCurrentPage(1); // Volver a la primera página
       setSuccess('Empresa creada con éxito.');
+      await fetchCompanies(); // Refrescar datos
       return response.data;
     } catch (err) {
+      console.error('Error creating company:', err);
       setError(err.response?.data?.error || 'No se pudo crear la empresa. Por favor, verifica los datos e intenta de nuevo.');
       throw err;
     } finally {
@@ -53,6 +101,10 @@ const useEmpresas = () => {
       setLoading(true);
       setError(null);
       setSuccess(null);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación. Por favor, inicia sesión.');
+      }
       const payload = {
         empresa_rfc: updatedData.empresa_rfc,
         empresa_nombre: updatedData.empresa_nombre,
@@ -63,10 +115,14 @@ const useEmpresas = () => {
         empresa_sociedad: updatedData.empresa_sociedad,
         empresa_pagina_web: updatedData.empresa_pagina_web || "",
       };
-      await axios.put(`http://localhost:9999/api/empresas/${id}`, payload);
-      await fetchCompanies();
+      await axios.put(`http://localhost:9999/api/empresas/${id}`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCurrentPage(1); // Volver a la primera página
       setSuccess('Empresa actualizada con éxito.');
+      await fetchCompanies(); // Refrescar datos
     } catch (err) {
+      console.error('Error updating company:', err);
       setError(err.response?.data?.error || 'No se pudo actualizar la empresa. Por favor, intenta de nuevo.');
       throw err;
     } finally {
@@ -79,11 +135,19 @@ const useEmpresas = () => {
       setLoading(true);
       setError(null);
       setSuccess(null);
-      const response = await axios.delete(`http://localhost:9999/api/empresas/${id}`);
-      await fetchCompanies();
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación. Por favor, inicia sesión.');
+      }
+      const response = await axios.delete(`http://localhost:9999/api/empresas/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCurrentPage(1); // Volver a la primera página
       setSuccess('Empresa eliminada con éxito.');
+      await fetchCompanies(); // Refrescar datos
       return response.data;
     } catch (err) {
+      console.error('Error deleting company:', err);
       setError(err.response?.data?.error || 'No se pudo eliminar la empresa. Por favor, intenta de nuevo.');
       throw err;
     } finally {
@@ -96,16 +160,22 @@ const useEmpresas = () => {
       setLoading(true);
       setError(null);
       setSuccess(null);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontró el token de autenticación. Por favor, inicia sesión.');
+      }
       const formData = new FormData();
       formData.append('file', file);
       const { data } = await axios.post('http://localhost:9999/api/empresas/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        },
       });
-  
-      await fetchCompanies();
-  
+
+      setCurrentPage(1); // Volver a la primera página
       // Construir mensaje amigable
-      const totalOmitted = data.existingCount + data.invalidEmailCount + data.invalidRFCCount + 
+      const totalOmitted = data.existingCount + data.invalidEmailCount + data.invalidRFCCount +
                           data.invalidTamanoCount + data.invalidSociedadCount + data.missingFieldsCount;
       let successMessage = `${data.insertedCount} empresa${data.insertedCount !== 1 ? 's' : ''} importada${data.insertedCount !== 1 ? 's' : ''} con éxito.`;
       if (totalOmitted > 0) {
@@ -133,14 +203,16 @@ const useEmpresas = () => {
           successMessage += `<br>- ${reasons.join('<br>- ')}`;
         }
       }
-  
+
       setSuccess(successMessage);
-      setLoading(false);
+      await fetchCompanies(); // Refrescar datos
       return data;
     } catch (err) {
+      console.error('Error importing companies:', err);
       setError(err.response?.data?.error || 'No se pudieron importar las empresas. Por favor, revisa el archivo CSV e intenta de nuevo.');
-      setLoading(false);
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -151,7 +223,7 @@ const useEmpresas = () => {
 
   useEffect(() => {
     fetchCompanies();
-  }, []);
+  }, [currentPage, searchTerm, sociedadFilter]);
 
   return {
     companies,
@@ -163,6 +235,15 @@ const useEmpresas = () => {
     deleteEmpresa,
     createEmpresasFromCSV,
     resetMessages,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    totalCompanies,
+    companiesPerPage,
+    searchTerm,
+    setSearchTerm,
+    sociedadFilter,
+    setSociedadFilter
   };
 };
 

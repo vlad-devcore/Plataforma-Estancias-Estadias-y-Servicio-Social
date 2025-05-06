@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Search } from 'lucide-react';
 import Header from './HeaderEstudiante';
 
-// Modal Component actualizado
+// Modal Component (sin cambios)
 const Modal = ({ company, onClose }) => (
   <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center p-4 z-50">
     <div className="bg-white p-4 md:p-6 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -18,7 +18,7 @@ const Modal = ({ company, onClose }) => (
         
         <div>
           <h3 className="font-medium text-gray-900">Dirección:</h3>
-          <p className="text-gray-600">{company.empresa_direccion}</p>
+          <p className="text-gray-600">{company.empresa_direccion || 'No especificado'}</p>
         </div>
         
         <div>
@@ -63,7 +63,7 @@ const Modal = ({ company, onClose }) => (
   </div>
 );
 
-// Main Component actualizado
+// Main Component
 export default function Empresas() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -72,12 +72,19 @@ export default function Empresas() {
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const companiesPerPage = 48;
 
   // Obtener las empresas desde el backend
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
-        const response = await axios.get('http://localhost:9999/api/empresas');
+        const response = await axios.get('http://localhost:9999/api/empresas', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (!Array.isArray(response.data)) {
+          throw new Error('Formato de respuesta inválido: se esperaba un arreglo de empresas');
+        }
         setCompanies(response.data);
         setLoading(false);
       } catch (error) {
@@ -93,12 +100,40 @@ export default function Empresas() {
   // Obtener industrias únicas para el filtro
   const industries = ['Todas', ...new Set(companies.map(company => company.empresa_sociedad))];
 
+  // Filtrar empresas
   const filteredCompanies = companies.filter(company => {
-    const matchesSearch = company.empresa_nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         company.empresa_rfc.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = 
+      (company.empresa_nombre?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || 
+      (company.empresa_rfc?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     const matchesIndustry = selectedIndustry === 'Todas' || company.empresa_sociedad === selectedIndustry;
     return matchesSearch && matchesIndustry;
   });
+
+  // Calcular paginación
+  const totalCompanies = filteredCompanies.length;
+  const totalPages = Math.ceil(totalCompanies / companiesPerPage);
+  const startIndex = (currentPage - 1) * companiesPerPage;
+  const paginatedCompanies = filteredCompanies.slice(startIndex, startIndex + companiesPerPage);
+
+  // Cambiar página
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      window.scrollTo({ top: 0, behavior: 'smooth' }); // Volver arriba al cambiar página
+    }
+  };
+
+  // Generar números de página
+  const getPageNumbers = () => {
+    const maxPagesToShow = 5;
+    const startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+    const pages = [];
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
 
   const openModal = (company) => setSelectedCompany(company);
   const closeModal = () => setSelectedCompany(null);
@@ -157,31 +192,82 @@ export default function Empresas() {
         </div>
 
         {/* Company List */}
-        {filteredCompanies.length === 0 ? (
+        {paginatedCompanies.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600">No se encontraron empresas que coincidan con los criterios de búsqueda.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCompanies.map(company => (
-              <div
-                key={company.id_empresa}
-                onClick={() => openModal(company)}
-                className="bg-white rounded-lg shadow-md p-4 cursor-pointer hover:shadow-lg transition-shadow duration-200"
-              >
-                <h3 className="font-semibold text-lg text-gray-900 mb-2">{company.empresa_nombre}</h3>
-                <p className="text-sm text-gray-600 mb-1">
-                  <span className="font-medium">RFC:</span> {company.empresa_rfc}
-                </p>
-                <p className="text-sm text-gray-600 mb-1">
-                  <span className="font-medium">Tipo:</span> {company.empresa_sociedad}
-                </p>
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">Tamaño:</span> {company.empresa_tamano}
-                </p>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+              {paginatedCompanies.map(company => (
+                <div
+                  key={company.id_empresa}
+                  onClick={() => openModal(company)}
+                  className="bg-white rounded-lg shadow-md p-4 cursor-pointer hover:shadow-lg transition-shadow duration-200 flex flex-col"
+                >
+                  <h3 className="font-semibold text-base md:text-lg text-gray-900 mb-2 truncate">{company.empresa_nombre}</h3>
+                  <p className="text-sm text-gray-600 mb-1 flex-1">
+                    <span className="font-medium">Dirección:</span>{' '}
+                    <span className="break-words">{company.empresa_direccion || 'No especificado'}</span>
+                  </p>
+                  <p className="text-sm text-gray-600 mb-1 flex-1">
+                    <span className="font-medium">Email:</span>{' '}
+                    <span className="break-words">{company.empresa_email || 'No especificado'}</span>
+                  </p>
+                  <p className="text-sm text-gray-600 flex-1">
+                    <span className="font-medium">Teléfono:</span>{' '}
+                    <span className="break-words">{company.empresa_telefono || 'No especificado'}</span>
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="mt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                    currentPage === 1
+                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      : 'bg-orange-500 text-white hover:bg-orange-600'
+                  }`}
+                >
+                  Anterior
+                </button>
+                <div className="flex space-x-2">
+                  {getPageNumbers().map(page => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                        currentPage === page
+                          ? 'bg-orange-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                    currentPage === totalPages
+                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      : 'bg-orange-500 text-white hover:bg-orange-600'
+                  }`}
+                >
+                  Siguiente
+                </button>
               </div>
-            ))}
-          </div>
+            )}
+            <div className="mt-4 text-sm text-gray-500 text-center">
+              Mostrando {paginatedCompanies.length} de {totalCompanies} empresas
+            </div>
+          </>
         )}
 
         {/* Modal */}

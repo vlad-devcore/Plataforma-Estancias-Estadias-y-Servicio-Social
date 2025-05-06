@@ -12,7 +12,7 @@ const useUsers = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
-  const usersPerPage = 10;
+  const usersPerPage = 50;
 
   // Obtener usuarios con paginación, búsqueda y filtro por rol
   useEffect(() => {
@@ -123,9 +123,26 @@ const useUsers = () => {
       });
       // Refrescar datos
       setCurrentPage(1);
-      setSuccess(response.data.message);
+      // Construir mensaje simplificado
+      const { insertedCount, duplicateEmails, existingEmails, errors } = response.data;
+      // Combinar duplicateEmails y existingEmails, eliminando repeticiones
+      const allDuplicateEmails = [...new Set([...(duplicateEmails || []), ...(existingEmails || [])])];
+      // Contar errores, excluyendo los correos duplicados/existentes
+      const actualErrors = errors ? errors.filter((err) => {
+        const email = err.match(/Email no válido: (.+)$/)?.[1] || err.match(/Fila \d+: .+?: (.+)$/)?.[1];
+        return email ? !allDuplicateEmails.includes(email) : true;
+      }) : [];
+      const messageLines = [
+        `${insertedCount} registros insertados con éxito`,
+        allDuplicateEmails.length > 0 ? `Correos duplicados o existentes: ${allDuplicateEmails.join(', ')}` : null,
+        actualErrors.length > 0 ? `${actualErrors.length} registros con errores` : null,
+      ].filter(Boolean);
+      setSuccess(messageLines.join('. '));
     } catch (err) {
       setError(err.response?.data?.error || 'Error al importar usuarios');
+      if (err.response?.data?.details && err.response.data.details.length > 0) {
+        setError(`${err.response.data.error}. Detalles: ${err.response.data.details.join('; ')}`);
+      }
     } finally {
       setLoading(false);
     }
