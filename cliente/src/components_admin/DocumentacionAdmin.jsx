@@ -4,14 +4,16 @@ import { useState } from 'react';
 import Sidebar from './Sidebar';
 import useDocumentosAdmin from '../components/hooks/useDocumentosAdmin';
 
-//jeje
 const DocumentManagement = () => {
   const {
     documents,
     periodos,
+    tiposDocumento,
+    programasEducativos,
     loading,
     error,
     success,
+    filters,
     approveDocument,
     rejectDocument,
     updateFilters,
@@ -25,7 +27,7 @@ const DocumentManagement = () => {
   const [rejectionNote, setRejectionNote] = useState('');
 
   const handleViewDocument = (document) => {
-    console.log('Ver documento', document);
+    console.log('Ver documento:', document);
     window.open(`http://localhost:9999/api/documentos/download/${document.id_Documento}`, '_blank');
   };
 
@@ -43,33 +45,48 @@ const DocumentManagement = () => {
 
   const handleApproveDocument = async () => {
     if (selectedDocument) {
-      await approveDocument(selectedDocument.id_Documento);
-      setModalOpen(false);
+      try {
+        await approveDocument(selectedDocument.id_Documento);
+        setModalOpen(false);
+      } catch (err) {
+        console.error('Error al aprobar documento:', err);
+      }
     }
   };
 
   const openRejectionModal = () => {
     setModalType('rejection');
-    // No cerramos el modal, solo cambiamos el tipo
   };
 
   const handleRejectDocument = async () => {
-    if (selectedDocument) {
-      await rejectDocument(selectedDocument.id_Documento, rejectionNote);
-      setModalOpen(false);
-      setRejectionNote('');
+    if (selectedDocument && rejectionNote.trim()) {
+      try {
+        await rejectDocument(selectedDocument.id_Documento, rejectionNote);
+        setModalOpen(false);
+        setRejectionNote('');
+      } catch (err) {
+        console.error('Error al rechazar documento:', err);
+      }
     }
   };
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    updateFilters({ [name]: value === 'Todos' ? '' : value });
+    const newValue = value === 'Todos' ? '' : value;
+    console.log(`Actualizando filtro ${name}:`, newValue);
+    updateFilters({
+      [name]: name === 'idTipoDoc' || name === 'idPeriodo' ? (newValue ? Number(newValue) : '') : newValue
+    });
   };
 
-  const filteredDocuments = documents.filter(doc => 
-    doc.Matricula.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.Nombre_TipoDoc.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredDocuments = documents.filter(doc => {
+    const matchesSearch = (
+      (doc.Matricula && doc.Matricula.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (doc.Nombre_TipoDoc && doc.Nombre_TipoDoc.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (doc.ProgramaEducativo && doc.ProgramaEducativo.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+    return matchesSearch;
+  });
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -99,28 +116,29 @@ const DocumentManagement = () => {
 
           {/* Messages */}
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
-              <button onClick={resetMessages} className="ml-2 text-red-900 underline">Cerrar</button>
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex justify-between items-center">
+              <span>{error}. Por favor, verifica la configuración del servidor.</span>
+              <button onClick={resetMessages} className="text-red-900 hover:underline">Cerrar</button>
             </div>
           )}
           {success && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 flex justify-between items-center">
               {success}
-              <button onClick={resetMessages} className="ml-2 text-green-900 underline">Cerrar</button>
+              <button onClick={resetMessages} className="text-green-900 hover:underline">Cerrar</button>
             </div>
           )}
 
           {/* Filters and Search */}
-          <div className="mb-6 flex flex-col md:flex-row justify-between gap-4">
+          <div className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Filtro por Estatus */}
-            <div className="flex-1">
+            <div>
               <label htmlFor="estatus" className="block text-sm font-medium text-gray-700 mb-1">
                 Filtrar por Estatus
               </label>
               <select
                 id="estatus"
                 name="estatus"
+                value={filters.estatus || 'Todos'}
                 onChange={handleFilterChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
@@ -132,41 +150,100 @@ const DocumentManagement = () => {
             </div>
 
             {/* Filtro por Periodo */}
-            <div className="flex-1">
+            <div>
               <label htmlFor="idPeriodo" className="block text-sm font-medium text-gray-700 mb-1">
                 Filtrar por Periodo
               </label>
               <select
                 id="idPeriodo"
                 name="idPeriodo"
+                value={filters.idPeriodo || 'Todos'}
                 onChange={handleFilterChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="Todos">Todos</option>
-                {periodos.map((periodo) => (
-                  <option key={periodo.IdPeriodo} value={periodo.IdPeriodo}>
-                    {periodo.Año} - {periodo.Fase}
-                  </option>
-                ))}
+                {periodos.length > 0 ? (
+                  periodos.map((periodo) => (
+                    <option key={periodo.IdPeriodo} value={periodo.IdPeriodo}>
+                      {periodo.Año} - {periodo.Fase}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No hay periodos disponibles</option>
+                )}
+              </select>
+            </div>
+
+            {/* Filtro por Tipo de Documento */}
+            <div>
+              <label htmlFor="idTipoDoc" className="block text-sm font-medium text-gray-700 mb-1">
+                Filtrar por Tipo de Documento
+              </label>
+              <select
+                id="idTipoDoc"
+                name="idTipoDoc"
+                value={filters.idTipoDoc || 'Todos'}
+                onChange={handleFilterChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="Todos">Todos</option>
+                {tiposDocumento.length > 0 ? (
+                  tiposDocumento.map((tipo) => (
+                    <option key={tipo.IdTipoDoc} value={tipo.IdTipoDoc}>
+                      {tipo.Nombre_TipoDoc}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No hay tipos disponibles</option>
+                )}
+              </select>
+            </div>
+
+            {/* Filtro por Programa Educativo */}
+            <div>
+              <label htmlFor="programaEducativo" className="block text-sm font-medium text-gray-700 mb-1">
+                Filtrar por Programa Educativo
+              </label>
+              <select
+                id="programaEducativo"
+                name="programaEducativo"
+                value={filters.programaEducativo || 'Todos'}
+                onChange={handleFilterChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="Todos">Todos</option>
+                {programasEducativos.length > 0 ? (
+                  programasEducativos.map((programa) => (
+                    <option key={programa} value={programa}>
+                      {programa}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No hay programas disponibles</option>
+                )}
               </select>
             </div>
 
             {/* Búsqueda */}
-            <div className="relative flex-1">
+            <div className="col-span-1 md:col-span-2 lg:col-span-1">
               <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
                 Buscar
               </label>
-              <motion.input
-                initial={{ width: '80%', opacity: 0 }}
-                animate={{ width: '100%', opacity: 1 }}
-                id="search"
-                type="text"
-                placeholder="Buscar por matrícula o nombre de documento..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+              <div className="relative">
+                <motion.input
+                  initial={{ width: '80%', opacity: 0 }}
+                  animate={{ width: '100%', opacity: 1 }}
+                  id="search"
+                  type="text"
+                  placeholder="Buscar por matrícula, documento o programa..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <Search className="text-gray-400" size={20} />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -187,6 +264,9 @@ const DocumentManagement = () => {
                       Documento
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Programa Educativo
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Estatus
                     </th>
                     <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -197,7 +277,7 @@ const DocumentManagement = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {loading ? (
                     <tr>
-                      <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">
+                      <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
                         Cargando...
                       </td>
                     </tr>
@@ -209,6 +289,9 @@ const DocumentManagement = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {doc.Nombre_TipoDoc}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {doc.ProgramaEducativo || 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           {doc.Estatus === 'Pendiente' && <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pendiente</span>}
@@ -243,7 +326,6 @@ const DocumentManagement = () => {
                             >
                               <Eye size={18} />
                             </motion.button>
-                            
                             {doc.Estatus === 'Pendiente' && (
                               <>
                                 <motion.button
@@ -255,7 +337,6 @@ const DocumentManagement = () => {
                                 >
                                   <CheckCircle size={18} />
                                 </motion.button>
-                                
                                 <motion.button
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.9 }}
@@ -273,7 +354,7 @@ const DocumentManagement = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">
+                      <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
                         No se encontraron documentos
                       </td>
                     </tr>

@@ -11,24 +11,47 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
 
   const user = useMemo(() => JSON.parse(localStorage.getItem('user')), []);
 
-  const tiposDocumentos = [
+  // Definir documentos según el tipo de proceso
+  const tiposDocumentos = tipoProceso === 'Servicio Social' ? [
+    'Reporte Mensual 1',
+    'Reporte Mensual 2',
+    'Reporte Mensual 3',
+    'Reporte Mensual 4',
+    'Reporte Mensual 5',
+    'Reporte Mensual 6',
+    'Reporte Mensual 7',
+    'Reporte Mensual 8',
+    'Reporte Mensual 9',
+    'Reporte Mensual 10',
+    'Reporte Mensual 11',
+    'Reporte Mensual 12',
+  ] : [
     'Carta de presentación',
     'Carta de aceptación',
     'Cédula de registro',
     'Definición de proyecto',
     'Carta de liberación',
-    //'Guía de uso',
-    //'Reporte Mensual',
   ];
 
-  const tipoDocumentoMap = {
+  const tipoDocumentoMap = tipoProceso === 'Servicio Social' ? {
+    'Reporte Mensual 1': 7,
+    'Reporte Mensual 2': 8,
+    'Reporte Mensual 3': 9,
+    'Reporte Mensual 4': 10,
+    'Reporte Mensual 5': 11,
+    'Reporte Mensual 6': 12,
+    'Reporte Mensual 7': 13,
+    'Reporte Mensual 8': 14,
+    'Reporte Mensual 9': 15,
+    'Reporte Mensual 10': 16,
+    'Reporte Mensual 11': 17,
+    'Reporte Mensual 12': 18,
+  } : {
     'Carta de presentación': 1,
     'Carta de aceptación': 2,
     'Cédula de registro': 3,
     'Definición de proyecto': 4,
     'Carta de liberación': 5,
-    //'Guía de uso': 6,
-    //'Reporte Mensual': 7,
   };
 
   const fetchPlantillas = async () => {
@@ -39,7 +62,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     setLoading(true);
     setError(null);
     try {
-      console.log('Fetching plantillas');
+      console.log('Fetching plantillas para tipoProceso:', tipoProceso);
       const response = await axios.get('http://localhost:9999/api/documentosAdmin');
       const data = response.data;
       console.log('Plantillas recibidas:', data);
@@ -161,7 +184,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     if (user?.id) {
       fetchPlantillas();
     }
-  }, [user?.id]);
+  }, [user?.id, tipoProceso]);
 
   useEffect(() => {
     if (procesoId) {
