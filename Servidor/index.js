@@ -27,7 +27,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Crear la carpeta "public/uploads/documentos" si no existe
-const uploadsDir = path.join(__dirname, "public", "uploads", "documentos");
+const uploadsDir = path.join(__dirname, "public", "Uploads", "documentos");
 if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
     console.log("Carpeta 'public/uploads/documentos' creada automáticamente.");
@@ -53,7 +53,7 @@ morgan.token('body', (req) => {
 });
 
 // Servir archivos estáticos desde public/uploads
-app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'Uploads')));
 
 // Montar rutas
 app.use("/api/users", userRouter);

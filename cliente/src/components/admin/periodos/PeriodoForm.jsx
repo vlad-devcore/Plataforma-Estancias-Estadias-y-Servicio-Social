@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Plus, Save } from 'lucide-react';
 import { useState } from 'react';
 
-const PeriodoForm = ({ initialData = {}, onSubmit }) => {
+const PeriodoForm = ({ initialData = {}, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     Año: initialData.Año || '',
     FechaInicio: initialData.FechaInicio || '',
@@ -94,24 +94,33 @@ const PeriodoForm = ({ initialData = {}, onSubmit }) => {
         </div>
       </div>
 
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        type="submit"
-        className="w-full bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 transition-colors flex items-center justify-center"
-      >
-        {initialData.IdPeriodo ? (
-          <>
-            <Save className="mr-2" size={18} />
-            Guardar Cambios
-          </>
-        ) : (
-          <>
-            <Plus className="mr-2" size={18} />
-            Crear Periodo
-          </>
-        )}
-      </motion.button>
+      <div className="flex justify-end gap-4">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+        >
+          Cancelar
+        </button>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          type="submit"
+          className="bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 transition-colors flex items-center justify-center"
+        >
+          {initialData.IdPeriodo ? (
+            <>
+              <Save className="mr-2" size={18} />
+              Guardar Cambios
+            </>
+          ) : (
+            <>
+              <Plus className="mr-2" size={18} />
+              Crear Periodo
+            </>
+          )}
+        </motion.button>
+      </div>
     </form>
   );
 };

@@ -114,9 +114,7 @@ const Estancia2 = () => {
             className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 flex justify-between items-center"
           >
             <span>{error}</span>
-            <button onClick={() => setError(null)} className="text-red-900 hover:underline">
-              Cerrar
-            </button>
+            
           </motion.div>
         )}
 

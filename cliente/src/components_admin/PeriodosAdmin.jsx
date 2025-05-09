@@ -60,6 +60,11 @@ const PeriodoManagement = () => {
     setConfirmData(null);
   };
 
+  const handleCancelForm = () => {
+    setFormMode(null);
+    setSelectedPeriodo(null);
+  };
+
   const handleSubmit = async (data) => {
     setConfirmData(data);
     
@@ -96,7 +101,7 @@ const PeriodoManagement = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setFormMode('create')}
-              className="flex items-center px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors shadow-sm"
+              className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors shadow-sm"
             >
               <Plus size={18} className="mr-1" />
               Crear Periodo
@@ -141,6 +146,7 @@ const PeriodoManagement = () => {
                   mode={formMode}
                   initialData={selectedPeriodo || {}}
                   onSubmit={handleSubmit}
+                  onCancel={handleCancelForm}
                 />
               </motion.div>
             )}

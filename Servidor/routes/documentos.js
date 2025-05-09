@@ -27,63 +27,48 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-router.get("/", async (req, res) => {
+// Obtener tipos de documentos
+router.get("/tipo_documento", async (req, res) => {
   try {
-    console.log("GET /api/documentos - Obtener todos los documentos");
-    const { estatus, idPeriodo, id_proceso, id_usuario } = req.query;
-
-    let query = `
-      SELECT 
-        d.id_Documento,
-        d.NombreArchivo,
-        d.RutaArchivo,
-        d.IdTipoDoc,
-        d.id_usuario,
-        d.Comentarios,
-        d.Estatus,
-        d.id_proceso,
-        e.Matricula,
-        t.Nombre_TipoDoc AS Nombre_TipoDoc
-      FROM documentos d
-      JOIN proceso p ON d.id_proceso = p.id_proceso
-      JOIN estudiantes e ON p.id_estudiante = e.id_estudiante
-      JOIN tipo_documento t ON d.IdTipoDoc = t.IdTipoDoc
-      JOIN periodos per ON p.id_periodo = per.IdPeriodo
-    `;
-    
-    const queryParams = [];
-    
-    const conditions = [];
-    if (estatus && ['Pendiente', 'Aprobado', 'Rechazado'].includes(estatus)) {
-      conditions.push('d.Estatus = ?');
-      queryParams.push(estatus);
-    }
-    if (idPeriodo && !isNaN(idPeriodo)) {
-      conditions.push('per.IdPeriodo = ?');
-      queryParams.push(Number(idPeriodo));
-    }
-    if (id_proceso && !isNaN(id_proceso)) {
-      conditions.push('d.id_proceso = ?');
-      queryParams.push(Number(id_proceso));
-    }
-    if (id_usuario && !isNaN(id_usuario)) {
-      conditions.push('d.id_usuario = ?');
-      queryParams.push(Number(id_usuario));
-    }
-    
-    if (conditions.length > 0) {
-      query += ' WHERE ' + conditions.join(' AND ');
-    }
-
-    console.log("Consulta SQL:", query);
-    console.log("Parámetros:", queryParams);
-
-    const [results] = await pool.query(query, queryParams);
-    console.log("Documentos obtenidos:", results);
+    console.log("GET /api/documentos/tipo_documento - Obtener todos los tipos de documentos");
+    const [results] = await pool.query(
+      `SELECT IdTipoDoc, Nombre_TipoDoc FROM tipo_documento ORDER BY Nombre_TipoDoc`
+    );
+    console.log("Tipos de documentos obtenidos:", results);
     res.json(results);
   } catch (error) {
-    console.error("Error al obtener documentos:", error.message);
-    res.status(500).json({ error: error.message });
+    console.error("Error al obtener tipos de documentos:", error.message);
+    res.status(500).json({ error: "Error al obtener tipos de documentos" });
+  }
+});
+
+// Obtener programas educativos
+router.get("/programas_educativos", async (req, res) => {
+  try {
+    console.log("GET /api/documentos/programas_educativos - Obtener todos los programas educativos");
+    const [results] = await pool.query(
+      `SELECT DISTINCT nombre FROM programa_educativo WHERE nombre IS NOT NULL ORDER BY nombre`
+    );
+    console.log("Programas educativos obtenidos:", results);
+    res.json(results.map(row => row.nombre));
+  } catch (error) {
+    console.error("Error al obtener programas educativos:", error.message);
+    res.status(500).json({ error: "Error al obtener programas educativos" });
+  }
+});
+
+// Obtener periodos
+router.get("/periodos", async (req, res) => {
+  try {
+    console.log("GET /api/documentos/periodos - Obtener todos los periodos");
+    const [results] = await pool.query(
+      `SELECT IdPeriodo, Año, Fase FROM periodos ORDER BY Año DESC, Fase`
+    );
+    console.log("Periodos obtenidos:", results);
+    res.json(results);
+  } catch (error) {
+    console.error("Error al obtener periodos:", error.message);
+    res.status(500).json({ error: "Error al obtener periodos" });
   }
 });
 
@@ -139,7 +124,7 @@ router.post("/upload", upload.single("archivo"), async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Error al subir documento:", error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Error al subir documento" });
   }
 });
 
@@ -163,7 +148,7 @@ router.put("/approve/:id_Documento", async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Error al aprobar documento:", error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Error al aprobar documento" });
   }
 });
 
@@ -193,7 +178,7 @@ router.put("/reject/:id_Documento", async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Error al rechazar documento:", error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Error al rechazar documento" });
   }
 });
 
@@ -246,7 +231,7 @@ router.get("/download/:id_Documento", async (req, res) => {
     fileStream.pipe(res);
   } catch (error) {
     console.error("Error al descargar documento:", error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Error al descargar documento" });
   }
 });
 
@@ -285,7 +270,78 @@ router.delete("/:id_Documento", async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Error al eliminar documento:", error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Error al eliminar documento" });
+  }
+});
+
+// Obtener todos los documentos
+router.get("/", async (req, res) => {
+  try {
+    console.log("GET /api/documentos - Obtener todos los documentos");
+    const { estatus, idPeriodo, id_proceso, id_usuario, idTipoDoc, programaEducativo } = req.query;
+
+    let query = `
+      SELECT 
+        d.id_Documento,
+        d.NombreArchivo,
+        d.RutaArchivo,
+        d.IdTipoDoc,
+        d.id_usuario,
+        d.Comentarios,
+        d.Estatus,
+        d.id_proceso,
+        e.Matricula,
+        t.Nombre_TipoDoc AS Nombre_TipoDoc,
+        pe.nombre AS ProgramaEducativo
+      FROM documentos d
+      JOIN proceso p ON d.id_proceso = p.id_proceso
+      JOIN estudiantes e ON p.id_estudiante = e.id_estudiante
+      JOIN tipo_documento t ON d.IdTipoDoc = t.IdTipoDoc
+      JOIN periodos per ON p.id_periodo = per.IdPeriodo
+      JOIN programa_educativo pe ON p.id_programa = pe.id_programa
+    `;
+    
+    const queryParams = [];
+    
+    const conditions = [];
+    if (estatus && ['Pendiente', 'Aprobado', 'Rechazado'].includes(estatus)) {
+      conditions.push('d.Estatus = ?');
+      queryParams.push(estatus);
+    }
+    if (idPeriodo && !isNaN(idPeriodo)) {
+      conditions.push('per.IdPeriodo = ?');
+      queryParams.push(Number(idPeriodo));
+    }
+    if (id_proceso && !isNaN(id_proceso)) {
+      conditions.push('d.id_proceso = ?');
+      queryParams.push(Number(id_proceso));
+    }
+    if (id_usuario && !isNaN(id_usuario)) {
+      conditions.push('d.id_usuario = ?');
+      queryParams.push(Number(id_usuario));
+    }
+    if (idTipoDoc && !isNaN(idTipoDoc)) {
+      conditions.push('d.IdTipoDoc = ?');
+      queryParams.push(Number(idTipoDoc));
+    }
+    if (programaEducativo) {
+      conditions.push('pe.nombre = ?');
+      queryParams.push(programaEducativo);
+    }
+    
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    console.log("Consulta SQL:", query);
+    console.log("Parámetros:", queryParams);
+
+    const [results] = await pool.query(query, queryParams);
+    console.log("Documentos obtenidos:", results);
+    res.json(results);
+  } catch (error) {
+    console.error("Error al obtener documentos:", error.message);
+    res.status(500).json({ error: "Error al obtener documentos" });
   }
 });
 
