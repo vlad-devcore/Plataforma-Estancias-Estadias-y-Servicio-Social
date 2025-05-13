@@ -69,6 +69,7 @@ const Sidebar = ({ onNavigate }) => {
             <NavItem to="/usuariosadmin" label="Usuarios" currentPath={location.pathname} onClick={handleNavigation} />
             <NavItem to="/empresasadmin" label="Empresas" currentPath={location.pathname} onClick={handleNavigation} />
             <NavItem to="/periodosadmin" label="Periodos" currentPath={location.pathname} onClick={handleNavigation} />
+            <NavItem to="/procesosadmin" label="Procesos" currentPath={location.pathname} onClick={handleNavigation} />
             <NavItem to="/formatosadmin" label="Formatos" currentPath={location.pathname} onClick={handleNavigation} />
             <NavItem to="/Documentacionadmin" label="Documentacion" currentPath={location.pathname} onClick={handleNavigation} />
             <NavItem to="/perfiladmin" label="Perfil" currentPath={location.pathname} onClick={handleNavigation} />
