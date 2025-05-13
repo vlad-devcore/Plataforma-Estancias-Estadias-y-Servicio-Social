@@ -12,7 +12,7 @@ const useProcesos = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProcesos, setTotalProcesos] = useState(0);
-  const processesPerPage = 3; // Número de procesos por página
+  const processesPerPage = 50; // Número de procesos por página
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
