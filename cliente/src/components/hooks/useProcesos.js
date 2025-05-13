@@ -48,7 +48,6 @@ const useProcesos = () => {
       id_user: user.id,
       id_empresa: formData.empresa,
       id_asesor_academico: formData.asesorAcademico,
-      id_asesor_empresarial: formData.asesorEmpresarial,
       id_programa: formData.programa,
       id_periodo: formData.periodo,
       tipo_proceso: mapTipoProceso(tipoProceso),
