@@ -19,7 +19,6 @@ router.post("/", async (req, res) => {
   }
 
   try {
-    // Obtener id_estudiante
     const [rows] = await pool.query(
       "SELECT id_estudiante FROM estudiantes WHERE id_user = ?",
       [id_user]
@@ -38,7 +37,7 @@ router.post("/", async (req, res) => {
     res.status(201).json({ message: "Proceso creado correctamente", id_proceso: result.insertId });
   } catch (error) {
     console.error("Error al registrar proceso:", error);
-    res.status(500).json({ error: "Error interno del servidor" });
+    res.status(500).json({ error: "Error interno del servidor", details: error.message });
   }
 });
 
@@ -51,7 +50,6 @@ router.post("/inicial", async (req, res) => {
   }
 
   try {
-    // Obtener id_estudiante
     const [rows] = await pool.query(
       "SELECT id_estudiante FROM estudiantes WHERE id_user = ?",
       [id_user]
@@ -70,7 +68,7 @@ router.post("/inicial", async (req, res) => {
     res.status(201).json({ message: "Proceso inicial creado", id_proceso: result.insertId });
   } catch (error) {
     console.error("Error al crear proceso inicial:", error);
-    res.status(500).json({ error: "Error interno del servidor" });
+    res.status(500).json({ error: "Error interno del servidor", details: error.message });
   }
 });
 
@@ -96,18 +94,51 @@ router.put("/:id_proceso", async (req, res) => {
     res.status(200).json({ message: "Proceso actualizado correctamente" });
   } catch (error) {
     console.error("Error al actualizar proceso:", error);
-    res.status(500).json({ error: "Error interno del servidor" });
+    res.status(500).json({ error: "Error interno del servidor", details: error.message });
+  }
+});
+
+// Eliminar proceso
+router.delete("/:id_proceso", async (req, res) => {
+  const { id_proceso } = req.params;
+  try {
+    const [result] = await pool.query("DELETE FROM proceso WHERE id_proceso = ?", [id_proceso]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Proceso no encontrado" });
+    }
+    res.status(200).json({ message: "Proceso eliminado correctamente" });
+  } catch (error) {
+    console.error("Error al eliminar proceso:", error);
+    res.status(500).json({ error: "Error interno del servidor", details: error.message });
   }
 });
 
 // Obtener todos los procesos
 router.get("/", async (req, res) => {
   try {
-    const [procesos] = await pool.query("SELECT * FROM proceso");
+    console.log("Consultando todos los procesos");
+    const [procesos] = await pool.query(
+      `SELECT 
+         p.id_proceso,
+         p.tipo_proceso,
+         e.matricula,
+         em.empresa_nombre,
+         COALESCE(u.nombre, 'Sin asesor') AS asesor_nombre,
+         COALESCE(pr.nombre, 'Sin programa') AS programa_nombre,
+         COALESCE(CONCAT(pe.Año, ' ', pe.Fase), 'Sin periodo') AS periodo_nombre
+       FROM proceso p
+       JOIN estudiantes e ON p.id_estudiante = e.id_estudiante
+       LEFT JOIN empresa em ON p.id_empresa = em.id_empresa
+       LEFT JOIN asesores_academicos aa ON p.id_asesor_academico = aa.id_asesor
+       LEFT JOIN users u ON aa.id_user = u.id_user
+       LEFT JOIN programa_educativo pr ON p.id_programa = pr.id_programa
+       LEFT JOIN periodos pe ON p.id_periodo = pe.IdPeriodo`
+    );
+    console.log(`Procesos encontrados: ${JSON.stringify(procesos, null, 2)}`);
     res.status(200).json(procesos);
   } catch (error) {
     console.error("Error al obtener procesos:", error);
-    res.status(500).json({ error: "Error interno del servidor" });
+    res.status(500).json({ error: "Error interno del servidor", details: error.message });
   }
 });
 
@@ -123,7 +154,7 @@ router.get("/estudiante/:id_estudiante/periodo/:id_periodo", async (req, res) =>
     res.status(200).json(results[0]);
   } catch (error) {
     console.error("Error al obtener proceso:", error);
-    res.status(500).json({ error: "Error interno del servidor" });
+    res.status(500).json({ error: "Error interno del servidor", details: error.message });
   }
 });
 
@@ -131,23 +162,31 @@ router.get("/estudiante/:id_estudiante/periodo/:id_periodo", async (req, res) =>
 router.get("/por-usuario/:id_user", async (req, res) => {
   const { id_user } = req.params;
   try {
-    const [estudianteRows] = await pool.query(
-      "SELECT id_estudiante FROM estudiantes WHERE id_user = ?",
+    console.log(`Consultando procesos para id_user: ${id_user}`);
+    const [procesos] = await pool.query(
+      `SELECT 
+         p.id_proceso,
+         p.tipo_proceso,
+         e.matricula,
+         em.empresa_nombre,
+         COALESCE(u.nombre, 'Sin asesor') AS asesor_nombre,
+         COALESCE(pr.nombre, 'Sin programa') AS programa_nombre,
+         COALESCE(CONCAT(pe.Año, ' ', pe.Fase), 'Sin periodo') AS periodo_nombre
+       FROM proceso p
+       JOIN estudiantes e ON p.id_estudiante = e.id_estudiante
+       LEFT JOIN empresa em ON p.id_empresa = em.id_empresa
+       LEFT JOIN asesores_academicos aa ON p.id_asesor_academico = aa.id_asesor
+       LEFT JOIN users u ON aa.id_user = u.id_user
+       LEFT JOIN programa_educativo pr ON p.id_programa = pr.id_programa
+       LEFT JOIN periodos pe ON p.id_periodo = pe.IdPeriodo
+       WHERE e.id_user = ?`,
       [id_user]
     );
-    if (estudianteRows.length === 0) {
-      return res.status(404).json({ error: "Estudiante no encontrado" });
-    }
-    const id_estudiante = estudianteRows[0].id_estudiante;
-
-    const [procesos] = await pool.query(
-      "SELECT * FROM proceso WHERE id_estudiante = ?",
-      [id_estudiante]
-    );
+    console.log(`Procesos encontrados: ${JSON.stringify(procesos, null, 2)}`);
     res.status(200).json(procesos);
   } catch (error) {
     console.error("Error al obtener procesos por usuario:", error);
-    res.status(500).json({ error: "Error interno del servidor" });
+    res.status(500).json({ error: "Error interno del servidor", details: error.message });
   }
 });
 
@@ -181,7 +220,7 @@ router.get("/validar/:id_user/:id_periodo", async (req, res) => {
     return res.json({ registrado: false, proceso: proceso[0] || null });
   } catch (error) {
     console.error("Error al validar proceso:", error);
-    res.status(500).json({ error: "Error interno del servidor" });
+    res.status(500).json({ error: "Error interno del servidor", details: error.message });
   }
 });
 

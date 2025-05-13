@@ -8,7 +8,7 @@ import { AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProgramaEducativoForm from './components/estudiante/ProgramaEducativoForm';
 import Login from './components_student/Login';
-import ResetPassword from './components/ResetPassword'; // Nuevo import
+import ResetPassword from './components/ResetPassword';
 import Home from './components_student/Home';
 import EmpresasS from './components_student/Empresas';
 import PerfilStudent from './components_student/Perfil';
@@ -25,6 +25,7 @@ import Documentacion from './components_admin/DocumentacionAdmin';
 import Empresas from './components_admin/EmpresasAdmin';
 import PerfilAdmin from './components_admin/PerfilAdmin';
 import Periodos from './components_admin/PeriodosAdmin';
+import ProcesosAdmin from './components_admin/ProcesosAdmin';
 import Unauthorized from './components/Unauthorized';
 import Logout from './components_admin/Logout';
 import PrivateRoute from './components/PrivateRoute';
@@ -46,8 +47,8 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         {/* Rutas públicas */}
         <Route path="/" element={<RootRedirect />} />
-        <Route path="/login" element={<Login />} /> {/* Añadida explícitamente */}
-        <Route path="/reset-password" element={<ResetPassword />} /> {/* Nueva ruta */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="/logout" element={<Logout />} />
 
@@ -113,6 +114,10 @@ function AnimatedRoutes() {
         <Route
           path="/periodosadmin"
           element={<PrivateRoute element={<Periodos />} allowedRoles={['administrador']} />}
+        />
+        <Route
+          path="/procesosadmin"
+          element={<PrivateRoute element={<ProcesosAdmin />} allowedRoles={['administrador']} />}
         />
         <Route
           path="/empresasadmin"
