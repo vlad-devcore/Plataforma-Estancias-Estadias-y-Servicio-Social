@@ -8,11 +8,10 @@ const Sidebar = ({ onNavigate }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const handleNavigation = () => {
-    setIsMobileMenuOpen(false);
     if (onNavigate) onNavigate();
   };
 
@@ -31,23 +30,27 @@ const Sidebar = ({ onNavigate }) => {
     setIsLogoutModalOpen(false);
   };
 
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
   return (
     <div className="flex bg-gray-100 min-h-screen">
-      {/* Botón móvil */}
+      {/* Botón de toggle */}
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        onClick={toggleSidebar}
         className="fixed top-4 left-4 z-50 p-2 bg-orange-500 text-white rounded-lg"
       >
-        {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
       </motion.button>
 
       {/* Barra lateral */}
       <aside
         className={`fixed w-64 bg-gradient-to-r from-orange-500 to-orange-600 text-white min-h-screen p-5 transform transition-transform duration-300 ease-in-out ${
-          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 z-40`}
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } z-40`}
       >
         {/* Logo */}
         <motion.img 
@@ -84,7 +87,7 @@ const Sidebar = ({ onNavigate }) => {
       </aside>
 
       {/* Contenido principal */}
-      <main className="flex-1 p-6 ml-0 md:ml-64">
+      <main className={`flex-1 p-6 transition-all duration-300 ${isSidebarOpen ? "md:ml-64" : "ml-0"}`}>
         <Outlet />
       </main>
 
