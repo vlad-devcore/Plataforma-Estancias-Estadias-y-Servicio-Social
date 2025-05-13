@@ -9,7 +9,6 @@ router.post("/", async (req, res) => {
     id_user,
     id_empresa,
     id_asesor_academico,
-    id_asesor_empresarial,
     id_programa,
     tipo_proceso,
     id_periodo
@@ -31,9 +30,9 @@ router.post("/", async (req, res) => {
     const id_estudiante = rows[0].id_estudiante;
 
     const [result] = await pool.query(
-      `INSERT INTO proceso (id_estudiante, id_empresa, id_asesor_academico, id_asesor_empresarial, id_programa, tipo_proceso, id_periodo)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [id_estudiante, id_empresa, id_asesor_academico, id_asesor_empresarial, id_programa, tipo_proceso, id_periodo]
+      `INSERT INTO proceso (id_estudiante, id_empresa, id_asesor_academico, id_programa, tipo_proceso, id_periodo)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [id_estudiante, id_empresa, id_asesor_academico, id_programa, tipo_proceso, id_periodo]
     );
 
     res.status(201).json({ message: "Proceso creado correctamente", id_proceso: result.insertId });
@@ -78,16 +77,16 @@ router.post("/inicial", async (req, res) => {
 // Actualizar proceso existente
 router.put("/:id_proceso", async (req, res) => {
   const { id_proceso } = req.params;
-  const { id_empresa, id_asesor_academico, id_asesor_empresarial, tipo_proceso } = req.body;
+  const { id_empresa, id_asesor_academico, tipo_proceso } = req.body;
 
-  if (!id_empresa || !id_asesor_academico || !id_asesor_empresarial || !tipo_proceso) {
+  if (!id_empresa || !id_asesor_academico || !tipo_proceso) {
     return res.status(400).json({ error: "Faltan campos obligatorios" });
   }
 
   try {
     const [result] = await pool.query(
-      `UPDATE proceso SET id_empresa = ?, id_asesor_academico = ?, id_asesor_empresarial = ?, tipo_proceso = ? WHERE id_proceso = ?`,
-      [id_empresa, id_asesor_academico, id_asesor_empresarial, tipo_proceso, id_proceso]
+      `UPDATE proceso SET id_empresa = ?, id_asesor_academico = ?, tipo_proceso = ? WHERE id_proceso = ?`,
+      [id_empresa, id_asesor_academico, tipo_proceso, id_proceso]
     );
 
     if (result.affectedRows === 0) {

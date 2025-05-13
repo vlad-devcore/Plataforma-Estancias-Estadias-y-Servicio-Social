@@ -2,21 +2,18 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import useEmpresas from "../hooks/useEmpresas";
 import useAsesoresAcademicos from "../hooks/useAsesoresAcademicos";
-import useAsesoresEmpresariales from "../hooks/useAsesoresEmpresariales";
 import { motion, AnimatePresence } from "framer-motion";
 
 const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoExistente }) => {
   const { companies } = useEmpresas();
   const { asesoresAcademicos } = useAsesoresAcademicos();
-  const { asesoresEmpresariales } = useAsesoresEmpresariales();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
-  const [cooldown, setCooldown] = useState(5); // 5 segundos de cooldown
+  const [cooldown, setCooldown] = useState(5);
   const [form, setForm] = useState({
     empresa: "",
     asesorAcademico: "",
-    asesorEmpresarial: "",
   });
 
   const user = JSON.parse(localStorage.getItem("user"));
@@ -26,7 +23,6 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
       setForm({
         empresa: procesoExistente.id_empresa || "",
         asesorAcademico: procesoExistente.id_asesor_academico || "",
-        asesorEmpresarial: procesoExistente.id_asesor_empresarial || "",
       });
     }
   }, [procesoExistente]);
@@ -46,12 +42,12 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
   };
 
   const handleSubmit = () => {
-    if (!form.empresa || !form.asesorAcademico || !form.asesorEmpresarial) {
-      setError("Por favor, completa todos los campos.");
+    if (!form.empresa || !form.asesorAcademico) {
+      setError("Por favor, selecciona una empresa y un asesor académico.");
       return;
     }
     setError(null);
-    setCooldown(5); // Reiniciar cooldown
+    setCooldown(5);
     setConfirmModalOpen(true);
   };
 
@@ -60,15 +56,12 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
     setLoading(true);
     try {
       if (procesoExistente) {
-        // Actualizar proceso existente
         await axios.put(`http://localhost:9999/api/procesos/${procesoExistente.id_proceso}`, {
           id_empresa: form.empresa,
           id_asesor_academico: form.asesorAcademico,
-          id_asesor_empresarial: form.asesorEmpresarial,
           tipo_proceso: tipoProceso,
         });
       } else {
-        // Crear nuevo proceso
         const { data: periodos } = await axios.get("http://localhost:9999/api/periodos");
         const periodoActivo = periodos.find((p) => p.EstadoActivo === "Activo");
         if (!periodoActivo) throw new Error("No hay periodo activo");
@@ -77,7 +70,6 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
           id_user: user.id,
           id_empresa: form.empresa,
           id_asesor_academico: form.asesorAcademico,
-          id_asesor_empresarial: form.asesorEmpresarial,
           id_programa: user.id_programa,
           tipo_proceso: tipoProceso,
           id_periodo: periodoActivo.IdPeriodo,
@@ -99,11 +91,6 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
 
   const getNombreAsesorAcademico = (id) => {
     const asesor = asesoresAcademicos.find((a) => a.id_asesor === parseInt(id));
-    return asesor ? asesor.nombre : "No seleccionado";
-  };
-
-  const getNombreAsesorEmpresarial = (id) => {
-    const asesor = asesoresEmpresariales.find((a) => a.id_asesor_emp === parseInt(id));
     return asesor ? asesor.nombre : "No seleccionado";
   };
 
@@ -171,21 +158,6 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
                   </option>
                 ))}
               </select>
-
-              <select
-                name="asesorEmpresarial"
-                value={form.asesorEmpresarial}
-                onChange={handleChange}
-                className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
-                required
-              >
-                <option value="">Seleccionar asesor empresarial</option>
-                {asesoresEmpresariales.map((a) => (
-                  <option key={a.id_asesor_emp} value={a.id_asesor_emp}>
-                    {a.nombre}
-                  </option>
-                ))}
-              </select>
             </div>
 
             <div className="flex justify-end gap-2">
@@ -226,7 +198,7 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
                 Confirmar Registro en {tipoProceso}
               </h3>
               <p className="text-gray-600 mb-4">
-                <strong>¡Importante!</strong> Una vez que confirmes, no podrás editar la empresa, asesor académico ni asesor empresarial. Por favor, verifica los datos:
+                <strong>¡Importante!</strong> Una vez que confirmes, no podrás editar la empresa ni el asesor académico. Por favor, verifica los datos:
               </p>
               <ul className="text-gray-700 mb-4 space-y-2">
                 <li>
@@ -235,21 +207,7 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
                 <li>
                   <strong>Asesor Académico:</strong> {getNombreAsesorAcademico(form.asesorAcademico)}
                 </li>
-                <li>
-                  <strong>Asesor Empresarial:</strong> {getNombreAsesorEmpresarial(form.asesorEmpresarial)}
-                </li>
               </ul>
-              {/* Opción 2: Barra de progreso (comentada) */}
-              {/*
-              <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-                <motion.div
-                  className="bg-gradient-to-r from-red-900 to-red-700 h-2.5 rounded-full"
-                  initial={{ width: "100%" }}
-                  animate={{ width: "0%" }}
-                  transition={{ duration: 5, ease: "linear" }}
-                />
-              </div>
-              */}
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setConfirmModalOpen(false)}
