@@ -34,8 +34,8 @@ router.post("/login", async (req, res) => {
   try {
     // Validar entrada
     if (!email || !password) {
-      console.error('Faltan email o contraseña');
-      return res.status(400).json({ error: "Email y contraseña son obligatorios" });
+      console.error('Faltan correo electrónico o contraseña');
+      return res.status(400).json({ error: "Correo electrónico y contraseña son obligatorios" });
     }
 
     // Buscar usuario por email
@@ -136,7 +136,7 @@ router.post("/change-password", authMiddleware, async (req, res) => {
   try {
     // Validar entrada
     if (!oldPassword || !newPassword) {
-      console.error('Faltan oldPassword o newPassword');
+      console.error('Faltan contraseña actual o nueva contraseña');
       return res.status(400).json({ error: "Se requieren ambas contraseñas" });
     }
 
@@ -183,19 +183,30 @@ router.post("/change-password", authMiddleware, async (req, res) => {
 // Solicitar enlace de recuperación
 router.post("/request-password-reset", async (req, res) => {
   const { email } = req.body;
+
+  console.log(`POST /api/auth/request-password-reset - Solicitud de recuperación para: ${email}`);
+
+  // Validar email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !emailRegex.test(email)) {
+    console.error(`Correo electrónico inválido: ${email}`);
+    return res.status(400).json({ error: 'Correo electrónico inválido' });
+  }
+
   try {
     const [users] = await pool.query('SELECT id_user FROM users WHERE email = ?', [email]);
     if (users.length === 0) {
       console.error(`Usuario no encontrado para recuperación: ${email}`);
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
+
     const userId = users[0].id_user;
     const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 3600000); // 1 hora
+    const expiresAt = new Date(Date.now() + 900000); // 15 minutos
 
     await pool.query(
-      'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)',
-      [userId, token, expiresAt]
+      'INSERT INTO password_reset_tokens (user_id, token, expires_at, used) VALUES (?, ?, ?, ?)',
+      [userId, token, expiresAt, false]
     );
 
     const transporter = nodemailer.createTransport({
@@ -206,18 +217,34 @@ router.post("/request-password-reset", async (req, res) => {
       }
     });
 
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: `"Universidad Politécnica de Quintana Roo" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: 'Recuperación de Contraseña - UPQROO',
+      subject: 'Restablecimiento de Contraseña - UPQROO',
       html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px; text-align: center;">
-          <img src="http://localhost:3000/logo512.png" alt="UPQROO Logo" style="height: 80px; margin-bottom: 20px;">
-          <h2>Restablecer tu contraseña</h2>
-          <p>Haz clic en el siguiente enlace para restablecer tu contraseña:</p>
-          <a href="http://localhost:3000/reset-password?token=${token}" style="display: inline-block; padding: 10px 20px; background-color: #f97316; color: white; text-decoration: none; border-radius: 5px;">Restablecer Contraseña</a>
-          <p>Este enlace expira en 1 hora.</p>
-          <p>Si no solicitaste esto, ignora este correo.</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f4f4f4;">
+          <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <img src="https://i.freeimage.host/i/3USBpMx.png" alt="UPQROO Logo" style="display: block; margin: 0 auto; height: 80px;">
+            <h2 style="color: #1a202c; text-align: center; margin-top: 20px;">Restablecimiento de Contraseña</h2>
+            <p style="color: #4a5568; line-height: 1.6; text-align: center;">
+              Estimado usuario, hemos recibido una solicitud para restablecer la contraseña de tu cuenta en el sistema de la Universidad Politécnica de Quintana Roo.
+            </p>
+            <p style="color: #4a5568; line-height: 1.6; text-align: center;">
+              Por favor, haz clic en el siguiente botón para proceder con el restablecimiento:
+            </p>
+            <div style="text-align: center; margin: 20px 0;">
+              <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #f97316; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold;">Restablecer Contraseña</a>
+            </div>
+            <p style="color: #4a5568; line-height: 1.6; text-align: center;">
+              Este enlace es válido por 15 minutos. Si no solicitaste este cambio, por favor ignora este correo o contacta a nuestro equipo de soporte.
+            </p>
+          </div>
+          <div style="margin-top: 20px; text-align: center; color: #718096;">
+            <p>Universidad Politécnica de Quintana Roo</p>
+            <p><a href="mailto:soporte@upqroo.edu.mx" style="color: #f97316; text-decoration: none;">soporte@upqroo.edu.mx</a> | <a href="https://www.upqroo.edu.mx" style="color: #f97316; text-decoration: none;">www.upqroo.edu.mx</a></p>
+            <p style="font-size: 12px; margin-top: 10px;">© 2025 UPQROO. Todos los derechos reservados.</p>
+          </div>
         </div>
       `
     };
@@ -227,6 +254,9 @@ router.post("/request-password-reset", async (req, res) => {
     res.status(200).json({ message: 'Enlace de recuperación enviado al correo' });
   } catch (error) {
     console.error('Error en solicitud de recuperación:', error);
+    if (error.code === 'EAUTH') {
+      return res.status(500).json({ error: 'Error de autenticación en el servidor de correo' });
+    }
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
@@ -234,7 +264,22 @@ router.post("/request-password-reset", async (req, res) => {
 // Restablecer contraseña
 router.post("/reset-password", async (req, res) => {
   const { token, newPassword } = req.body;
+
+  console.log(`POST /api/auth/reset-password - Intento de restablecimiento con token`);
+
   try {
+    // Validar entrada
+    if (!token || !newPassword) {
+      console.error('Faltan token o nueva contraseña');
+      return res.status(400).json({ error: 'Token y nueva contraseña son obligatorios' });
+    }
+
+    if (newPassword.length < 8) {
+      console.error('Nueva contraseña demasiado corta');
+      return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 8 caracteres' });
+    }
+
+    // Verificar token
     const [tokens] = await pool.query(
       'SELECT user_id, expires_at, used FROM password_reset_tokens WHERE token = ?',
       [token]
@@ -243,13 +288,16 @@ router.post("/reset-password", async (req, res) => {
       console.error('Token inválido o expirado:', token);
       return res.status(400).json({ error: 'Token inválido o expirado' });
     }
-    if (newPassword.length < 8) {
-      console.error('Nueva contraseña demasiado corta');
-      return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 8 caracteres' });
-    }
+
+    // Hashear nueva contraseña
     const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Actualizar contraseña
     await pool.query('UPDATE users SET password = ? WHERE id_user = ?', [hashedPassword, tokens[0].user_id]);
+
+    // Marcar token como usado
     await pool.query('UPDATE password_reset_tokens SET used = TRUE WHERE token = ?', [token]);
+
     console.log(`Contraseña restablecida para user_id: ${tokens[0].user_id}`);
     res.status(200).json({ message: 'Contraseña restablecida correctamente' });
   } catch (error) {
