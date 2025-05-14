@@ -5,6 +5,7 @@ import { FiEye, FiEyeOff } from 'react-icons/fi';
 import { Mail, UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
+import CreditsModal from '../components/CreditsModal';
 import './Login.css';
 
 const Login = () => {
@@ -123,6 +124,7 @@ const Login = () => {
                     type="button"
                     onClick={() => setShowForgotPassword(true)}
                     className="forgot-password-link"
+                    disabled={email === ''}
                   >
                     ¿Olvidaste tu contraseña?
                   </button>
@@ -342,6 +344,9 @@ const Login = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Modal de créditos */}
+      <CreditsModal />
     </div>
   );
 };
