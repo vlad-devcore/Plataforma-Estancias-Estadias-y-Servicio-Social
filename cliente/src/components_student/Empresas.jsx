@@ -79,7 +79,7 @@ export default function Empresas() {
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
-        const response = await axios.get('http://localhost:9999/api/empresas', {
+        const response = await axios.get('http://189.203.249.19:3011/api/empresas', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         if (!Array.isArray(response.data)) {

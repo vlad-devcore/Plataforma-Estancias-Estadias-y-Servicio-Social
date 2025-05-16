@@ -8,7 +8,7 @@ const useAsesoresAcademicos = () => {
 
   const fetchAsesoresAcademicos = async () => {
     try {
-      const { data } = await axios.get("http://localhost:9999/api/asesores/academicos");
+      const { data } = await axios.get("http://189.203.249.19:3011/api/asesores/academicos");
       setAsesoresAcademicos(data);
     } catch (err) {
       setError(err.response?.data?.message || err.message);

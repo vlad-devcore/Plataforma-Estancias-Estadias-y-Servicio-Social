@@ -25,8 +25,8 @@ const useDocumentosAdmin = () => {
   // Obtener todos los periodos
   const fetchPeriodos = async () => {
     try {
-      console.log('Fetching periodos from http://localhost:9999/api/documentos/periodos');
-      const { data } = await axios.get('http://localhost:9999/api/documentos/periodos');
+      console.log('Fetching periodos from http://189.203.249.19:3011/api/documentos/periodos');
+      const { data } = await axios.get('http://189.203.249.19:3011/api/documentos/periodos');
       console.log('Periodos recibidos:', data);
       setPeriodos(data);
       if (data.length === 0) {
@@ -41,8 +41,8 @@ const useDocumentosAdmin = () => {
   // Obtener tipos de documentos
   const fetchTiposDocumento = async () => {
     try {
-      console.log('Fetching tipos de documento from http://localhost:9999/api/documentos/tipo_documento');
-      const { data } = await axios.get('http://localhost:9999/api/documentos/tipo_documento');
+      console.log('Fetching tipos de documento from http://189.203.249.19:3011/api/documentos/tipo_documento');
+      const { data } = await axios.get('http://189.203.249.19:3011/api/documentos/tipo_documento');
       console.log('Tipos de documento recibidos:', data);
       setTiposDocumento(data);
       if (data.length === 0) {
@@ -57,8 +57,8 @@ const useDocumentosAdmin = () => {
   // Obtener programas educativos
   const fetchProgramasEducativos = async () => {
     try {
-      console.log('Fetching programas educativos from http://localhost:9999/api/documentos/programas_educativos');
-      const { data } = await axios.get('http://localhost:9999/api/documentos/programas_educativos');
+      console.log('Fetching programas educativos from http://189.203.249.19:3011/api/documentos/programas_educativos');
+      const { data } = await axios.get('http://189.203.249.19:3011/api/documentos/programas_educativos');
       console.log('Programas educativos recibidos:', data);
       setProgramasEducativos(data);
       if (data.length === 0) {
@@ -83,7 +83,7 @@ const useDocumentosAdmin = () => {
         programaEducativo: filters.programaEducativo || undefined
       };
       console.log('Parámetros enviados al backend:', params);
-      const { data } = await axios.get('http://localhost:9999/api/documentos', { params });
+      const { data } = await axios.get('http://189.203.249.19:3011/api/documentos', { params });
       console.log('Documentos recibidos:', data);
       if (!Array.isArray(data)) {
         throw new Error('Formato de respuesta inválido: se esperaba un arreglo de documentos');
@@ -125,7 +125,7 @@ const useDocumentosAdmin = () => {
     setSuccess(null);
     try {
       console.log(`Aprobando documento ${idDocumento}`);
-      await axios.put(`http://localhost:9999/api/documentos/approve/${idDocumento}`);
+      await axios.put(`http://189.203.249.19:3011/api/documentos/approve/${idDocumento}`);
       setSuccess('Documento aprobado correctamente');
       setCurrentPage(1); // Volver a la primera página
       await fetchDocuments();
@@ -144,7 +144,7 @@ const useDocumentosAdmin = () => {
     setSuccess(null);
     try {
       console.log(`Rechazando documento ${idDocumento} con comentarios: ${comentarios}`);
-      await axios.put(`http://localhost:9999/api/documentos/reject/${idDocumento}`, { comentarios });
+      await axios.put(`http://189.203.249.19:3011/api/documentos/reject/${idDocumento}`, { comentarios });
       setSuccess('Documento rechazado correctamente');
       setCurrentPage(1); // Volver a la primera página
       await fetchDocuments();

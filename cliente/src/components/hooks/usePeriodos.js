@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-const API_URL = "http://localhost:9999/api/periodos";
+const API_URL = "http://189.203.249.19:3011/api/periodos";
 
 const usePeriodos = () => {
   const [periodos, setPeriodos] = useState([]);

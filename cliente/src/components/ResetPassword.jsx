@@ -43,7 +43,7 @@ const ResetPassword = () => {
       return;
     }
     try {
-      await axios.post('http://localhost:9999/api/auth/reset-password', { token, newPassword });
+      await axios.post('http://189.203.249.19:3011/api/auth/reset-password', { token, newPassword });
       setToast({ message: 'Contraseña restablecida correctamente', type: 'success' });
       setTimeout(() => navigate('/login'), 2000);
     } catch (error) {

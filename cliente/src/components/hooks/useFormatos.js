@@ -8,7 +8,7 @@ const useFormatos = () => {
   const [success, setSuccess] = useState(null);
 
   // Base URL completa para las peticiones
-  const API_BASE = 'http://localhost:9999/api/documentosAdmin';
+  const API_BASE = 'http://189.203.249.19:3011/api/documentosAdmin';
 
   // Tipos de documentos predefinidos
   const tiposDocumentos = [
@@ -83,7 +83,7 @@ const downloadFormato = async (nombreDocumento) => {
   setError(null);
   try {
     // Abrir en nueva pestaña primero para forzar la descarga
-    window.open(`http://localhost:9999/api/documentosAdmin/download/${encodeURIComponent(nombreDocumento)}`, '_blank');
+    window.open(`http://189.203.249.19:3011/api/documentosAdmin/download/${encodeURIComponent(nombreDocumento)}`, '_blank');
     
     return true;
   } catch (err) {

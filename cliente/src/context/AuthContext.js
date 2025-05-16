@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
 
       if (token && userData) {
         try {
-          const response = await axios.get('http://localhost:9999/api/auth/verify', {
+          const response = await axios.get('http://189.203.249.19:3011/api/auth/verify', {
             headers: { Authorization: `Bearer ${token}` }
           });
           const verifiedUser = response.data.user;
@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('http://localhost:9999/api/auth/login', {
+      const response = await axios.post('http://189.203.249.19:3011/api/auth/login', {
         email,
         password
       });
@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }) => {
   const updateUser = async (userData) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.put(`http://localhost:9999/api/users/${userData.id}`, userData, {
+      const response = await axios.put(`http://189.203.249.19:3011/api/users/${userData.id}`, userData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const updatedUser = {
@@ -94,7 +94,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        'http://localhost:9999/api/auth/change-password',
+        'http://189.203.249.19:3011/api/auth/change-password',
         { oldPassword, newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );

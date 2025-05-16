@@ -121,7 +121,7 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
                     <td className="px-6 py-4">
                       {p.nombre_archivo ? (
                         <motion.a
-                          href={`http://localhost:9999/api/documentosAdmin/download/${encodeURIComponent(
+                          href={`http://189.203.249.19:3011/api/documentosAdmin/download/${encodeURIComponent(
                             p.nombre_documento
                           )}`}
                           target="_blank"
@@ -140,7 +140,7 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
                     <td className="px-6 py-4">
                       {doc?.RutaArchivo ? (
                         <motion.a
-                          href={`http://localhost:9999/api/documentos/download/${doc.id_Documento}`}
+                          href={`http://189.203.249.19:3011/api/documentos/download/${doc.id_Documento}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center justify-center w-10 h-10 bg-teal-500 text-white rounded-full hover:bg-teal-600 transition-colors"

@@ -75,7 +75,7 @@ const Header = () => {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        await axios.post('http://localhost:9999/api/auth/logout', {}, {
+        await axios.post('http://189.203.249.19:3011/api/auth/logout', {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
       }

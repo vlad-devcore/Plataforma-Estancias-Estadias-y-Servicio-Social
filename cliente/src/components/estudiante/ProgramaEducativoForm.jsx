@@ -20,8 +20,8 @@ const ProgramaEducativoForm = () => {
     const fetchData = async () => {
       try {
         const [programasRes, periodosRes] = await Promise.all([
-          axios.get('http://localhost:9999/api/programas'),
-          axios.get('http://localhost:9999/api/periodos'),
+          axios.get('http://189.203.249.19:3011/api/programas'),
+          axios.get('http://189.203.249.19:3011/api/periodos'),
         ]);
         setProgramas(programasRes.data);
         const periodosActivos = periodosRes.data.filter((p) => p.EstadoActivo === 'Activo');
@@ -65,7 +65,7 @@ const ProgramaEducativoForm = () => {
       const user = JSON.parse(localStorage.getItem('user'));
       if (!user?.id) throw new Error('Usuario no autenticado');
 
-      await axios.post('http://localhost:9999/api/procesos/inicial', {
+      await axios.post('http://189.203.249.19:3011/api/procesos/inicial', {
         id_user: user.id,
         id_programa: idPrograma,
         id_periodo: idPeriodo,

@@ -18,7 +18,7 @@ const PrivateRoute = ({ element, allowedRoles }) => {
       }
 
       try {
-        await axios.get('http://localhost:9999/api/auth/verify', {
+        await axios.get('http://189.203.249.19:3011/api/auth/verify', {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (!allowedRoles.includes(user.role)) {

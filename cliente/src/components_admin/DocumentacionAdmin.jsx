@@ -34,7 +34,7 @@ const DocumentManagement = () => {
 
   const handleViewDocument = (document) => {
     console.log('Ver documento:', document);
-    window.open(`http://localhost:9999/api/documentos/download/${document.id_Documento}`, '_blank');
+    window.open(`http://189.203.249.19:3011/api/documentos/download/${document.id_Documento}`, '_blank');
   };
 
   const openConfirmApproveModal = (document) => {

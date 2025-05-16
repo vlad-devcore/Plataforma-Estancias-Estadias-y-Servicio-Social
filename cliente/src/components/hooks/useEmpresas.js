@@ -23,7 +23,7 @@ const useEmpresas = () => {
       if (!token) {
         throw new Error('No se encontró el token de autenticación. Por favor, inicia sesión.');
       }
-      const { data } = await axios.get("http://localhost:9999/api/empresas", {
+      const { data } = await axios.get("http://189.203.249.19:3011/api/empresas", {
         headers: { Authorization: `Bearer ${token}` }
       });
       console.log('API response:', data);
@@ -80,7 +80,7 @@ const useEmpresas = () => {
         empresa_sociedad: data.empresa_sociedad,
         empresa_pagina_web: data.empresa_pagina_web || "",
       };
-      const response = await axios.post("http://localhost:9999/api/empresas", payload, {
+      const response = await axios.post("http://189.203.249.19:3011/api/empresas", payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCurrentPage(1); // Volver a la primera página
@@ -115,7 +115,7 @@ const useEmpresas = () => {
         empresa_sociedad: updatedData.empresa_sociedad,
         empresa_pagina_web: updatedData.empresa_pagina_web || "",
       };
-      await axios.put(`http://localhost:9999/api/empresas/${id}`, payload, {
+      await axios.put(`http://189.203.249.19:3011/api/empresas/${id}`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCurrentPage(1); // Volver a la primera página
@@ -139,7 +139,7 @@ const useEmpresas = () => {
       if (!token) {
         throw new Error('No se encontró el token de autenticación. Por favor, inicia sesión.');
       }
-      const response = await axios.delete(`http://localhost:9999/api/empresas/${id}`, {
+      const response = await axios.delete(`http://189.203.249.19:3011/api/empresas/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCurrentPage(1); // Volver a la primera página
@@ -166,7 +166,7 @@ const useEmpresas = () => {
       }
       const formData = new FormData();
       formData.append('file', file);
-      const { data } = await axios.post('http://localhost:9999/api/empresas/upload', formData, {
+      const { data } = await axios.post('http://189.203.249.19:3011/api/empresas/upload', formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
