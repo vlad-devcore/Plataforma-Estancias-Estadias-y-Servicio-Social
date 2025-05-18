@@ -64,7 +64,6 @@ const EmpresaManagement = () => {
       setConfirmData(null);
     } catch (err) {
       console.error('Error al procesar la acción:', err);
-      // No establecemos error aquí porque useEmpresas ya lo hace
     }
   };
 
@@ -72,7 +71,7 @@ const EmpresaManagement = () => {
     setShowConfirmation(false);
     setConfirmAction(null);
     setConfirmData(null);
-    resetMessages(); // Resetear mensajes al cancelar
+    resetMessages();
   };
 
   const handleSubmit = async (data) => {
@@ -87,7 +86,6 @@ const EmpresaManagement = () => {
     setShowConfirmation(true);
   };
 
-  // Filtrar empresas localmente (como respaldo, con verificación)
   const filteredEmpresas = Array.isArray(empresas) ? empresas.filter((empresa) => {
     const matchesSearch =
       empresa.empresa_nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -97,14 +95,12 @@ const EmpresaManagement = () => {
     return matchesSearch && matchesSociedad;
   }) : [];
 
-  // Cambiar página
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
   };
 
-  // Generar números de página
   const getPageNumbers = () => {
     const maxPagesToShow = 5;
     const startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
@@ -118,13 +114,10 @@ const EmpresaManagement = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
       <Sidebar />
 
-      {/* Main Content */}
-      <div className="flex-1 p-8">
+      <div className="flex-1 p-4 md:p-8 overflow-x-hidden">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -142,7 +135,6 @@ const EmpresaManagement = () => {
             </h2>
           </motion.div>
 
-          {/* Search, Filter, and Actions */}
           <div className="mb-6 flex flex-col md:flex-row justify-between gap-4">
             <div className="flex flex-col md:flex-row gap-4 flex-1">
               <div className="relative flex-1">
@@ -178,7 +170,7 @@ const EmpresaManagement = () => {
                 onClick={() => {
                   setSelectedEmpresa(null);
                   setFormMode('create');
-                  resetMessages(); // Resetear mensajes al abrir el formulario
+                  resetMessages();
                 }}
                 className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors shadow-sm"
               >
@@ -190,7 +182,7 @@ const EmpresaManagement = () => {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   setFormMode('import');
-                  resetMessages(); // Resetear mensajes al abrir el formulario
+                  resetMessages();
                 }}
                 className="flex items-center px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors shadow-sm"
               >
@@ -200,7 +192,6 @@ const EmpresaManagement = () => {
             </div>
           </div>
 
-          {/* Messages */}
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
               <span>{error}</span>
@@ -218,75 +209,81 @@ const EmpresaManagement = () => {
             </div>
           )}
 
-          {/* Table Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 mb-6"
-          >
-            <EmpresaTable
-              empresas={filteredEmpresas}
-              loading={loading}
-              error={error}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-            <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
-              <p className="text-sm text-gray-500">
-                Mostrando {filteredEmpresas.length} de {totalCompanies} registros
-              </p>
-            </div>
-            {/* Controles de paginación */}
-            {totalPages > 1 && (
-              <div className="px-6 py-4 flex justify-between items-center">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                    currentPage === 1
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
-                  }`}
-                >
-                  Anterior
-                </motion.button>
-                <div className="flex space-x-2">
-                  {getPageNumbers().map(page => (
-                    <motion.button
-                      key={page}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handlePageChange(page)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                        currentPage === page
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {page}
-                    </motion.button>
-                  ))}
+          {/* TABLA CON SCROLL HORIZONTAL CORREGIDA */}
+          <div className="w-full">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6"
+            >
+              <div className="relative overflow-x-auto">
+                <div className="min-w-[900px] w-full">
+                  <EmpresaTable
+                    empresas={filteredEmpresas}
+                    loading={loading}
+                    error={error}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
                 </div>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                    currentPage === totalPages
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
-                  }`}
-                >
-                  Siguiente
-                </motion.button>
               </div>
-            )}
-          </motion.div>
+              
+              <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
+                <p className="text-sm text-gray-500">
+                  Mostrando {filteredEmpresas.length} de {totalCompanies} registros
+                </p>
+              </div>
+              
+              {totalPages > 1 && (
+                <div className="px-6 py-4 flex justify-between items-center">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                      currentPage === 1
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                    }`}
+                  >
+                    Anterior
+                  </motion.button>
+                  <div className="flex space-x-2">
+                    {getPageNumbers().map(page => (
+                      <motion.button
+                        key={page}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => handlePageChange(page)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                          currentPage === page
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {page}
+                      </motion.button>
+                    ))}
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                      currentPage === totalPages
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                    }`}
+                  >
+                    Siguiente
+                  </motion.button>
+                </div>
+              )}
+            </motion.div>
+          </div>
 
-          {/* Form Modal */}
           {(formMode === 'create' || formMode === 'edit' || formMode === 'import') && (
             <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
               <motion.div
@@ -317,7 +314,7 @@ const EmpresaManagement = () => {
                     onClick={() => {
                       setFormMode(null);
                       setSelectedEmpresa(null);
-                      resetMessages(); // Resetear mensajes al cerrar el modal
+                      resetMessages();
                     }}
                     className="text-gray-500 hover:text-gray-700"
                   >
@@ -348,7 +345,6 @@ const EmpresaManagement = () => {
             </div>
           )}
 
-          {/* Modal de Confirmación */}
           {showConfirmation && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <motion.div
