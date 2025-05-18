@@ -25,13 +25,11 @@ const PeriodoManagement = () => {
   const [confirmData, setConfirmData] = useState(null);
 
   const handleEdit = (periodo) => {
-    console.log('Abriendo formulario de edición para periodo:', periodo);
     setSelectedPeriodo(periodo);
     setFormMode('edit');
   };
 
   const handleDelete = (periodoId) => {
-    console.log('Confirmando eliminación de periodo ID:', periodoId);
     setConfirmAction('delete');
     setConfirmData(periodoId);
     setShowConfirmation(true);
@@ -39,7 +37,6 @@ const PeriodoManagement = () => {
 
   const handleConfirmAction = async () => {
     try {
-      console.log('Ejecutando acción:', confirmAction, 'con datos:', confirmData);
       if (confirmAction === 'delete') {
         await deletePeriodo(confirmData);
       } else if (confirmAction === 'update') {
@@ -58,7 +55,6 @@ const PeriodoManagement = () => {
   };
 
   const handleCancelAction = () => {
-    console.log('Cancelando acción de confirmación');
     setShowConfirmation(false);
     setConfirmAction(null);
     setConfirmData(null);
@@ -66,14 +62,12 @@ const PeriodoManagement = () => {
   };
 
   const handleCancelForm = () => {
-    console.log('Cancelando formulario');
     setFormMode(null);
     setSelectedPeriodo(null);
     resetMessages();
   };
 
   const handleSubmit = (data) => {
-    console.log('Datos enviados desde el formulario:', data);
     setConfirmData(data);
     if (formMode === 'edit') {
       setConfirmAction('update');
@@ -87,8 +81,9 @@ const PeriodoManagement = () => {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      <div className="flex-1 p-8">
-        <div className="max-w-7xl mx-auto">
+      {/* Contenedor principal responsivo */}
+      <div className="flex-1 p-4 md:p-8 overflow-x-auto">
+        <div className="max-w-7xl mx-auto w-full">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -113,7 +108,6 @@ const PeriodoManagement = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => {
-                console.log('Abriendo formulario de creación');
                 setSelectedPeriodo(null);
                 setFormMode('create');
                 resetMessages();
@@ -143,25 +137,31 @@ const PeriodoManagement = () => {
             </div>
           )}
 
-          {/* Table Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-lg shadow-sm overflow-x-auto border border-gray-200 mb-6"
-          >
-            <PeriodoTable
-              periodos={periodos}
-              loading={loading}
-              error={error}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-            <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
-              <p className="text-sm text-gray-500">
-                Mostrando {periodos.length} de {periodos.length} registros
-              </p>
-            </div>
-          </motion.div>
+          {/* Sección de la tabla con scroll horizontal */}
+          <div className="w-full overflow-x-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 min-w-max"
+            >
+              {/* Contenedor de la tabla con scroll horizontal */}
+              <div className="overflow-x-auto">
+                <PeriodoTable
+                  periodos={periodos}
+                  loading={loading}
+                  error={error}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+              </div>
+              
+              <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
+                <p className="text-sm text-gray-500">
+                  Mostrando {periodos.length} de {periodos.length} registros
+                </p>
+              </div>
+            </motion.div>
+          </div>
 
           {/* Form Modal */}
           {(formMode === 'create' || formMode === 'edit') && (
