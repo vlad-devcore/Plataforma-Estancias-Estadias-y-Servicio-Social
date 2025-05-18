@@ -33,7 +33,6 @@ const DocumentManagement = () => {
   const [rejectionNote, setRejectionNote] = useState('');
 
   const handleViewDocument = (document) => {
-    console.log('Ver documento:', document);
     window.open(`http://189.203.249.19:3011/api/documentos/download/${document.id_Documento}`, '_blank');
   };
 
@@ -79,13 +78,11 @@ const DocumentManagement = () => {
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     const newValue = value === 'Todos' ? '' : value;
-    console.log(`Actualizando filtro ${name}:`, newValue);
     updateFilters({
       [name]: name === 'idTipoDoc' || name === 'idPeriodo' ? (newValue ? Number(newValue) : '') : newValue
     });
   };
 
-  // Generar números de página
   const getPageNumbers = () => {
     const maxPagesToShow = 5;
     const startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
@@ -102,9 +99,9 @@ const DocumentManagement = () => {
       {/* Sidebar */}
       <Sidebar />
       
-      {/* Main Content */}
-      <div className="flex-1 p-8">
-        <div className="max-w-7xl mx-auto">
+      {/* Main Content with horizontal scroll */}
+      <div className="flex-1 p-4 md:p-8 overflow-x-auto">
+        <div className="max-w-7xl mx-auto w-full">
           {/* Header */}
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
@@ -125,21 +122,29 @@ const DocumentManagement = () => {
 
           {/* Messages */}
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex justify-between items-center">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex justify-between items-center"
+            >
               <span>{error}. Por favor, verifica la configuración del servidor.</span>
               <button onClick={resetMessages} className="text-red-900 hover:underline">Cerrar</button>
-            </div>
+            </motion.div>
           )}
           {success && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 flex justify-between items-center">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 flex justify-between items-center"
+            >
               {success}
               <button onClick={resetMessages} className="text-green-900 hover:underline">Cerrar</button>
-            </div>
+            </motion.div>
           )}
 
           {/* Filters and Search */}
           <div className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Filtro por Estatus */}
+            {/* Status Filter */}
             <div>
               <label htmlFor="estatus" className="block text-sm font-medium text-gray-700 mb-1">
                 Filtrar por Estatus
@@ -158,7 +163,7 @@ const DocumentManagement = () => {
               </select>
             </div>
 
-            {/* Filtro por Periodo */}
+            {/* Period Filter */}
             <div>
               <label htmlFor="idPeriodo" className="block text-sm font-medium text-gray-700 mb-1">
                 Filtrar por Periodo
@@ -171,19 +176,15 @@ const DocumentManagement = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="Todos">Todos</option>
-                {periodos.length > 0 ? (
-                  periodos.map((periodo) => (
-                    <option key={periodo.IdPeriodo} value={periodo.IdPeriodo}>
-                      {periodo.Año} - {periodo.Fase}
-                    </option>
-                  ))
-                ) : (
-                  <option disabled>No hay periodos disponibles</option>
-                )}
+                {periodos.map((periodo) => (
+                  <option key={periodo.IdPeriodo} value={periodo.IdPeriodo}>
+                    {periodo.Año} - {periodo.Fase}
+                  </option>
+                ))}
               </select>
             </div>
 
-            {/* Filtro por Tipo de Documento */}
+            {/* Document Type Filter */}
             <div>
               <label htmlFor="idTipoDoc" className="block text-sm font-medium text-gray-700 mb-1">
                 Filtrar por Tipo de Documento
@@ -196,19 +197,15 @@ const DocumentManagement = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="Todos">Todos</option>
-                {tiposDocumento.length > 0 ? (
-                  tiposDocumento.map((tipo) => (
-                    <option key={tipo.IdTipoDoc} value={tipo.IdTipoDoc}>
-                      {tipo.Nombre_TipoDoc}
-                    </option>
-                  ))
-                ) : (
-                  <option disabled>No hay tipos disponibles</option>
-                )}
+                {tiposDocumento.map((tipo) => (
+                  <option key={tipo.IdTipoDoc} value={tipo.IdTipoDoc}>
+                    {tipo.Nombre_TipoDoc}
+                  </option>
+                ))}
               </select>
             </div>
 
-            {/* Filtro por Programa Educativo */}
+            {/* Education Program Filter */}
             <div>
               <label htmlFor="programaEducativo" className="block text-sm font-medium text-gray-700 mb-1">
                 Filtrar por Programa Educativo
@@ -221,19 +218,15 @@ const DocumentManagement = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="Todos">Todos</option>
-                {programasEducativos.length > 0 ? (
-                  programasEducativos.map((programa) => (
-                    <option key={programa} value={programa}>
-                      {programa}
-                    </option>
-                  ))
-                ) : (
-                  <option disabled>No hay programas disponibles</option>
-                )}
+                {programasEducativos.map((programa) => (
+                  <option key={programa} value={programa}>
+                    {programa}
+                  </option>
+                ))}
               </select>
             </div>
 
-            {/* Búsqueda */}
+            {/* Search */}
             <div className="col-span-1 md:col-span-2 lg:col-span-1">
               <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
                 Buscar
@@ -256,177 +249,179 @@ const DocumentManagement = () => {
             </div>
           </div>
 
-          {/* Table Section */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 mb-6"
-          >
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Matrícula
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Documento
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Programa Educativo
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Estatus
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {loading ? (
+          {/* Table Section with horizontal scroll */}
+          <div className="w-full overflow-x-auto">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 min-w-max"
+            >
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
                     <tr>
-                      <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
-                        Cargando...
-                      </td>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Matrícula
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Documento
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Programa Educativo
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Estatus
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Acciones
+                      </th>
                     </tr>
-                  ) : documents.length > 0 ? (
-                    documents.map((doc) => (
-                      <tr key={doc.id_Documento} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {doc.Matricula}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {doc.Nombre_TipoDoc}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {doc.ProgramaEducativo || 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {doc.Estatus === 'Pendiente' && <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pendiente</span>}
-                          {doc.Estatus === 'Aprobado' && <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Aprobado</span>}
-                          {doc.Estatus === 'Rechazado' && (
-                            <div className="flex items-center">
-                              <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Rechazado</span>
-                              {doc.Comentarios && (
-                                <motion.div 
-                                  whileHover={{ scale: 1.1 }}
-                                  className="ml-2 cursor-pointer text-gray-500 hover:text-gray-700"
-                                  onClick={() => {
-                                    setSelectedDocument(doc);
-                                    setModalType('viewNote');
-                                    setModalOpen(true);
-                                  }}
-                                >
-                                  <MessageSquare size={16} />
-                                </motion.div>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex justify-end space-x-2">
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              className="text-blue-600 hover:text-blue-800"
-                              onClick={() => handleViewDocument(doc)}
-                              disabled={loading}
-                            >
-                              <Eye size={18} />
-                            </motion.button>
-                            {doc.Estatus === 'Pendiente' && (
-                              <>
-                                <motion.button
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.9 }}
-                                  className="text-green-600 hover:text-green-800"
-                                  onClick={() => openConfirmApproveModal(doc)}
-                                  disabled={loading}
-                                >
-                                  <CheckCircle size={18} />
-                                </motion.button>
-                                <motion.button
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.9 }}
-                                  className="text-red-600 hover:text-red-800"
-                                  onClick={() => openConfirmRejectModal(doc)}
-                                  disabled={loading}
-                                >
-                                  <XCircle size={18} />
-                                </motion.button>
-                              </>
-                            )}
-                          </div>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {loading ? (
+                      <tr>
+                        <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                          Cargando...
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
-                        No se encontraron documentos
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
-              <p className="text-sm text-gray-500">
-                Mostrando {documents.length} de {totalDocuments} registros
-              </p>
-            </div>
-            {/* Controles de paginación */}
-            {totalPages > 1 && (
-              <div className="px-6 py-4 flex justify-between items-center">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                    currentPage === 1
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
-                  }`}
-                >
-                  Anterior
-                </motion.button>
-                <div className="flex space-x-2">
-                  {getPageNumbers().map(page => (
-                    <motion.button
-                      key={page}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                        currentPage === page
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {page}
-                    </motion.button>
-                  ))}
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                    currentPage === totalPages
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
-                  }`}
-                >
-                  Siguiente
-                </motion.button>
+                    ) : documents.length > 0 ? (
+                      documents.map((doc) => (
+                        <tr key={doc.id_Documento} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {doc.Matricula}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {doc.Nombre_TipoDoc}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {doc.ProgramaEducativo || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            {doc.Estatus === 'Pendiente' && <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pendiente</span>}
+                            {doc.Estatus === 'Aprobado' && <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Aprobado</span>}
+                            {doc.Estatus === 'Rechazado' && (
+                              <div className="flex items-center">
+                                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Rechazado</span>
+                                {doc.Comentarios && (
+                                  <motion.div 
+                                    whileHover={{ scale: 1.1 }}
+                                    className="ml-2 cursor-pointer text-gray-500 hover:text-gray-700"
+                                    onClick={() => {
+                                      setSelectedDocument(doc);
+                                      setModalType('viewNote');
+                                      setModalOpen(true);
+                                    }}
+                                  >
+                                    <MessageSquare size={16} />
+                                  </motion.div>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div className="flex justify-end space-x-2">
+                              <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                className="text-blue-600 hover:text-blue-800"
+                                onClick={() => handleViewDocument(doc)}
+                                disabled={loading}
+                              >
+                                <Eye size={18} />
+                              </motion.button>
+                              {doc.Estatus === 'Pendiente' && (
+                                <>
+                                  <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    className="text-green-600 hover:text-green-800"
+                                    onClick={() => openConfirmApproveModal(doc)}
+                                    disabled={loading}
+                                  >
+                                    <CheckCircle size={18} />
+                                  </motion.button>
+                                  <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    className="text-red-600 hover:text-red-800"
+                                    onClick={() => openConfirmRejectModal(doc)}
+                                    disabled={loading}
+                                  >
+                                    <XCircle size={18} />
+                                  </motion.button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                          No se encontraron documentos
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
-            )}
-          </motion.div>
+              <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
+                <p className="text-sm text-gray-500">
+                  Mostrando {documents.length} de {totalDocuments} registros
+                </p>
+              </div>
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                      currentPage === 1
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                    }`}
+                  >
+                    Anterior
+                  </motion.button>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {getPageNumbers().map(page => (
+                      <motion.button
+                        key={page}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                          currentPage === page
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {page}
+                      </motion.button>
+                    ))}
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                      currentPage === totalPages
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                    }`}
+                  >
+                    Siguiente
+                  </motion.button>
+                </div>
+              )}
+            </motion.div>
+          </div>
 
-          {/* Modal para confirmaciones, rechazo o visualización de notas */}
+          {/* Modal for confirmations, rejection or note viewing */}
           {modalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
               <motion.div 
@@ -472,19 +467,23 @@ const DocumentManagement = () => {
                       ¿Estás seguro de que deseas aprobar el documento "{selectedDocument?.Nombre_TipoDoc}" de la matrícula {selectedDocument?.Matricula}?
                     </p>
                     <div className="flex justify-end space-x-2">
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => setModalOpen(false)}
                         className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
                       >
                         Cancelar
-                      </button>
-                      <button
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={handleApproveDocument}
                         className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
                         disabled={loading}
                       >
                         Aprobar
-                      </button>
+                      </motion.button>
                     </div>
                   </>
                 ) : modalType === 'confirmReject' ? (
@@ -493,19 +492,23 @@ const DocumentManagement = () => {
                       ¿Estás seguro de que deseas rechazar el documento "{selectedDocument?.Nombre_TipoDoc}" de la matrícula {selectedDocument?.Matricula}?
                     </p>
                     <div className="flex justify-end space-x-2">
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => setModalOpen(false)}
                         className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
                       >
                         Cancelar
-                      </button>
-                      <button
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={openRejectionModal}
                         className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
                         disabled={loading}
                       >
                         Continuar
-                      </button>
+                      </motion.button>
                     </div>
                   </>
                 ) : modalType === 'rejection' ? (
@@ -524,19 +527,23 @@ const DocumentManagement = () => {
                       ></textarea>
                     </div>
                     <div className="flex justify-end space-x-2">
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => setModalOpen(false)}
                         className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
                       >
                         Cancelar
-                      </button>
-                      <button
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={handleRejectDocument}
                         className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
                         disabled={!rejectionNote.trim() || loading}
                       >
                         Rechazar
-                      </button>
+                      </motion.button>
                     </div>
                   </>
                 ) : (
@@ -545,12 +552,14 @@ const DocumentManagement = () => {
                       <p className="text-gray-700">{selectedDocument?.Comentarios}</p>
                     </div>
                     <div className="flex justify-end">
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => setModalOpen(false)}
                         className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
                       >
                         Cerrar
-                      </button>
+                      </motion.button>
                     </div>
                   </>
                 )}

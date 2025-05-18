@@ -41,7 +41,7 @@ const CreditsModal = () => {
       role: 'Desarrollador Backend',
       emoji: '👨🏾‍💻',
       image: '/team/juan.jpg',
-      github: 'https://github.com/juanoch',
+      github: 'https://github.com/pablomian',
       linkedin: 'https://linkedin.com/in/juanoch'
     },
     {

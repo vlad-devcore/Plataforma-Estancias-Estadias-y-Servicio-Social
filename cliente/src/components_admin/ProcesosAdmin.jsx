@@ -8,7 +8,7 @@ import Sidebar from '../components_admin/Sidebar';
 
 const ProcesosAdmin = () => {
   const {
-    filteredProcesos, // Cambiamos a filteredProcesos desde useProcesos
+    filteredProcesos,
     loading,
     error,
     success,
@@ -91,8 +91,9 @@ const ProcesosAdmin = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="flex-1 p-8">
-        <div className="max-w-7xl mx-auto">
+      {/* Contenedor principal con scroll horizontal */}
+      <div className="flex-1 p-4 md:p-8 overflow-x-auto">
+        <div className="max-w-7xl mx-auto w-full">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -142,71 +143,76 @@ const ProcesosAdmin = () => {
             </div>
           )}
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 mb-6"
-          >
-            <ProcesoTable
-              procesos={filteredProcesos}
-              loading={loading}
-              error={error}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-            <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
-              <p className="text-sm text-gray-500">
-                Mostrando {filteredProcesos.length} de {totalProcesos} registros
-              </p>
-            </div>
-            {totalPages > 1 && (
-              <div className="px-6 py-4 flex justify-between items-center">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                    currentPage === 1
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
-                  }`}
-                >
-                  Anterior
-                </motion.button>
-                <div className="flex space-x-2">
-                  {getPageNumbers().map(page => (
-                    <motion.button
-                      key={page}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handlePageChange(page)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                        currentPage === page
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {page}
-                    </motion.button>
-                  ))}
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                    currentPage === totalPages
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
-                  }`}
-                >
-                  Siguiente
-                </motion.button>
+          {/* Contenedor de la tabla con scroll horizontal */}
+          <div className="w-full overflow-x-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 min-w-max"
+            >
+              <div className="overflow-x-auto">
+                <ProcesoTable
+                  procesos={filteredProcesos}
+                  loading={loading}
+                  error={error}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
               </div>
-            )}
-          </motion.div>
+              <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
+                <p className="text-sm text-gray-500">
+                  Mostrando {filteredProcesos.length} de {totalProcesos} registros
+                </p>
+              </div>
+              {totalPages > 1 && (
+                <div className="px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                      currentPage === 1
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                    }`}
+                  >
+                    Anterior
+                  </motion.button>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {getPageNumbers().map(page => (
+                      <motion.button
+                        key={page}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => handlePageChange(page)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                          currentPage === page
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {page}
+                      </motion.button>
+                    ))}
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                      currentPage === totalPages
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                    }`}
+                  >
+                    Siguiente
+                  </motion.button>
+                </div>
+              )}
+            </motion.div>
+          </div>
 
           {formMode === 'edit' && (
             <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
