@@ -34,7 +34,6 @@ const UserManagement = () => {
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmData, setConfirmData] = useState(null);
 
-  // Roles estáticos para el dropdown
   const uniqueRoles = ['Todos', 'estudiante', 'administrador', 'asesor_academico', 'asesor_empresarial'];
 
   const handleSubmit = (data) => {
@@ -81,14 +80,12 @@ const UserManagement = () => {
     setSelectedUser(null);
   };
 
-  // Cambiar página
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
   };
 
-  // Generar números de página
   const getPageNumbers = () => {
     const maxPagesToShow = 5;
     const startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
@@ -102,13 +99,10 @@ const UserManagement = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
       <Sidebar />
 
-      {/* Main Content */}
-      <div className="flex-1 p-8">
+      <div className="flex-1 p-4 md:p-8 overflow-x-hidden">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -126,7 +120,6 @@ const UserManagement = () => {
             </h2>
           </motion.div>
 
-          {/* Search, Filter, and Actions */}
           <div className="mb-6 flex flex-col md:flex-row justify-between gap-4">
             <div className="flex flex-col md:flex-row gap-4 flex-1">
               <div className="relative flex-1">
@@ -178,7 +171,6 @@ const UserManagement = () => {
             </div>
           </div>
 
-          {/* Messages */}
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
               <div>
@@ -204,33 +196,38 @@ const UserManagement = () => {
             </div>
           )}
 
-          {/* Layout: tabla */}
+          {/* TABLA CON SCROLL HORIZONTAL FUNCIONAL */}
           <div className="w-full">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-lg shadow-sm overflow-x-auto border border-gray-200 mb-6"
+              className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6"
             >
-              <UserTable
-                users={filteredUsers}
-                loading={loading}
-                error={error}
-                onEdit={(user) => {
-                  setSelectedUser(user);
-                  setFormMode('edit');
-                }}
-                onDelete={(id_user) => {
-                  setConfirmData(id_user);
-                  setConfirmAction('delete');
-                  setShowConfirmation(true);
-                }}
-              />
+              <div className="relative overflow-x-auto">
+                <div className="min-w-[900px] w-full">
+                  <UserTable
+                    users={filteredUsers}
+                    loading={loading}
+                    error={error}
+                    onEdit={(user) => {
+                      setSelectedUser(user);
+                      setFormMode('edit');
+                    }}
+                    onDelete={(id_user) => {
+                      setConfirmData(id_user);
+                      setConfirmAction('delete');
+                      setShowConfirmation(true);
+                    }}
+                  />
+                </div>
+              </div>
+              
               <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
                 <p className="text-sm text-gray-500">
                   Mostrando {filteredUsers.length} de {totalUsers} registros
                 </p>
               </div>
-              {/* Controles de paginación */}
+              
               {totalPages > 1 && (
                 <div className="px-6 py-4 flex justify-between items-center">
                   <motion.button
@@ -281,7 +278,6 @@ const UserManagement = () => {
             </motion.div>
           </div>
 
-          {/* Form Modal */}
           {(formMode === 'create' || formMode === 'edit' || formMode === 'import') && (
             <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
               <motion.div
@@ -332,7 +328,6 @@ const UserManagement = () => {
             </div>
           )}
 
-          {/* Confirmation Modal */}
           {showConfirmation && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <motion.div
