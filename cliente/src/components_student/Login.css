@@ -140,6 +140,7 @@ body {
   position: relative;
   opacity: 0;
   animation: fadeInSection 1s ease-out 1s forwards;
+  z-index: 1;
 }
 
 @keyframes fadeInSection {
@@ -198,6 +199,7 @@ body {
   position: relative;
   transform: translateX(100%);
   animation: slideInRight 1s ease-out 0.9s forwards;
+  z-index: 3; /* Z-index más alto para asegurar que esté por encima */
 }
 
 @keyframes slideInRight {
@@ -214,6 +216,8 @@ body {
   width: 100%;
   max-width: 450px;
   margin: 0 auto;
+  position: relative;
+  z-index: 4; /* Z-index aún más alto para el contenido del formulario */
 }
 
 h2 {
@@ -231,6 +235,7 @@ h2 {
   margin-bottom: 25px;
   position: relative;
   opacity: 0;
+  z-index: 5; /* Z-index alto para los grupos del formulario */
 }
 
 .form-group:nth-child(1) {
@@ -271,6 +276,8 @@ label {
   transition: var(--transition);
   color: var(--text-dark);
   box-shadow: var(--input-shadow);
+  position: relative;
+  z-index: 6; /* Z-index muy alto para los inputs */
 }
 
 .form-input:focus {
@@ -319,6 +326,7 @@ label {
   overflow: hidden;
   opacity: 0;
   animation: fadeInButton 0.8s ease-out 2.3s forwards;
+  z-index: 6; /* Z-index alto para el botón */
 }
 
 @keyframes fadeInButton {
@@ -475,7 +483,37 @@ label {
   }
 }
 
-/* Efecto de barrido luminoso */
+/* SOLUCIÓN 1: Efecto de barrido mejorado - Solo afecta la sección del logo */
+.logo-section::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(30deg);
+  animation: shiningEffect 8s ease-in-out 3s infinite;
+  z-index: 0;
+  pointer-events: none;
+}
+
+@keyframes shiningEffect {
+  0% {
+    transform: rotate(30deg) translateX(-100%);
+  }
+  100% {
+    transform: rotate(30deg) translateX(100%);
+  }
+}
+
+/* ALTERNATIVA: Si quieres mantener el efecto original pero sin interferencia */
+/*
 .login-form-container::after {
   content: '';
   position: absolute;
@@ -491,16 +529,10 @@ label {
   );
   transform: rotate(30deg);
   animation: shiningEffect 6s ease-in-out 3s infinite;
+  z-index: -1;
+  pointer-events: none;
 }
-
-@keyframes shiningEffect {
-  0% {
-    transform: rotate(30deg) translateX(-100%);
-  }
-  100% {
-    transform: rotate(30deg) translateX(100%);
-  }
-}
+*/
 
 /* Responsive styles */
 @media (max-width: 992px) {
@@ -538,7 +570,6 @@ label {
     padding: 40px 30px;
   }
   
-
   .login-form-container::before {
     width: 100%;
     height: 50%;
@@ -582,7 +613,6 @@ label {
     padding: 14px;
   }
   
-
   .university-logo {
     animation-delay: 0.8s;
   }
@@ -604,8 +634,8 @@ label {
   }
 }
 
-
-.logo-section::after {
+/* Efecto adicional para la sección del logo - no interfiere con el formulario */
+.logo-section::before {
   content: '';
   position: absolute;
   bottom: 0;
@@ -621,6 +651,7 @@ label {
 
 .password-input-container {
   position: relative;
+  z-index: 6;
 }
 
 .password-toggle-icon {
@@ -630,6 +661,7 @@ label {
   transform: translateY(-50%);
   cursor: pointer;
   color: #6c4c44;
+  z-index: 7;
 }
 
 .password-toggle-icon svg {

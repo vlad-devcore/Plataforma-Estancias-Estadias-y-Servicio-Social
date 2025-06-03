@@ -1,9 +1,11 @@
 import React, { useRef, useState } from 'react';
-import { Upload, Trash2, Download, MessageSquare, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Upload, Trash2, Download, MessageSquare, FileText, Eye } from 'lucide-react';
 import useDocumentosEstudiante from '../components/hooks/useDocumentosEstudiante';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
+  const navigate = useNavigate();
   const fileInputRefs = useRef({});
   const [modalSubirConfirm, setModalSubirConfirm] = useState({ open: false, idTipoDoc: null });
   const [modalSubir, setModalSubir] = useState({ open: false, idTipoDoc: null });
@@ -45,6 +47,21 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
 
   const getDocumentoSubido = (idTipoDoc) =>
     documentos.find((doc) => doc.IdTipoDoc === idTipoDoc);
+
+  // Función para manejar la redirección a vistas específicas
+  const handlePlantillaClick = (nombreDocumento) => {
+    const nombreLower = nombreDocumento.toLowerCase();
+    
+    if (nombreLower.includes('definición de proyecto') || nombreLower.includes('definicion de proyecto')) {
+      navigate('/DefinicionProyectoForm');
+    } else if (nombreLower.includes('cédula de registro') || nombreLower.includes('cedula de registro')) {
+      navigate('/CedulaRegistroForm');
+    } else {
+      // Para otros documentos, mantener el comportamiento original de descarga
+      const downloadUrl = `http://189.203.249.19:3011/api/documentosAdmin/download/${encodeURIComponent(nombreDocumento)}`;
+      window.open(downloadUrl, '_blank');
+    }
+  };
 
   if (!procesoIdProp && !loading) {
     return (
@@ -115,24 +132,30 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
             <tbody className="divide-y divide-gray-200">
               {plantillas.map((p) => {
                 const doc = getDocumentoSubido(p.IdTipoDoc);
+                const nombreLower = p.nombre_documento.toLowerCase();
+                const esVistaEspecial = nombreLower.includes('definición de proyecto') || 
+                                       nombreLower.includes('definicion de proyecto') || 
+                                       nombreLower.includes('cédula de registro') || 
+                                       nombreLower.includes('cedula de registro');
+                
                 return (
                   <tr key={p.id_plantilla} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 text-gray-800 font-medium">{p.nombre_documento}</td>
                     <td className="px-6 py-4">
                       {p.nombre_archivo ? (
-                        <motion.a
-                          href={`http://189.203.249.19:3011/api/documentosAdmin/download/${encodeURIComponent(
-                            p.nombre_documento
-                          )}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center w-10 h-10 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors"
-                          whileHover={{ rotate: 360 }}
+                        <motion.button
+                          onClick={() => handlePlantillaClick(p.nombre_documento)}
+                          className={`inline-flex items-center justify-center w-10 h-10 ${
+                            esVistaEspecial 
+                              ? 'bg-purple-500 hover:bg-purple-600' 
+                              : 'bg-green-500 hover:bg-green-600'
+                          } text-white rounded-full transition-colors`}
+                          whileHover={{ rotate: esVistaEspecial ? 0 : 360, scale: esVistaEspecial ? 1.1 : 1 }}
                           transition={{ duration: 0.3 }}
-                          title="Descargar plantilla"
+                          title={esVistaEspecial ? 'Ir a vista específica' : 'Descargar plantilla'}
                         >
-                          <Download size={20} />
-                        </motion.a>
+                          {esVistaEspecial ? <Eye size={20} /> : <Download size={20} />}
+                        </motion.button>
                       ) : (
                         <span className="text-gray-500 italic">No disponible</span>
                       )}

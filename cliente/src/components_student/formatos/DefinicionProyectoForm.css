@@ -1,0 +1,692 @@
+/* DefinicionProyectoForm.css */
+
+/* Variables CSS para la paleta de colores */
+:root {
+  --primary-color: #8B0000;
+  --primary-dark: #580000;
+  --primary-light: rgba(139, 0, 0, 0.1);
+  --secondary-dark: #1f0000;
+  --text-dark: #333;
+  --text-light: #fff;
+  --gray-light: #f5f5f5;
+  --gray-medium: #ddd;
+}
+
+/* Container and Layout */
+.proyecto-container {
+  min-height: 100vh;
+  background: 
+    radial-gradient(circle at 30% 20%, rgba(139, 0, 0, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 70% 80%, rgba(31, 0, 0, 0.12) 0%, transparent 50%),
+    linear-gradient(135deg, var(--gray-light) 0%, rgba(245, 245, 245, 0.8) 25%, white 50%, rgba(245, 245, 245, 0.9) 75%, var(--gray-light) 100%);
+  padding: 2rem 1rem;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Efecto de ondas animadas en el fondo */
+.proyecto-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 120%;
+  height: 120%;
+  background: 
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 60px,
+      rgba(139, 0, 0, 0.02) 61px,
+      rgba(139, 0, 0, 0.02) 62px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 40px,
+      rgba(31, 0, 0, 0.015) 41px,
+      rgba(31, 0, 0, 0.015) 42px
+    );
+  animation: backgroundFlow 20s linear infinite;
+  pointer-events: none;
+  z-index: -2;
+}
+
+/* Efecto de brillo sutil flotante */
+.proyecto-container::after {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: 
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 75% 75%, rgba(139, 0, 0, 0.05) 0%, transparent 40%);
+  animation: floatingGlow 15s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes backgroundFlow {
+  0% {
+    transform: translate(-10px, -10px) rotate(0deg);
+  }
+  100% {
+    transform: translate(-10px, -10px) rotate(360deg);
+  }
+}
+
+@keyframes floatingGlow {
+  0% {
+    transform: translate(-2%, -2%) scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(2%, 2%) scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* Header Styles */
+.proyecto-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.proyecto-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: var(--primary-dark);
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 4px rgba(88, 0, 0, 0.3);
+}
+
+.proyecto-subtitle {
+  font-size: 1.5rem;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+  text-shadow: 0 1px 2px rgba(139, 0, 0, 0.2);
+}
+
+.proyecto-form-title {
+  font-size: 1.25rem;
+  color: var(--secondary-dark);
+  font-weight: 600;
+}
+
+/* Form Wrapper */
+.proyecto-form-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.proyecto-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Info General */
+.proyecto-info-general {
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 
+    0 10px 15px -3px rgba(139, 0, 0, 0.1), 
+    0 4px 6px -2px rgba(139, 0, 0, 0.05),
+    0 0 0 1px rgba(139, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.proyecto-info-general:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 20px 25px -5px rgba(139, 0, 0, 0.1), 
+    0 10px 10px -5px rgba(139, 0, 0, 0.04),
+    0 0 0 1px rgba(139, 0, 0, 0.1);
+}
+
+.proyecto-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+/* Section Styles */
+.proyecto-section {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 
+    0 10px 15px -3px rgba(139, 0, 0, 0.1), 
+    0 4px 6px -2px rgba(139, 0, 0, 0.05),
+    0 0 0 1px rgba(139, 0, 0, 0.05);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.proyecto-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 20px 25px -5px rgba(139, 0, 0, 0.1), 
+    0 10px 10px -5px rgba(139, 0, 0, 0.04),
+    0 0 0 1px rgba(139, 0, 0, 0.1);
+}
+
+.proyecto-section-header {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  color: var(--text-light);
+  padding: 1rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.proyecto-section-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.proyecto-section-header:hover {
+  background: linear-gradient(135deg, var(--primary-dark), var(--secondary-dark));
+}
+
+.proyecto-section-header:hover::before {
+  left: 100%;
+}
+
+.proyecto-header-with-action {
+  cursor: default;
+}
+
+.proyecto-section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.section-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+.proyecto-section-content {
+  padding: 1.5rem;
+  background: linear-gradient(to bottom, white, rgba(245, 245, 245, 0.3));
+}
+
+/* Grid Layout */
+.proyecto-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+/* Field Styles */
+.proyecto-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.proyecto-field label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-dark);
+  transition: color 0.3s ease;
+}
+
+.proyecto-field:focus-within label {
+  color: var(--primary-color);
+}
+
+.proyecto-field input,
+.proyecto-field select,
+.proyecto-field textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--gray-medium);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  outline: none;
+  font-family: inherit;
+  background: white;
+}
+
+.proyecto-field input:focus,
+.proyecto-field select:focus,
+.proyecto-field textarea:focus {
+  border-color: var(--primary-color);
+  box-shadow: 
+    0 0 0 3px var(--primary-light),
+    0 4px 6px -1px rgba(139, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.proyecto-field input:hover,
+.proyecto-field select:hover,
+.proyecto-field textarea:hover {
+  border-color: rgba(139, 0, 0, 0.4);
+}
+
+.proyecto-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid var(--gray-medium);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  background: white;
+}
+
+.proyecto-textarea:focus {
+  border-color: var(--primary-color);
+  box-shadow: 
+    0 0 0 3px var(--primary-light),
+    0 4px 6px -1px rgba(139, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.proyecto-textarea:hover {
+  border-color: rgba(139, 0, 0, 0.4);
+}
+
+/* Field Span Classes */
+.proyecto-field-span-2 {
+  grid-column: span 2;
+}
+
+.proyecto-field-span-4 {
+  grid-column: span 4;
+}
+
+/* Etapas Container */
+.proyecto-etapas-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.proyecto-etapa {
+  border: 2px solid rgba(139, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  background: linear-gradient(to bottom, var(--gray-light), rgba(245, 245, 245, 0.7));
+  transition: all 0.3s ease;
+}
+
+.proyecto-etapa:hover {
+  border-color: rgba(139, 0, 0, 0.2);
+  box-shadow: 0 4px 6px -1px rgba(139, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.proyecto-etapa-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.proyecto-etapa-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--primary-dark);
+  margin: 0;
+}
+
+/* Buttons */
+.proyecto-add-btn {
+  background: white;
+  color: var(--primary-color);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: 2px solid var(--primary-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.proyecto-add-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-color);
+  transition: left 0.3s ease;
+  z-index: -1;
+}
+
+.proyecto-add-btn:hover {
+  color: var(--text-light);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(139, 0, 0, 0.2);
+}
+
+.proyecto-add-btn:hover::before {
+  left: 0;
+}
+
+.proyecto-remove-btn {
+  background: none;
+  border: none;
+  color: #ec5c04;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: all 0.3s ease;
+  border-radius: 0.25rem;
+}
+
+.proyecto-remove-btn:hover {
+  color: var(--primary-color);
+  background: rgba(139, 0, 0, 0.1);
+  transform: scale(1.1);
+}
+
+.btn-icon-small {
+  width: 1rem;
+  height: 1rem;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));
+}
+
+/* Submit Button */
+.proyecto-submit-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.proyecto-submit-btn {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  color: var(--text-light);
+  padding: 0.75rem 2rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 
+    0 4px 6px -1px rgba(139, 0, 0, 0.2), 
+    0 2px 4px -1px rgba(139, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.proyecto-submit-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.proyecto-submit-btn:hover {
+  background: linear-gradient(135deg, var(--primary-dark), var(--secondary-dark));
+  transform: translateY(-2px);
+  box-shadow: 
+    0 10px 15px -3px rgba(139, 0, 0, 0.2), 
+    0 4px 6px -2px rgba(139, 0, 0, 0.1);
+}
+
+.proyecto-submit-btn:hover::before {
+  left: 100%;
+}
+
+.proyecto-download-btn {
+  background: linear-gradient(135deg, #6c4c44, var(--primary-dark));
+  color: var(--text-light);
+  padding: 0.75rem 2rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 
+    0 4px 6px -1px rgba(108, 76, 68, 0.2), 
+    0 2px 4px -1px rgba(108, 76, 68, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.proyecto-download-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.proyecto-download-btn:hover {
+  background: linear-gradient(135deg, var(--primary-dark), var(--secondary-dark));
+  transform: translateY(-2px);
+  box-shadow: 
+    0 10px 15px -3px rgba(108, 76, 68, 0.2), 
+    0 4px 6px -2px rgba(108, 76, 68, 0.1);
+  color: var(--text-light);
+  text-decoration: none;
+}
+
+.proyecto-download-btn:hover::before {
+  left: 100%;
+}
+
+.btn-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+/* Back Button */
+.cedula-back-button-wrapper {
+  margin: 20px 0;
+  padding: 0 20px;
+}
+
+.cedula-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #6c4c44, var(--primary-dark));
+  color: var(--text-light);
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(108, 76, 68, 0.2);
+}
+
+.cedula-back-btn:hover {
+  background: linear-gradient(135deg, var(--primary-dark), var(--secondary-dark));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(108, 76, 68, 0.3);
+}
+
+.back-icon {
+  width: 16px;
+  height: 16px;
+  transform: rotate(-90deg);
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .proyecto-title {
+    font-size: 2rem;
+  }
+
+  .proyecto-subtitle {
+    font-size: 1.25rem;
+  }
+
+  .proyecto-grid,
+  .proyecto-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .proyecto-field-span-2,
+  .proyecto-field-span-4 {
+    grid-column: span 1;
+  }
+
+  .proyecto-section-header {
+    padding: 0.75rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .proyecto-header-with-action {
+    flex-direction: row;
+  }
+
+  .proyecto-section-content {
+    padding: 1rem;
+  }
+
+  .proyecto-add-btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .proyecto-section:hover,
+  .proyecto-info-general:hover,
+  .proyecto-etapa:hover {
+    transform: none;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.proyecto-section-content {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Scrollbar Styles */
+.proyecto-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.proyecto-container::-webkit-scrollbar-track {
+  background: var(--gray-light);
+}
+
+.proyecto-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, var(--primary-color), var(--primary-dark));
+  border-radius: 4px;
+}
+
+.proyecto-container::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, var(--primary-dark), var(--secondary-dark));
+}
+
+/* Print Styles */
+@media print {
+  .proyecto-container {
+    background: white;
+  }
+
+  .proyecto-section {
+    box-shadow: none;
+    border: 1px solid #e5e7eb;
+  }
+
+  .proyecto-section-header {
+    background: var(--gray-light);
+    color: var(--text-dark);
+  }
+
+  .proyecto-add-btn,
+  .proyecto-remove-btn {
+    display: none;
+  }
+}
+
+/* Efectos adicionales para mejorar la presentación */
+.proyecto-field input:valid,
+.proyecto-field select:valid,
+.proyecto-field textarea:valid {
+  border-color: rgba(139, 0, 0, 0.3);
+}
+
+.proyecto-field input:invalid:not(:placeholder-shown),
+.proyecto-field select:invalid:not(:placeholder-shown),
+.proyecto-field textarea:invalid:not(:placeholder-shown) {
+  border-color: #ec5c04;
+  box-shadow: 0 0 0 2px rgba(236, 92, 4, 0.1);
+}
+
+/* Efecto de brillo sutil en elementos interactivos */
+.proyecto-submit-btn:active,
+.proyecto-download-btn:active,
+.cedula-back-btn:active,
+.proyecto-add-btn:active {
+  transform: translateY(0);
+  box-shadow: 
+    0 2px 4px rgba(139, 0, 0, 0.2), 
+    inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}

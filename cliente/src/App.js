@@ -17,6 +17,8 @@ import Estancia2 from './components_student/formatos/Estancia2';
 import Estadias from './components_student/formatos/Estadias';
 import ServicioSocial from './components_student/formatos/ServicioSocial';
 import EstadiasNacionales from './components_student/formatos/EstadiasNacionales';
+import CeduladeRegistro from './components_student/formatos/CedulaRegistroForm';
+import DefiniciondeProyecto from './components_student/formatos/DefinicionProyectoForm';
 import Inicio from './components_admin/InicioAdmin';
 import Usuarios from './components_admin/UsuariosAdmin';
 import Registros from './components_admin/RegistrosAdmin';
@@ -88,6 +90,15 @@ function AnimatedRoutes() {
         <Route
           path="/formatos/EstadiasNacionales"
           element={<PrivateRoute element={<EstadiasNacionales />} allowedRoles={['estudiante']} />}
+        />
+        {/* Nuevas rutas para las vistas específicas de documentos */}
+        <Route
+          path="/CedulaRegistroForm"
+          element={<PrivateRoute element={<CeduladeRegistro />} allowedRoles={['estudiante']} />}
+        />
+        <Route
+          path="/DefinicionProyectoForm"
+          element={<PrivateRoute element={<DefiniciondeProyecto />} allowedRoles={['estudiante']} />}
         />
 
         {/* Rutas protegidas para administrador */}
