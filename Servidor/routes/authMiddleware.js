@@ -2,7 +2,7 @@
 import jwt from "jsonwebtoken";
 import pool from "../config/config.db.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "tu_secreto_super_seguro_123!";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 export const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
