@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import useEmpresas from "../hooks/useEmpresas";
 import useAsesoresAcademicos from "../hooks/useAsesoresAcademicos";
 import { motion, AnimatePresence } from "framer-motion";
 
 const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoExistente }) => {
-  const { companies } = useEmpresas();
-  const { asesoresAcademicos } = useAsesoresAcademicos();
+  const { companies, setSearchTerm, loading: empresasLoading } = useEmpresas();
+  const { asesoresAcademicos, loading: asesoresLoading } = useAsesoresAcademicos();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
@@ -15,6 +15,12 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
     empresa: "",
     asesorAcademico: "",
   });
+  const [searchEmpresa, setSearchEmpresa] = useState("");
+  const [searchAsesor, setSearchAsesor] = useState("");
+  const [showEmpresaDropdown, setShowEmpresaDropdown] = useState(false);
+  const [showAsesorDropdown, setShowAsesorDropdown] = useState(false);
+  const empresaRef = useRef(null);
+  const asesorRef = useRef(null);
 
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -24,6 +30,8 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
         empresa: procesoExistente.id_empresa || "",
         asesorAcademico: procesoExistente.id_asesor_academico || "",
       });
+      setSearchEmpresa(getNombreEmpresa(procesoExistente.id_empresa) || "");
+      setSearchAsesor(getNombreAsesorAcademico(procesoExistente.id_asesor_academico) || "");
     }
   }, [procesoExistente]);
 
@@ -37,9 +45,48 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
     return () => clearInterval(timer);
   }, [confirmModalOpen, cooldown]);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (empresaRef.current && !empresaRef.current.contains(e.target)) {
+        setShowEmpresaDropdown(false);
+      }
+      if (asesorRef.current && !asesorRef.current.contains(e.target)) {
+        setShowAsesorDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    setSearchTerm(searchEmpresa); // Actualiza el filtro de useEmpresas
+  }, [searchEmpresa, setSearchTerm]);
+
+  const handleSearchEmpresa = (e) => {
+    setSearchEmpresa(e.target.value);
+    setShowEmpresaDropdown(true);
   };
+
+  const handleSearchAsesor = (e) => {
+    setSearchAsesor(e.target.value);
+    setShowAsesorDropdown(true);
+  };
+
+  const selectEmpresa = (empresa) => {
+    setForm({ ...form, empresa: empresa.id_empresa });
+    setSearchEmpresa(empresa.empresa_nombre);
+    setShowEmpresaDropdown(false);
+  };
+
+  const selectAsesor = (asesor) => {
+    setForm({ ...form, asesorAcademico: asesor.id_asesor });
+    setSearchAsesor(asesor.nombre);
+    setShowAsesorDropdown(false);
+  };
+
+  const filteredAsesores = asesoresAcademicos.filter((a) =>
+    a.nombre.toLowerCase().includes(searchAsesor.toLowerCase())
+  );
 
   const handleSubmit = () => {
     if (!form.empresa || !form.asesorAcademico) {
@@ -86,12 +133,12 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
 
   const getNombreEmpresa = (id) => {
     const empresa = companies.find((e) => e.id_empresa === parseInt(id));
-    return empresa ? empresa.empresa_nombre : "No seleccionada";
+    return empresa ? empresa.empresa_nombre : "";
   };
 
   const getNombreAsesorAcademico = (id) => {
     const asesor = asesoresAcademicos.find((a) => a.id_asesor === parseInt(id));
-    return asesor ? asesor.nombre : "No seleccionado";
+    return asesor ? asesor.nombre : "";
   };
 
   if (!open) return null;
@@ -122,42 +169,67 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
           </motion.div>
         )}
 
-        {loading ? (
+        {loading || empresasLoading || asesoresLoading ? (
           <div className="text-center text-gray-500 animate-pulse">
-            Registrando proceso...
+            Cargando...
           </div>
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <select
-                name="empresa"
-                value={form.empresa}
-                onChange={handleChange}
-                className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
-                required
-              >
-                <option value="">Seleccionar empresa</option>
-                {companies.map((e) => (
-                  <option key={e.id_empresa} value={e.id_empresa}>
-                    {e.empresa_nombre}
-                  </option>
-                ))}
-              </select>
+              {/* Buscador de empresas */}
+              <div className="relative" ref={empresaRef}>
+                <input
+                  type="text"
+                  value={searchEmpresa}
+                  onChange={handleSearchEmpresa}
+                  onFocus={() => setShowEmpresaDropdown(true)}
+                  placeholder="Buscar empresa..."
+                  autoFocus
+                  className="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+                {showEmpresaDropdown && companies.length > 0 && (
+                  <ul
+                    className="absolute z-10 w-full bg-white border rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto"
+                  >
+                    {companies.map((e) => (
+                      <li
+                        key={e.id_empresa}
+                        onClick={() => selectEmpresa(e)}
+                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                      >
+                        {e.empresa_nombre} ({e.empresa_rfc})
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
 
-              <select
-                name="asesorAcademico"
-                value={form.asesorAcademico}
-                onChange={handleChange}
-                className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
-                required
-              >
-                <option value="">Seleccionar asesor académico</option>
-                {asesoresAcademicos.map((a) => (
-                  <option key={a.id_asesor} value={a.id_asesor}>
-                    {a.nombre}
-                  </option>
-                ))}
-              </select>
+              {/* Buscador de asesores académicos */}
+              <div className="relative" ref={asesorRef}>
+                <input
+                  type="text"
+                  value={searchAsesor}
+                  onChange={handleSearchAsesor}
+                  onFocus={() => setShowAsesorDropdown(true)}
+                  placeholder="Buscar asesor académico..."
+                  className="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+                {showAsesorDropdown && filteredAsesores.length > 0 && (
+                  <ul
+                    className="absolute z-10 w-full bg-white border rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto"
+                  >
+                    {filteredAsesores.map((a) => (
+                      <li
+                        key={a.id_asesor}
+                        onClick={() => selectAsesor(a)}
+                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                      >
+                        {a.nombre}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
 
             <div className="flex justify-end gap-2">

@@ -12,7 +12,7 @@ const useEmpresas = () => {
   const [totalCompanies, setTotalCompanies] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [sociedadFilter, setSociedadFilter] = useState('Todas');
-  const companiesPerPage = 50;
+  const companiesPerPage = 50; 
 
   const fetchCompanies = async () => {
     try {

@@ -400,7 +400,7 @@ const DefinicionProyectoForm = () => {
                 />
               </div>
               <div className="proyecto-field proyecto-field-span-2">
-                <label>Lugar</label>
+                <label>Lugar donde se realizo el proceso</label>
                 <input
                   type="text"
                   value={proyectoData.lugar}
@@ -598,7 +598,7 @@ const DefinicionProyectoForm = () => {
                         />
                       </div>
                       <div className="proyecto-field proyecto-field-span-4">
-                        <label>Competencia</label>
+                        <label>Actividades</label>
                         <textarea
                           value={etapa.competencia}
                           onChange={(e) => updateEtapa(etapa.id, 'competencia', e.target.value)}
