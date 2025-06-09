@@ -81,8 +81,7 @@ body {
   width: 100%;
   max-width: 1000px;
   min-height: 400px;
-  background-color: transparent;
-  box-shadow: var(--box-shadow);
+  
   overflow: hidden;
   border-radius: 30px;
   margin: 20px;
@@ -102,22 +101,7 @@ body {
   }
 }
 
-/* Elemento de fondo oscuro con desenfoque */
-.login-form-container::before {
-  content: "";
-  position: absolute;
-  border-radius: 30px;
-  top: 0;
-  left: 0;
-  width: 50%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.221);
-  backdrop-filter: blur(3px);
-  z-index: -1;
-  transform: translateX(-100%);
-  animation: slideInLeft 1s ease-out 0.7s forwards;
-  
-}
+
 
 @keyframes slideInLeft {
   0% {
