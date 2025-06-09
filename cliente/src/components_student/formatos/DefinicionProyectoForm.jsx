@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Plus, Trash2, User, Building, Briefcase, Calendar, Send } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Trash2, User, Building, Briefcase, Calendar, Send, HelpCircle } from 'lucide-react';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import './DefinicionProyectoForm.css';
 
@@ -100,8 +100,98 @@ const styles = StyleSheet.create({
     borderColor: '#DDD',
     minHeight: 40,
     marginBottom: 10,
+  },
+  signatureSection: {
+    marginTop: 30,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#000',
+  },
+  signatureTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 25,
+  },
+  signatureRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 40,
+  },
+  signatureBox: {
+    width: '30%',
+    alignItems: 'center',
+  },
+  signatureName: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 25,
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    paddingBottom: 2,
+  },
+  signatureLine: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    width: '100%',
+    height: 20,
+    marginBottom: 5,
+  },
+  signatureLabel: {
+    fontSize: 9,
+    textAlign: 'center',
+    fontWeight: 'bold',
   }
 });
+
+// Componente de Tooltip
+const Tooltip = ({ text, children }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  return (
+    <div className="tooltip-container" style={{ position: 'relative', display: 'inline-block' }}>
+      <div
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+        style={{ cursor: 'help' }}
+      >
+        {children}
+      </div>
+      {showTooltip && (
+        <div className="tooltip-content" style={{
+          position: 'absolute',
+          bottom: '100%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: '#333',
+          color: 'white',
+          padding: '8px 12px',
+          borderRadius: '6px',
+          fontSize: '12px',
+          whiteSpace: 'nowrap',
+          zIndex: 1000,
+          maxWidth: '250px',
+          whiteSpace: 'normal',
+          textAlign: 'center'
+        }}>
+          {text}
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 0,
+            height: 0,
+            borderLeft: '5px solid transparent',
+            borderRight: '5px solid transparent',
+            borderTop: '5px solid #333'
+          }}></div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // PDF Document Component
 const DefinicionProyectoPDF = ({ formData }) => (
@@ -233,6 +323,31 @@ const DefinicionProyectoPDF = ({ formData }) => (
           </View>
         )}
       </View>
+
+      {/* Sección de Firmas */}
+      <View style={styles.signatureSection}>
+        <Text style={styles.signatureTitle}>FIRMAS DE AUTORIZACIÓN</Text>
+        
+        <View style={styles.signatureRow}>
+          <View style={styles.signatureBox}>
+            <Text style={styles.signatureName}>{formData.alumno.nombre || '_________________________'}</Text>
+            <View style={styles.signatureLine}></View>
+            <Text style={styles.signatureLabel}>NOMBRE Y FIRMA DEL ESTUDIANTE</Text>
+          </View>
+          
+          <View style={styles.signatureBox}>
+            <Text style={styles.signatureName}>{formData.alumno.asesorAcademico || '_________________________'}</Text>
+            <View style={styles.signatureLine}></View>
+            <Text style={styles.signatureLabel}>NOMBRE Y FIRMA DEL ASESOR ACADÉMICO</Text>
+          </View>
+          
+          <View style={styles.signatureBox}>
+            <Text style={styles.signatureName}>{formData.empresa.asesorEmpresarial || '_________________________'}</Text>
+            <View style={styles.signatureLine}></View>
+            <Text style={styles.signatureLabel}>NOMBRE Y FIRMA DEL ASESOR EMPRESARIAL</Text>
+          </View>
+        </View>
+      </View>
     </Page>
   </Document>
 );
@@ -344,13 +459,48 @@ const DefinicionProyectoForm = () => {
   const procesos = ['Estancia I', 'Estancia II', 'Estadía'];
 
   const camposAdicionales = [
-    { key: 'actividades', label: 'Actividades de Aprendizaje' },
-    { key: 'resultados', label: 'Resultados de Aprendizaje' },
-    { key: 'evidencias', label: 'Evidencias' },
-    { key: 'instrumentos', label: 'Instrumentos de Evaluación' },
-    { key: 'asignaturas', label: 'Asignaturas' },
-    { key: 'topicos', label: 'Tópicos Recomendados' },
-    { key: 'estrategias', label: 'Estrategias Didácticas' }
+    { 
+      key: 'actividades', 
+      label: 'Cosas que vas a aprender', 
+      placeholder: 'Ejemplo: Aprender a usar Excel para hacer reportes de ventas, participar en reuniones con clientes, ayudar en el diseño de páginas web...',
+      showTip: false
+    },
+    { 
+      key: 'resultados', 
+      label: 'Lo que vas a lograr', 
+      placeholder: 'Ejemplo: Al final sabré crear reportes financieros, podré atender clientes por teléfono, habré terminado el diseño de 3 páginas web...',
+      showTip: false
+    },
+    { 
+      key: 'evidencias', 
+      label: 'Pruebas de tu trabajo', 
+      placeholder: 'Ejemplo: Fotos de los proyectos terminados, capturas de pantalla de sistemas que usé, documentos que creé...',
+      showTip: false
+    },
+    { 
+      key: 'instrumentos', 
+      label: 'Cómo te van a evaluar', 
+      placeholder: 'Ejemplo: Lista de verificación, rúbrica de evaluación, examen práctico, presentación final...',
+      showTip: false
+    },
+    { 
+      key: 'asignaturas', 
+      label: 'Materias relacionadas', 
+      placeholder: 'Ejemplo: Contabilidad, Marketing Digital, Programación Web, Administración...',
+      showTip: false
+    },
+    { 
+      key: 'topicos', 
+      label: 'Temas importantes', 
+      placeholder: 'Ejemplo: Servicio al cliente, manejo de redes sociales, uso de software contable...',
+      showTip: false
+    },
+    { 
+      key: 'estrategias', 
+      label: 'Cómo vas a aprender', 
+      placeholder: 'Ejemplo: Observando a mi supervisor, practicando con casos reales, recibiendo capacitación...',
+      showTip: false
+    }
   ];
 
   return (
@@ -381,7 +531,7 @@ const DefinicionProyectoForm = () => {
           <div className="proyecto-info-general">
             <div className="proyecto-info-grid">
               <div className="proyecto-field">
-                <label>Proceso</label>
+                <label>Tipo de Proceso</label>
                 <select
                   value={proyectoData.proceso}
                   onChange={(e) => handleSimpleProyectoChange('proceso', e.target.value)}
@@ -392,7 +542,7 @@ const DefinicionProyectoForm = () => {
                 </select>
               </div>
               <div className="proyecto-field">
-                <label>Fecha</label>
+                <label>Fecha de hoy</label>
                 <input
                   type="date"
                   value={proyectoData.fecha}
@@ -400,11 +550,12 @@ const DefinicionProyectoForm = () => {
                 />
               </div>
               <div className="proyecto-field proyecto-field-span-2">
-                <label>Lugar</label>
+                <label>Ciudad donde estás</label>
                 <input
                   type="text"
                   value={proyectoData.lugar}
                   onChange={(e) => handleSimpleProyectoChange('lugar', e.target.value)}
+                  placeholder="Ejemplo: Cancún, Quintana Roo"
                 />
               </div>
             </div>
@@ -418,7 +569,7 @@ const DefinicionProyectoForm = () => {
             >
               <h3 className="proyecto-section-title">
                 <User className="section-icon" />
-                Alumno
+                Tus Datos
               </h3>
               {expandedSections.alumnoProyecto ? <ChevronUp /> : <ChevronDown />}
             </div>
@@ -426,27 +577,38 @@ const DefinicionProyectoForm = () => {
               <div className="proyecto-section-content">
                 <div className="proyecto-grid">
                   <div className="proyecto-field">
-                    <label>Nombre del Alumno</label>
+                    <label>Tu nombre completo</label>
                     <input
                       type="text"
                       value={proyectoData.alumno.nombre}
                       onChange={(e) => handleProyectoChange('alumno', 'nombre', e.target.value)}
+                      placeholder="Ejemplo: Juan Pérez García"
                     />
                   </div>
                   <div className="proyecto-field">
-                    <label>Grupo</label>
+                    <Tooltip text="Tu grupo actual, ejemplo: 9A, 7B, etc.">
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        Tu grupo <HelpCircle size={16} color="#666" />
+                      </label>
+                    </Tooltip>
                     <input
                       type="text"
                       value={proyectoData.alumno.grupo}
                       onChange={(e) => handleProyectoChange('alumno', 'grupo', e.target.value)}
+                      placeholder="Ejemplo: 9A"
                     />
                   </div>
                   <div className="proyecto-field proyecto-field-span-2">
-                    <label>Asesor Académico</label>
+                    <Tooltip text="Es el maestro de la universidad que te va a supervisar durante tu estancia">
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        Profesor que te supervisa <HelpCircle size={16} color="#666" />
+                      </label>
+                    </Tooltip>
                     <input
                       type="text"
                       value={proyectoData.alumno.asesorAcademico}
                       onChange={(e) => handleProyectoChange('alumno', 'asesorAcademico', e.target.value)}
+                      placeholder="Ejemplo: Ing. María López"
                     />
                   </div>
                 </div>
@@ -462,7 +624,7 @@ const DefinicionProyectoForm = () => {
             >
               <h3 className="proyecto-section-title">
                 <Building className="section-icon" />
-                Empresa
+                Datos de la Empresa
               </h3>
               {expandedSections.empresaProyecto ? <ChevronUp /> : <ChevronDown />}
             </div>
@@ -470,27 +632,42 @@ const DefinicionProyectoForm = () => {
               <div className="proyecto-section-content">
                 <div className="proyecto-grid">
                   <div className="proyecto-field">
-                    <label>Nombre de la Empresa</label>
+                    <Tooltip text="El nombre oficial de la empresa donde harás tu estancia">
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        Nombre de la empresa <HelpCircle size={16} color="#666" />
+                      </label>
+                    </Tooltip>
                     <input
                       type="text"
                       value={proyectoData.empresa.nombre}
                       onChange={(e) => handleProyectoChange('empresa', 'nombre', e.target.value)}
+                      placeholder="Ejemplo: Hotel Xcaret, OXXO, Walmart"
                     />
                   </div>
                   <div className="proyecto-field">
-                    <label>Asesor Empresarial</label>
+                    <Tooltip text="La persona de la empresa que te va a supervisar y enseñar">
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        Tu supervisor en la empresa <HelpCircle size={16} color="#666" />
+                      </label>
+                    </Tooltip>
                     <input
                       type="text"
                       value={proyectoData.empresa.asesorEmpresarial}
                       onChange={(e) => handleProyectoChange('empresa', 'asesorEmpresarial', e.target.value)}
+                      placeholder="Ejemplo: Lic. Carlos Mendoza"
                     />
                   </div>
                   <div className="proyecto-field proyecto-field-span-2">
-                    <label>Puesto</label>
+                    <Tooltip text="Puesto que ocupa tu asesor empresarial en la empresa ">
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        Puesto <HelpCircle size={16} color="#666" />
+                      </label>
+                    </Tooltip>
                     <input
                       type="text"
                       value={proyectoData.empresa.puesto}
                       onChange={(e) => handleProyectoChange('empresa', 'puesto', e.target.value)}
+                      placeholder="Ejemplo: Gerente de Operaciones, Especialista en Marketing Digital, Analista Financiero"
                     />
                   </div>
                 </div>
@@ -506,26 +683,36 @@ const DefinicionProyectoForm = () => {
             >
               <h3 className="proyecto-section-title">
                 <Briefcase className="section-icon" />
-                Proyecto
+                Tu Proyecto
               </h3>
               {expandedSections.proyectoInfo ? <ChevronUp /> : <ChevronDown />}
             </div>
             {expandedSections.proyectoInfo !== false && (
               <div className="proyecto-section-content">
                 <div className="proyecto-field">
-                  <label>Nombre del Proyecto</label>
+                  <Tooltip text="Un nombre corto que describa lo que vas a hacer">
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      Nombre de tu proyecto <HelpCircle size={16} color="#666" />
+                    </label>
+                  </Tooltip>
                   <input
                     type="text"
                     value={proyectoData.proyecto.nombre}
                     onChange={(e) => handleProyectoChange('proyecto', 'nombre', e.target.value)}
+                    placeholder="Ejemplo: Sistema de ventas para tienda, Campaña de redes sociales"
                   />
                 </div>
                 <div className="proyecto-field">
-                  <label>Objetivo del Proyecto</label>
+                  <Tooltip text="Explica para qué sirve tu proyecto, qué problema resuelve">
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      Para qué sirve tu proyecto <HelpCircle size={16} color="#666" />
+                    </label>
+                  </Tooltip>
                   <textarea
                     value={proyectoData.proyecto.objetivo}
                     onChange={(e) => handleProyectoChange('proyecto', 'objetivo', e.target.value)}
                     rows={3}
+                    placeholder="Ejemplo: Crear una página web para que los clientes puedan ver los productos y hacer pedidos más fácil, lo que ayudará a la empresa a vender más..."
                   />
                 </div>
               </div>
@@ -537,7 +724,7 @@ const DefinicionProyectoForm = () => {
             <div className="proyecto-section-header proyecto-header-with-action">
               <h3 className="proyecto-section-title">
                 <Calendar className="section-icon" />
-                Etapas del Proyecto
+                Fases de tu Proyecto
               </h3>
               <button
                 type="button"
@@ -545,7 +732,7 @@ const DefinicionProyectoForm = () => {
                 className="proyecto-add-btn"
               >
                 <Plus className="btn-icon-small" />
-                Agregar Etapa
+                Agregar Fase
               </button>
             </div>
             <div className="proyecto-section-content">
@@ -553,7 +740,7 @@ const DefinicionProyectoForm = () => {
                 {proyectoData.etapas.map((etapa) => (
                   <div key={etapa.id} className="proyecto-etapa">
                     <div className="proyecto-etapa-header">
-                      <h4 className="proyecto-etapa-title">Etapa {etapa.id}</h4>
+                      <h4 className="proyecto-etapa-title">Fase {etapa.id}</h4>
                       {proyectoData.etapas.length > 1 && (
                         <button
                           type="button"
@@ -566,15 +753,20 @@ const DefinicionProyectoForm = () => {
                     </div>
                     <div className="proyecto-grid">
                       <div className="proyecto-field">
-                        <label>Nombre de la Etapa</label>
+                        <Tooltip text="Un nombre que describa esta parte del proyecto">
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            Nombre de esta fase <HelpCircle size={16} color="#666" />
+                          </label>
+                        </Tooltip>
                         <input
                           type="text"
                           value={etapa.nombre}
                           onChange={(e) => updateEtapa(etapa.id, 'nombre', e.target.value)}
+                          placeholder="Ejemplo: Investigación inicial, Diseño, Implementación"
                         />
                       </div>
                       <div className="proyecto-field">
-                        <label>Fecha de Inicio</label>
+                        <label>Cuándo empiezas</label>
                         <input
                           type="date"
                           value={etapa.fechaInicio}
@@ -582,7 +774,7 @@ const DefinicionProyectoForm = () => {
                         />
                       </div>
                       <div className="proyecto-field">
-                        <label>Fecha de Fin</label>
+                        <label>Cuándo terminas</label>
                         <input
                           type="date"
                           value={etapa.fechaFin}
@@ -590,19 +782,29 @@ const DefinicionProyectoForm = () => {
                         />
                       </div>
                       <div className="proyecto-field">
-                        <label>Horas</label>
+                        <Tooltip text="Cuántas horas de trabajo necesitas para esta fase">
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            Horas de trabajo <HelpCircle size={16} color="#666" />
+                          </label>
+                        </Tooltip>
                         <input
                           type="number"
                           value={etapa.horas}
                           onChange={(e) => updateEtapa(etapa.id, 'horas', e.target.value)}
+                          placeholder="Ejemplo: 40"
                         />
                       </div>
                       <div className="proyecto-field proyecto-field-span-4">
-                        <label>Competencia</label>
+                        <Tooltip text="Describe qué actividades específicas vas a hacer en esta fase">
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            Actividades de esta fase <HelpCircle size={16} color="#666" />
+                          </label>
+                        </Tooltip>
                         <textarea
                           value={etapa.competencia}
                           onChange={(e) => updateEtapa(etapa.id, 'competencia', e.target.value)}
                           rows={2}
+                          placeholder="Ejemplo: Investigar qué necesita la empresa, entrevistar clientes, revisar procesos actuales..."
                         />
                       </div>
                     </div>
@@ -619,7 +821,9 @@ const DefinicionProyectoForm = () => {
                 className="proyecto-section-header"
                 onClick={() => toggleSection(campo.key)}
               >
-                <h3 className="proyecto-section-title">{campo.label}</h3>
+                <h3 className="proyecto-section-title">
+                  {campo.label}
+                </h3>
                 {expandedSections[campo.key] ? <ChevronUp /> : <ChevronDown />}
               </div>
               {expandedSections[campo.key] !== false && (
@@ -629,7 +833,7 @@ const DefinicionProyectoForm = () => {
                     onChange={(e) => handleSimpleProyectoChange(campo.key, e.target.value)}
                     rows={4}
                     className="proyecto-textarea"
-                    placeholder={`Ingrese ${campo.label.toLowerCase()}...`}
+                    placeholder={campo.placeholder}
                   />
                 </div>
               )}
