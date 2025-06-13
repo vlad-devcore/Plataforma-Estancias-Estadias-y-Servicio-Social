@@ -46,24 +46,10 @@ jobs:
       - name: Deploy to Server
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
-          username: ${{ secrets.SFTP_USERNAME }}  # [EDITA] Añade como secreto en GitHub
-          server: academico.upqroo.edu.mx        # [CONFIRMA] Verifica con tu equipo
-          port: 22                               # [CONFIRMA] Verifica con tu equipo
-          password: ${{ secrets.SFTP_PASSWORD }} # [EDITA] Añade como secreto en GitHub
-          local_path: './*'                      # Sube todo el repositorio
-          remote_path: '/home/gestionvinculacion' # Destino en el servidor
+          username: ${{ secrets.SFTP_USERNAME }}  
+          server: academico.upqroo.edu.mx        
+          port: 22                               
+          password: ${{ secrets.SFTP_PASSWORD }} 
+          local_path: './*'                     
+          remote_path: '/home/gestionvinculacion'
 
-      # Opcional: Ejecutar servidores via SSH (descomenta si tienes acceso)
-      # - name: Run Servers
-      #   uses: appleboy/ssh-action@master
-      #   with:
-      #     host: academico.upqroo.edu.mx
-      #     username: gestionvinculacion
-      #     password: ${{ secrets.SSH_PASSWORD }} # [EDITA] Añade como secreto si usas
-      #     script: |
-      #       cd /home/gestionvinculacion/mini
-      #       npm install
-      #       node index.js &
-      #       cd /home/gestionvinculacion/Servidor
-      #       npm install
-      #       node index.js &

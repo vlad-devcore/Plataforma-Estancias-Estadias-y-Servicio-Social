@@ -3,7 +3,7 @@ import pool from "../config/config.db.js";
 
 const router = express.Router();
 
-// Obtener asesores académicos
+// Obtener asesores académicos nuevo comment
 const getAsesoresAcademicos = async (req, res) => {
     try {
         const [results] = await pool.query(`
