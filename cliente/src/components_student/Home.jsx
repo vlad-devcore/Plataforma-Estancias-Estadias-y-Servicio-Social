@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { DocumentTextIcon, VideoCameraIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { DocumentTextIcon, VideoCameraIcon, ChevronRightIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import Header from './HeaderEstudiante';
 import useProgramas from '../components/hooks/useProgramasEducativos';
 
@@ -65,12 +65,12 @@ const GuideButton = memo(({ icon, text, gradient }) => (
   <motion.button
     whileHover={{ scale: 1.02 }}
     whileTap={{ scale: 0.98 }}
-    className={`${gradient} text-white px-8 py-4 rounded-xl flex items-center justify-center gap-3 font-medium shadow-lg transition-shadow duration-300 hover:shadow-xl`}
+    className={`${gradient} text-white px-6 py-3 rounded-xl flex items-center justify-center gap-3 font-medium shadow-lg transition-shadow duration-300 hover:shadow-xl`}
   >
-    <div className="p-2 bg-white/20 rounded-lg">
+    <div className="p-1.5 bg-white/20 rounded-lg">
       {icon}
     </div>
-    <span className="text-lg">{text}</span>
+    <span className="text-base">{text}</span>
   </motion.button>
 ));
 
@@ -92,7 +92,7 @@ export default function Home() {
   const services = procesosPermitidos.map((proceso, index) => ({
     title: proceso,
     icon: <DocumentTextIcon className="w-7 h-7 text-white" />,
-    delay: 0.5 + index * 0.1,
+    delay: 0.7 + index * 0.1,
     path: procesoRoutes[proceso] || '#',
   }));
 
@@ -116,27 +116,28 @@ export default function Home() {
         <Header />
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {/* Welcome Section */}
           <AnimatePresence>
             {mounted && (
               <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-center mb-16"
+                className="text-center mb-12"
               >
                 <motion.h1
-                  className="text-5xl font-bold text-gray-900 mb-6"
+                  className="text-4xl md:text-5xl font-bold text-gray-900 mb-4"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
+                  transition={{ delay: 0.2 }}
                 >
                   Bienvenido al Portal del Estudiante
                 </motion.h1>
                 <motion.p
-                  className="text-xl text-gray-600 max-w-3xl mx-auto"
+                  className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4 }}
+                  transition={{ delay: 0.3 }}
                 >
                   Acceda a todos sus documentos y procesos académicos en un solo lugar
                 </motion.p>
@@ -144,6 +145,41 @@ export default function Home() {
             )}
           </AnimatePresence>
 
+          {/* Guía de Usuarios Section - Ahora más prominente */}
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="bg-gradient-to-r from-white-50 to-indigo-50 border border-white-200 p-8 rounded-2xl shadow-lg mb-12"
+          >
+            <div className="flex items-center justify-center mb-6">
+              
+                
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+                ¿Primera vez aquí?
+              </h2>
+           
+            
+            <p className="text-center text-gray-700 mb-6 text-lg">
+              Consulta nuestra guía de usuarios para aprender a usar el portal
+            </p>
+            
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <GuideButton
+                icon={<VideoCameraIcon className="w-5 h-5" />}
+                text="Ver Guía en Video"
+                gradient="bg-gradient-to-r from-blue-500 to-blue-600"
+              />
+              <GuideButton
+                icon={<DocumentTextIcon className="w-5 h-5" />}
+                text="Descargar Guía PDF"
+                gradient="bg-gradient-to-r from-red-500 to-red-600"
+              />
+            </div>
+          </motion.section>
+
+          {/* Error Message */}
           {error && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -154,60 +190,58 @@ export default function Home() {
             </motion.div>
           )}
 
-          {loading ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center text-gray-600"
-            >
-              Cargando procesos...
-            </motion.div>
-          ) : services.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center text-gray-600"
-            >
-              No hay procesos disponibles para tu programa educativo.
-            </motion.div>
-          ) : (
-            <motion.div
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-20"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-            >
-              {services.map((service) => (
-                <ServiceCard
-                  key={service.title}
-                  {...service}
-                  navigate={navigate}
-                />
-              ))}
-            </motion.div>
-          )}
-
+          {/* Services Section */}
           <motion.section
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.7 }}
-            className="text-center bg-white p-12 rounded-2xl shadow-xl"
+            transition={{ delay: 0.5 }}
+            className="mb-8"
           >
-            <h2 className="text-3xl font-bold text-gray-900 mb-10">
-              Guía de usuarios
-            </h2>
-            <div className="flex flex-col sm:flex-row justify-center gap-6">
-              <GuideButton
-                icon={<VideoCameraIcon className="w-6 h-6" />}
-                text="Guía en video"
-                gradient="bg-gradient-to-r from-blue-500 to-blue-600"
-              />
-              <GuideButton
-                icon={<DocumentTextIcon className="w-6 h-6" />}
-                text="Guía en PDF"
-                gradient="bg-gradient-to-r from-red-500 to-red-600"
-              />
-            </div>
+            <motion.h2
+              className="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              Procesos Disponibles
+            </motion.h2>
+
+            {loading ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center text-gray-600 py-12"
+              >
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                <p className="mt-4">Cargando procesos...</p>
+              </motion.div>
+            ) : services.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center text-gray-600 py-12 bg-white rounded-xl shadow-lg"
+              >
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <DocumentTextIcon className="w-8 h-8 text-gray-400" />
+                </div>
+                <p className="text-lg">No hay procesos disponibles para tu programa educativo.</p>
+              </motion.div>
+            ) : (
+              <motion.div
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.7 }}
+              >
+                {services.map((service) => (
+                  <ServiceCard
+                    key={service.title}
+                    {...service}
+                    navigate={navigate}
+                  />
+                ))}
+              </motion.div>
+            )}
           </motion.section>
         </main>
       </motion.div>
