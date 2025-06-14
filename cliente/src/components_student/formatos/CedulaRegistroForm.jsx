@@ -613,7 +613,7 @@ const CedulaRegistroForm = () => {
                     </select>
                   </div>
                   <div className="cedula-field">
-                    <label>Email Personal</label>
+                    <label>Correo Personal</label>
                     <input
                       type="email"
                       value={cedulaData.alumno.emailPersonal}
@@ -622,11 +622,13 @@ const CedulaRegistroForm = () => {
                     />
                   </div>
                   <div className="cedula-field">
+
                     <Tooltip text="Tu correo institucional que termina en @upqroo.edu.mx">
                       <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        Email Institucional <HelpCircle size={16} color="#666" />
+                        Correo Institucional <HelpCircle size={16} color="#666" />
                       </label>
                     </Tooltip>
+
                     <input
                       type="email"
                       value={cedulaData.alumno.emailInstitucional}
@@ -728,11 +730,13 @@ const CedulaRegistroForm = () => {
                 </div>
                 
                 <div className="cedula-subsection">
+
                   <Tooltip text="Persona encargada del departamento de personal y contrataciones">
                     <h4 className="cedula-subsection-title" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                       Responsable de Recursos Humanos <HelpCircle size={16} color="#666" />
                     </h4>
                   </Tooltip>
+
                   <div className="cedula-grid">
                     <div className="cedula-field">
                       <label>Apellido Paterno</label>
@@ -780,7 +784,7 @@ const CedulaRegistroForm = () => {
                       />
                     </div>
                     <div className="cedula-field">
-                      <label>Email</label>
+                      <label>Correo</label>
                       <input
                         type="email"
                         value={cedulaData.empresa.responsableRH.email}
@@ -850,7 +854,7 @@ const CedulaRegistroForm = () => {
                     />
                   </div>
                   <div className="cedula-field">
-                    <label>Email</label>
+                    <label>Correo</label>
                     <input
                       type="email"
                       value={cedulaData.asesorEmpresarial.email}
@@ -928,7 +932,7 @@ const CedulaRegistroForm = () => {
                     />
                   </div>
                   <div className="cedula-field">
-                    <label>Email</label>
+                    <label>Correo</label>
                     <input
                       type="email"
                       value={cedulaData.asesorAcademico.email}

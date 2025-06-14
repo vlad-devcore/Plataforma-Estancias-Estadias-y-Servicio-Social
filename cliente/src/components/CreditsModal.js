@@ -46,7 +46,7 @@ const CreditsModal = () => {
     },
     {
       name: 'Vladimir Poot',
-      role: 'Diseñador UI/UX',
+      role: 'Desarrollador Frontend',
       emoji: '🎨',
       image: '/team/vladimir.jpg',
       github: 'https://github.com/vladimirpoot',
@@ -54,7 +54,7 @@ const CreditsModal = () => {
     },
     {
       name: 'Zurisaday Guerrero',
-      role: 'Diseñador UI/UX',
+      role: 'Desarrollador Frontend',
       emoji: '🎨',
       image: '/team/zurisaday.jpg',
       github: 'https://github.com/zury-guerrero',

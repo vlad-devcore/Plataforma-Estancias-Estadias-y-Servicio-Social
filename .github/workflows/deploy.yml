@@ -1,0 +1,55 @@
+name: Deploy to SFTP
+
+# Dispara el workflow en cada push a la rama especificada
+on:
+  push:
+    branches:
+      - main  # [EDITA] Cambia a tu rama de trabajo (ej. develop, CTS-BRANCH) si es diferente
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Clona el repositorio con historial
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Asegura que se obtenga todo el historial
+
+      # Configura Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+
+      # Instala dependencias y construye el frontend
+      - name: Build Frontend
+        run: |
+          cd cliente
+          npm install
+          npm run build
+
+      # Instala dependencias para mini/
+      - name: Install Mini Dependencies
+        run: |
+          cd mini
+          npm install
+
+      # Instala dependencias para Servidor/
+      - name: Install Backend Dependencies
+        run: |
+          cd Servidor
+          npm install
+
+      # Despliegue via SFTP
+      - name: Deploy to Server
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          username: ${{ secrets.SFTP_USERNAME }}  
+          server: academico.upqroo.edu.mx        
+          port: 22                               
+          password: ${{ secrets.SFTP_PASSWORD }} 
+          local_path: './*'                     
+          remote_path: '/home/gestionvinculacion'
+

@@ -550,7 +550,9 @@ const DefinicionProyectoForm = () => {
                 />
               </div>
               <div className="proyecto-field proyecto-field-span-2">
-                <label>Ciudad donde estás</label>
+
+                <label>Lugar donde se realizo el proceso</label>
+
                 <input
                   type="text"
                   value={proyectoData.lugar}
@@ -795,11 +797,13 @@ const DefinicionProyectoForm = () => {
                         />
                       </div>
                       <div className="proyecto-field proyecto-field-span-4">
+
                         <Tooltip text="Describe qué actividades específicas vas a hacer en esta fase">
                           <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                             Actividades de esta fase <HelpCircle size={16} color="#666" />
                           </label>
                         </Tooltip>
+
                         <textarea
                           value={etapa.competencia}
                           onChange={(e) => updateEtapa(etapa.id, 'competencia', e.target.value)}
