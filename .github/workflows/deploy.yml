@@ -29,6 +29,7 @@ jobs:
           cd cliente
           npm install
           npm run build
+          CI=false npm run build 
 
       # Instala dependencias para mini/
       - name: Install Mini Dependencies
