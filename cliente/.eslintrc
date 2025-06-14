@@ -1,0 +1,7 @@
+{
+  "extends": ["react-app"], // Usa la configuración base de CRA
+  "rules": {
+    "no-dupe-keys": "off", // Mantiene tu desactivación actual
+    "react-hooks/exhaustive-deps": "warn" // Ajusta esta regla específicamente
+  }
+}
