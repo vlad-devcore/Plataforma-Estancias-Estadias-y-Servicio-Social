@@ -59,6 +59,7 @@ const Estancia2 = () => {
 
   useEffect(() => {
     fetchProcesoActivo();
+     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleOpenModal = () => {

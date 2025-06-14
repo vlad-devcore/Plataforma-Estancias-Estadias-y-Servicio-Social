@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const useUsers = () => {
-  const [users, setUsers] = useState([]);
+
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [rolFilter, setRolFilter] = useState('Todos');
@@ -32,13 +32,13 @@ const useUsers = () => {
           headers: { Authorization: `Bearer ${token}` },
           params
         });
-        setUsers(response.data.users);
+       
         setFilteredUsers(response.data.users);
         setTotalPages(response.data.totalPages);
         setTotalUsers(response.data.total);
       } catch (err) {
         setError(err.response?.data?.error || 'Error al cargar usuarios');
-        setUsers([]);
+        
         setFilteredUsers([]);
         setTotalPages(1);
         setTotalUsers(0);

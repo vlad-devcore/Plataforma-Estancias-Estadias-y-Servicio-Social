@@ -57,10 +57,12 @@ const useProgramas = () => {
       setLoading(false);
     };
     init();
+     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   useEffect(() => {
     fetchProcesos();
+     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idPrograma]);
 
   return {

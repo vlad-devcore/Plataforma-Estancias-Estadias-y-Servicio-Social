@@ -24,7 +24,7 @@ const DocumentManagement = () => {
     setCurrentPage,
     totalPages,
     totalDocuments,
-    documentsPerPage
+    
   } = useDocumentosAdmin();
 
   const [selectedDocument, setSelectedDocument] = useState(null);

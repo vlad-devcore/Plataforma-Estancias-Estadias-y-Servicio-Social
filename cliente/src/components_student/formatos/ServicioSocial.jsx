@@ -79,6 +79,7 @@ const ServicioSocial = () => {
   useEffect(() => {
     console.log("🔍 Depuración: Ejecutando useEffect para fetchProcesoActivo");
     fetchProcesoActivo();
+     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

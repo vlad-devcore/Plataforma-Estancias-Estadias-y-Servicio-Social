@@ -87,12 +87,12 @@ const ProgramaEducativoForm = () => {
 
   const getProgramaNombre = () => {
     console.log('getProgramaNombre:', { idPrograma, programas }); // Debug
-    const programa = programas.find((p) => p.id_programa == idPrograma); // Comparación no estricta
+    const programa = programas.find((p) => p.id_programa === idPrograma); // Comparación no estricta
     return programa ? programa.nombre : 'No seleccionado';
   };
 
   const getPeriodoNombre = () => {
-    const periodo = periodos.find((p) => p.IdPeriodo == idPeriodo); // Comparación no estricta
+    const periodo = periodos.find((p) => p.IdPeriodo === idPeriodo); // Comparación no estricta
     return periodo ? `${periodo.Fase} ${periodo.Año}` : 'No seleccionado';
   };
 
