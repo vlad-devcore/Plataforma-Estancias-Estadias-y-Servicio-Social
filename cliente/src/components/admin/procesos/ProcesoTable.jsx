@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 
 const ProcesoTable = ({ procesos, loading, error, onEdit, onDelete }) => {
   if (loading) return <div className="text-center py-8">Cargando procesos...</div>;

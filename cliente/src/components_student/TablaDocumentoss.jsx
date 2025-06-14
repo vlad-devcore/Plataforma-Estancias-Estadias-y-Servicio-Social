@@ -14,7 +14,6 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
   const {
     plantillas,
     documentos,
-    procesoId,
     loading,
     error,
     success,

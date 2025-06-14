@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
+import { useState, useEffect, useMemo } from "react";
+import axios from "axios";
 
 const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
   const [plantillas, setPlantillas] = useState([]);
@@ -9,63 +9,71 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  const user = useMemo(() => JSON.parse(localStorage.getItem('user')), []);
+  const user = useMemo(() => JSON.parse(localStorage.getItem("user")), []);
 
   // Definir documentos según el tipo de proceso
-  const tiposDocumentos = tipoProceso === 'Servicio Social' ? [
-    'Reporte Mensual 1',
-    'Reporte Mensual 2',
-    'Reporte Mensual 3',
-    'Reporte Mensual 4',
-    'Reporte Mensual 5',
-    'Reporte Mensual 6',
-    'Reporte Mensual 7',
-    'Reporte Mensual 8',
-    'Reporte Mensual 9',
-    'Reporte Mensual 10',
-    'Reporte Mensual 11',
-    'Reporte Mensual 12',
-  ] : [
-    'Carta de presentación',
-    'Carta de aceptación',
-    'Cédula de registro',
-    'Definición de proyecto',
-    'Carta de liberación',
-  ];
+  const tiposDocumentos =
+    tipoProceso === "Servicio Social"
+      ? [
+          "Reporte Mensual 1",
+          "Reporte Mensual 2",
+          "Reporte Mensual 3",
+          "Reporte Mensual 4",
+          "Reporte Mensual 5",
+          "Reporte Mensual 6",
+          "Reporte Mensual 7",
+          "Reporte Mensual 8",
+          "Reporte Mensual 9",
+          "Reporte Mensual 10",
+          "Reporte Mensual 11",
+          "Reporte Mensual 12",
+        ]
+      : [
+          "Carta de presentación",
+          "Carta de aceptación",
+          "Cédula de registro",
+          "Definición de proyecto",
+          "Carta de liberación",
+        ];
 
-  const tipoDocumentoMap = tipoProceso === 'Servicio Social' ? {
-    'Reporte Mensual 1': 7,
-    'Reporte Mensual 2': 8,
-    'Reporte Mensual 3': 9,
-    'Reporte Mensual 4': 10,
-    'Reporte Mensual 5': 11,
-    'Reporte Mensual 6': 12,
-    'Reporte Mensual 7': 13,
-    'Reporte Mensual 8': 14,
-    'Reporte Mensual 9': 15,
-    'Reporte Mensual 10': 16,
-    'Reporte Mensual 11': 17,
-    'Reporte Mensual 12': 18,
-  } : {
-    'Carta de presentación': 1,
-    'Carta de aceptación': 2,
-    'Cédula de registro': 3,
-    'Definición de proyecto': 4,
-    'Carta de liberación': 5,
-  };
+  const tipoDocumentoMap =
+    tipoProceso === "Servicio Social"
+      ? {
+          "Reporte Mensual 1": 7,
+          "Reporte Mensual 2": 8,
+          "Reporte Mensual 3": 9,
+          "Reporte Mensual 4": 10,
+          "Reporte Mensual 5": 11,
+          "Reporte Mensual 6": 12,
+          "Reporte Mensual 7": 13,
+          "Reporte Mensual 8": 14,
+          "Reporte Mensual 9": 15,
+          "Reporte Mensual 10": 16,
+          "Reporte Mensual 11": 17,
+          "Reporte Mensual 12": 18,
+        }
+      : {
+          "Carta de presentación": 1,
+          "Carta de aceptación": 2,
+          "Cédula de registro": 3,
+          "Definición de proyecto": 4,
+          "Carta de liberación": 5,
+        };
 
   const fetchPlantillas = async () => {
     if (!user?.id) {
-      setError('Usuario no autenticado');
+      setError("Usuario no autenticado");
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      console.log('Fetching plantillas para tipoProceso:', tipoProceso);
-      const response = await axios.get('http://189.203.249.19:3011/api/documentosAdmin');
+      console.log("Fetching plantillas para tipoProceso:", tipoProceso);
+      const response = await axios.get(
+        "http://189.203.249.19:3011/api/documentosAdmin"
+      );
       const data = response.data;
-      console.log('Plantillas recibidas:', data);
+      console.log("Plantillas recibidas:", data);
 
       const combined = tiposDocumentos.map((tipo) => {
         const match = data.find((d) => d.nombre_documento === tipo);
@@ -79,8 +87,8 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
 
       setPlantillas(combined);
     } catch (err) {
-      console.error('Error al obtener plantillas:', err);
-      setError(err.response?.data?.error || 'Error al obtener plantillas');
+      console.error("Error al obtener plantillas:", err);
+      setError(err.response?.data?.error || "Error al obtener plantillas");
     } finally {
       setLoading(false);
     }
@@ -88,22 +96,29 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
 
   const fetchDocumentos = async () => {
     if (!procesoId || !user?.id) {
-      console.log('No hay procesoId o id_usuario, omitiendo fetchDocumentos');
-      setError('No hay proceso activo o usuario no autenticado');
+      console.log("No hay procesoId o id_usuario, omitiendo fetchDocumentos");
+      setError("No hay proceso activo o usuario no autenticado");
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      console.log(`Fetching documentos para proceso ${procesoId}, usuario ${user.id}`);
-      const { data } = await axios.get(`http://189.203.249.19:3011/api/documentos`, {
-        params: { id_proceso: procesoId, id_usuario: user.id }
-      });
-      console.log('Documentos recibidos:', data);
+      console.log(
+        `Fetching documentos para proceso ${procesoId}, usuario ${user.id}`
+      );
+      const { data } = await axios.get(
+        `http://189.203.249.19:3011/api/documentos`,
+        {
+          params: { id_proceso: procesoId, id_usuario: user.id },
+        }
+      );
+      console.log("Documentos recibidos:", data);
       setDocumentos(data);
     } catch (err) {
-      console.error('Error al obtener documentos:', err);
-      setError(err.response?.data?.error || 'Error al obtener documentos subidos');
+      console.error("Error al obtener documentos:", err);
+      setError(
+        err.response?.data?.error || "Error al obtener documentos subidos"
+      );
     } finally {
       setLoading(false);
     }
@@ -111,15 +126,17 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
 
   const uploadDocumento = async (idTipoDoc, file) => {
     if (!file || !procesoId || !user?.id) {
-      setError('No se seleccionó archivo, no hay proceso activo o usuario no autenticado');
+      setError(
+        "No se seleccionó archivo, no hay proceso activo o usuario no autenticado"
+      );
       return;
     }
 
-    const allowedTypes = ['.pdf', '.docx', '.xlsx'];
-    const fileExtension = `.${file.name.toLowerCase().split('.').pop()}`;
+    const allowedTypes = [".pdf", ".docx", ".xlsx"];
+    const fileExtension = `.${file.name.toLowerCase().split(".").pop()}`;
 
     if (!allowedTypes.includes(fileExtension)) {
-      setError('Solo se permiten archivos PDF, Word (.docx) o Excel (.xlsx)');
+      setError("Solo se permiten archivos PDF, Word (.docx) o Excel (.xlsx)");
       return;
     }
 
@@ -128,23 +145,31 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     setSuccess(null);
 
     const formData = new FormData();
-    formData.append('archivo', file);
-    formData.append('IdTipoDoc', idTipoDoc);
-    formData.append('id_usuario', user.id);
-    formData.append('Comentarios', '');
-    formData.append('Estatus', 'Pendiente');
-    formData.append('id_proceso', procesoId);
+    formData.append("archivo", file);
+    formData.append("IdTipoDoc", idTipoDoc);
+    formData.append("id_usuario", user.id);
+    formData.append("Comentarios", "");
+    formData.append("Estatus", "Pendiente");
+    formData.append("id_proceso", procesoId);
 
     try {
-      console.log('Subiendo documento:', { IdTipoDoc: idTipoDoc, id_usuario: user.id, id_proceso: procesoId });
-      await axios.post('http://189.203.249.19:3011/api/documentos/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      console.log("Subiendo documento:", {
+        IdTipoDoc: idTipoDoc,
+        id_usuario: user.id,
+        id_proceso: procesoId,
       });
-      setSuccess('Documento subido correctamente');
+      await axios.post(
+        "http://189.203.249.19:3011/api/documentos/upload",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+      setSuccess("Documento subido correctamente");
       await fetchDocumentos();
     } catch (err) {
-      console.error('Error al subir documento:', err);
-      setError(err.response?.data?.error || 'Error al subir documento');
+      console.error("Error al subir documento:", err);
+      setError(err.response?.data?.error || "Error al subir documento");
     } finally {
       setLoading(false);
     }
@@ -152,7 +177,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
 
   const deleteDocumento = async (idDocumento) => {
     if (!procesoId || !user?.id) {
-      setError('No hay proceso activo o usuario no autenticado');
+      setError("No hay proceso activo o usuario no autenticado");
       return;
     }
     setLoading(true);
@@ -160,12 +185,14 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     setSuccess(null);
     try {
       console.log(`Eliminando documento ${idDocumento}`);
-      await axios.delete(`http://189.203.249.19:3011/api/documentos/${idDocumento}`);
-      setSuccess('Documento eliminado correctamente');
+      await axios.delete(
+        `http://189.203.249.19:3011/api/documentos/${idDocumento}`
+      );
+      setSuccess("Documento eliminado correctamente");
       await fetchDocumentos();
     } catch (err) {
-      console.error('Error al eliminar documento:', err);
-      setError(err.response?.data?.error || 'Error al eliminar documento');
+      console.error("Error al eliminar documento:", err);
+      setError(err.response?.data?.error || "Error al eliminar documento");
     } finally {
       setLoading(false);
     }
@@ -173,7 +200,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
 
   const getFileExtension = (filename) => {
     if (!filename) return null;
-    return filename.split('.').pop().toLowerCase();
+    return filename.split(".").pop().toLowerCase();
   };
 
   useEffect(() => {
@@ -184,12 +211,14 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     if (user?.id) {
       fetchPlantillas();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, tipoProceso]);
 
   useEffect(() => {
     if (procesoId) {
       fetchDocumentos();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [procesoId]);
 
   return {

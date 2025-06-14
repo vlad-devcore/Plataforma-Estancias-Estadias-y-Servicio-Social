@@ -11,7 +11,6 @@ const FormatosAdmin = () => {
     loading,
     error,
     success,
-    tiposDocumentos,
     uploadFormato,
     downloadFormato,
     deleteFormato,

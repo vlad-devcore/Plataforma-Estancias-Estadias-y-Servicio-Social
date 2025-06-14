@@ -33,6 +33,7 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
       setSearchEmpresa(getNombreEmpresa(procesoExistente.id_empresa) || "");
       setSearchAsesor(getNombreAsesorAcademico(procesoExistente.id_asesor_academico) || "");
     }
+    // eslint-disable-next-line 
   }, [procesoExistente]);
 
   useEffect(() => {

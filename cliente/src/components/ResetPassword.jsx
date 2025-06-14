@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Key } from 'lucide-react';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import axios from 'axios';
 import '../components_student/Login.css'; // Asegúrate de que la ruta sea correcta

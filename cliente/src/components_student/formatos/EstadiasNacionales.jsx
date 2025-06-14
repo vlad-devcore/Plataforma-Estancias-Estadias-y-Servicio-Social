@@ -64,9 +64,10 @@ const EstadiasNacionales = () => {
     }
   };
 
-  useEffect(() => {
-    fetchProcesoActivo();
-  }, []);
+useEffect(() => {
+  fetchProcesoActivo();
+   // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []); 
 
   const handleOpenModal = () => {
     setShowModal(true);

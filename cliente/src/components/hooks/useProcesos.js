@@ -162,6 +162,7 @@ const useProcesos = () => {
 
   useEffect(() => {
     fetchProcesos();
+     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {

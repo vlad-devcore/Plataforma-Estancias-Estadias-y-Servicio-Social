@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, memo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { DocumentTextIcon, VideoCameraIcon, ChevronRightIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { DocumentTextIcon, VideoCameraIcon, ChevronRightIcon, } from '@heroicons/react/24/outline';
 import Header from './HeaderEstudiante';
 import useProgramas from '../components/hooks/useProgramasEducativos';
 

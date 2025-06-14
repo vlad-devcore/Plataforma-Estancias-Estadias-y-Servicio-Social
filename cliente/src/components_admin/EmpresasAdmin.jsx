@@ -22,7 +22,6 @@ const EmpresaManagement = () => {
     setCurrentPage,
     totalPages,
     totalCompanies,
-    companiesPerPage,
     searchTerm,
     setSearchTerm,
     sociedadFilter,
