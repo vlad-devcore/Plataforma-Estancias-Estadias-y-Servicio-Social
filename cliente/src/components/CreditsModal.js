@@ -30,7 +30,7 @@ const CreditsModal = () => {
   const teamMembers = [
     {
       name: 'Alberto Castrejón',
-      role: 'Desarrollador Frontend',
+      role: 'Desarrollador Full Stack',
       emoji: '👨🏻‍💻',
       image: '/team/alberto.jpg',
       github: 'https://github.com/AlbertoCastre',
