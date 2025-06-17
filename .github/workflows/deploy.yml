@@ -1,10 +1,9 @@
 name: Deploy to SFTP
 
-# Dispara el workflow en cada push a la rama especificada
 on:
   push:
     branches:
-      - main  # [EDITA] Cambia a tu rama de trabajo (ej. develop, CTS-BRANCH) si es diferente
+      - main  
 
 jobs:
   deploy:
@@ -15,42 +14,74 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Asegura que se obtenga todo el historial
+          fetch-depth: 0
 
       # Configura Node.js
       - name: Setup Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3  
         with:
           node-version: '16'
 
-      # Instala dependencias y construye el frontend
-      - name: Build Frontend
+      # Usa caché para dependencias
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            cliente/node_modules
+            mini/node_modules
+            Servidor/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # Instala dependencias solo si package.json cambia
+      - name: Install Client Dependencies
         run: |
           cd cliente
           npm install
-          npm run build
-          CI=false npm run build 
+        if: steps.cache.outputs.cache-hit != 'true' 
 
-      # Instala dependencias para mini/
       - name: Install Mini Dependencies
         run: |
           cd mini
           npm install
+        if: steps.cache.outputs.cache-hit != 'true'
 
-      # Instala dependencias para Servidor/
       - name: Install Backend Dependencies
         run: |
           cd Servidor
           npm install
+        if: steps.cache.outputs.cache-hit != 'true'
 
-      # Despliegue via SFTP
+      # Construye el frontend solo si hay cambios en el código
+      - name: Build Frontend
+        run: |
+          cd cliente
+          npm run build
+          CI=false npm run build  # Evita fallos de CI
+        if: github.event_name == 'push' && (github.event.push.changes[0] != 'package.json' || contains(github.event.push.changes[0], 'cliente/'))
+
+      # Despliegue incremental via SFTP
       - name: Deploy to Server
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
-          username: ${{ secrets.SFTP_USERNAME }}  
-          server: academico.upqroo.edu.mx        
-          port: 22                               
-          password: ${{ secrets.SFTP_PASSWORD }} 
-          local_path: './*'                     
+          username: ${{ secrets.SFTP_USERNAME }}
+          server: academico.upqroo.edu.mx
+          port: 22
+          password: ${{ secrets.SFTP_PASSWORD }}
+          local_path: './*'  
           remote_path: '/home/gestionvinculacion'
+          exclude: 'node_modules/**, .git/**'  
 
+      # Script remoto para regenerar build si es necesario
+      - name: Execute remote commands
+        uses: appleboy/ssh-action@master
+        with:
+          host: academico.upqroo.edu.mx
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          port: 22
+          script: |
+            cd /home/gestionvinculacion/cliente
+            npm run build  # Regenera build en el servidor si hubo cambios
+            cp -r build/* /home/gestionvinculacion/mini/../cliente/build/
