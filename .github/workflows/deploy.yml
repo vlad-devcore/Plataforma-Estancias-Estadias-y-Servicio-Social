@@ -1,87 +1,71 @@
-name: Deploy to SFTP
+name: Smart Deploy to SFTP
 
 on:
   push:
     branches:
-      - main  
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Clona el repositorio con historial
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      # Configura Node.js
       - name: Setup Node.js
-        uses: actions/setup-node@v3  
+        uses: actions/setup-node@v3
         with:
           node-version: '16'
 
-      # Usa caché para dependencias
-      - name: Cache node modules
-        uses: actions/cache@v3
-        with:
-          path: |
-            cliente/node_modules
-            mini/node_modules
-            Servidor/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      # Instala dependencias solo si package.json cambia
-      - name: Install Client Dependencies
+      #####################################
+      # CLIENTE: Build y despliegue
+      #####################################
+      - name: Build React app
+        if: contains(github.event.head_commit.message, '[cliente]')
         run: |
           cd cliente
-          npm install
-        if: steps.cache.outputs.cache-hit != 'true' 
-
-      - name: Install Mini Dependencies
-        run: |
-          cd mini
-          npm install
-        if: steps.cache.outputs.cache-hit != 'true'
-
-      - name: Install Backend Dependencies
-        run: |
-          cd Servidor
-          npm install
-        if: steps.cache.outputs.cache-hit != 'true'
-
-      # Construye el frontend solo si hay cambios en el código
-      - name: Build Frontend
-        run: |
-          cd cliente
+          npm ci
           npm run build
-          CI=false npm run build  # Evita fallos de CI
-        if: github.event_name == 'push' && (github.event.push.changes[0] != 'package.json' || contains(github.event.push.changes[0], 'cliente/'))
 
-      # Despliegue incremental via SFTP
-      - name: Deploy to Server
+      - name: Deploy cliente/build
+        if: contains(github.event.head_commit.message, '[cliente]')
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
           server: academico.upqroo.edu.mx
           port: 22
-          password: ${{ secrets.SFTP_PASSWORD }}
-          local_path: './*'  
-          remote_path: '/home/gestionvinculacion'
-          exclude: 'node_modules/**, .git/**'  
+          local_path: 'cliente/build/*'
+          remote_path: '/home/gestionvinculacion/cliente/build'
+          exclude: '.git/**,node_modules/**,package.json,package-lock.json'
 
-      # Script remoto para regenerar build si es necesario
-      - name: Execute remote commands
-        uses: appleboy/ssh-action@master
+      #####################################
+      # MINI: Solo archivos fuente, sin node_modules
+      #####################################
+      - name: Deploy mini folder
+        if: contains(github.event.head_commit.message, '[mini]')
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
-          host: academico.upqroo.edu.mx
           username: ${{ secrets.SFTP_USERNAME }}
           password: ${{ secrets.SFTP_PASSWORD }}
+          server: academico.upqroo.edu.mx
           port: 22
-          script: |
-            cd /home/gestionvinculacion/cliente
-            npm run build  # Regenera build en el servidor si hubo cambios
-            cp -r build/* /home/gestionvinculacion/mini/../cliente/build/
+          local_path: 'mini/*'
+          remote_path: '/home/gestionvinculacion/mini'
+          exclude: '.git/**,node_modules/**,package.json,package-lock.json'
+
+      #####################################
+      # BACKEND: Solo archivos fuente, sin node_modules
+      #####################################
+      - name: Deploy backend (Servidor)
+        if: contains(github.event.head_commit.message, '[backend]')
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          server: academico.upqroo.edu.mx
+          port: 22
+          local_path: 'Servidor/*'
+          remote_path: '/home/gestionvinculacion/Servidor'
+          exclude: '.git/**,node_modules/**,package.json,package-lock.json'
