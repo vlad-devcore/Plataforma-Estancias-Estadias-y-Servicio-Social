@@ -1,4 +1,4 @@
-name: Smart Deploy to SFTP
+name: Smart Incremental Deploy to SFTP
 
 on:
   push:
@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Para comparar cambios
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -19,17 +21,28 @@ jobs:
           node-version: '16'
 
       #####################################
-      # CLIENTE: Build y despliegue
+      # Determinar cambios
+      #####################################
+      - name: Detect changed files
+        id: changes
+        run: |
+          echo "CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)" >> $GITHUB_ENV
+          echo "HAS_CLIENTE=$(git diff --name-only HEAD^ HEAD | grep '^cliente/' | wc -l)" >> $GITHUB_ENV
+          echo "HAS_MINI=$(git diff --name-only HEAD^ HEAD | grep '^mini/' | wc -l)" >> $GITHUB_ENV
+          echo "HAS_SERVIDOR=$(git diff --name-only HEAD^ HEAD | grep '^Servidor/' | wc -l)" >> $GITHUB_ENV
+
+      #####################################
+      # CLIENTE: Build y despliegue si hay cambios
       #####################################
       - name: Build React app
-        if: contains(github.event.head_commit.message, '[cliente]')
+        if: env.HAS_CLIENTE > 0
         run: |
           cd cliente
           npm ci
           npm run build
 
       - name: Deploy cliente/build
-        if: contains(github.event.head_commit.message, '[cliente]')
+        if: env.HAS_CLIENTE > 0
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           username: ${{ secrets.SFTP_USERNAME }}
@@ -41,31 +54,46 @@ jobs:
           exclude: '.git/**,node_modules/**,package.json,package-lock.json'
 
       #####################################
-      # MINI: Solo archivos fuente, sin node_modules
+      # MINI: Despliegue si hay cambios
       #####################################
       - name: Deploy mini folder
-        if: contains(github.event.head_commit.message, '[mini]')
+        if: env.HAS_MINI > 0
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           username: ${{ secrets.SFTP_USERNAME }}
           password: ${{ secrets.SFTP_PASSWORD }}
           server: academico.upqroo.edu.mx
           port: 22
-          local_path: 'mini/*'
+          local_path: 'mini/'
           remote_path: '/home/gestionvinculacion/mini'
           exclude: '.git/**,node_modules/**,package.json,package-lock.json'
 
       #####################################
-      # BACKEND: Solo archivos fuente, sin node_modules
+      # BACKEND: Despliegue si hay cambios
       #####################################
       - name: Deploy backend (Servidor)
-        if: contains(github.event.head_commit.message, '[backend]')
+        if: env.HAS_SERVIDOR > 0
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           username: ${{ secrets.SFTP_USERNAME }}
           password: ${{ secrets.SFTP_PASSWORD }}
           server: academico.upqroo.edu.mx
           port: 22
-          local_path: 'Servidor/*'
+          local_path: 'Servidor/'
           remote_path: '/home/gestionvinculacion/Servidor'
           exclude: '.git/**,node_modules/**,package.json,package-lock.json'
+
+      #####################################
+      # Reiniciar servicios con pm2
+      #####################################
+      - name: Restart PM2 processes
+        if: env.HAS_CLIENTE > 0 || env.HAS_MINI > 0 || env.HAS_SERVIDOR > 0
+        uses: appleboy/ssh-action@master
+        with:
+          host: academico.upqroo.edu.mx
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          port: 22
+          script: |
+            pm2 restart mini-server
+            pm2 restart servidor
