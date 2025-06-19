@@ -1,10 +1,10 @@
-name: Smart Incremental Deploy to SFTP
+name: Full Deploy to SFTP
 
 on:
   push:
     branches:
       - main
-      - CAST-BRANCH  
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -13,7 +13,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Trae todo el historial
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -21,31 +21,15 @@ jobs:
           node-version: '16'
 
       #####################################
-      # Determinar cambios
-      #####################################
-      - name: Detect changed files
-        id: changes
-        run: |
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD || echo "")
-          echo "CHANGED_FILES<<EOF" >> $GITHUB_ENV
-          echo "$CHANGED_FILES" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-          echo "HAS_CLIENTE=$(echo "$CHANGED_FILES" | grep '^cliente/' | wc -l)" >> $GITHUB_ENV
-          echo "HAS_MINI=$(echo "$CHANGED_FILES" | grep '^mini/' | wc -l)" >> $GITHUB_ENV
-          echo "HAS_SERVIDOR=$(echo "$CHANGED_FILES" | grep '^Servidor/' | wc -l)" >> $GITHUB_ENV
-
-      #####################################
-      # CLIENTE: Build y despliegue si hay cambios
+      # CLIENTE: Build y despliegue completo
       #####################################
       - name: Build React app
-        if: env.HAS_CLIENTE > 0
         run: |
           cd cliente
           npm ci
           npm run build
 
       - name: Deploy cliente/build
-        if: env.HAS_CLIENTE > 0
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           username: ${{ secrets.SFTP_USERNAME }}
@@ -57,10 +41,9 @@ jobs:
           exclude: '.git/**,node_modules/**,package.json,package-lock.json'
 
       #####################################
-      # MINI: Despliegue si hay cambios
+      # MINI: Despliegue completo
       #####################################
       - name: Deploy mini folder
-        if: env.HAS_MINI > 0
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           username: ${{ secrets.SFTP_USERNAME }}
@@ -72,10 +55,9 @@ jobs:
           exclude: '.git/**,node_modules/**,package.json,package-lock.json'
 
       #####################################
-      # BACKEND: Despliegue si hay cambios
+      # BACKEND: Despliegue completo
       #####################################
       - name: Deploy backend (Servidor)
-        if: env.HAS_SERVIDOR > 0
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           username: ${{ secrets.SFTP_USERNAME }}
@@ -90,7 +72,6 @@ jobs:
       # Reiniciar servicios con pm2
       #####################################
       - name: Restart PM2 processes
-        if: env.HAS_CLIENTE > 0 || env.HAS_MINI > 0 || env.HAS_SERVIDOR > 0
         uses: appleboy/ssh-action@master
         with:
           host: academico.upqroo.edu.mx
