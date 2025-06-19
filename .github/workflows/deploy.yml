@@ -13,7 +13,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Para comparar cambios
+          fetch-depth: 0  # Trae todo el historial
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -26,10 +26,13 @@ jobs:
       - name: Detect changed files
         id: changes
         run: |
-          echo "CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)" >> $GITHUB_ENV
-          echo "HAS_CLIENTE=$(git diff --name-only HEAD^ HEAD | grep '^cliente/' | wc -l)" >> $GITHUB_ENV
-          echo "HAS_MINI=$(git diff --name-only HEAD^ HEAD | grep '^mini/' | wc -l)" >> $GITHUB_ENV
-          echo "HAS_SERVIDOR=$(git diff --name-only HEAD^ HEAD | grep '^Servidor/' | wc -l)" >> $GITHUB_ENV
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD || echo "")
+          echo "CHANGED_FILES<<EOF" >> $GITHUB_ENV
+          echo "$CHANGED_FILES" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          echo "HAS_CLIENTE=$(echo "$CHANGED_FILES" | grep '^cliente/' | wc -l)" >> $GITHUB_ENV
+          echo "HAS_MINI=$(echo "$CHANGED_FILES" | grep '^mini/' | wc -l)" >> $GITHUB_ENV
+          echo "HAS_SERVIDOR=$(echo "$CHANGED_FILES" | grep '^Servidor/' | wc -l)" >> $GITHUB_ENV
 
       #####################################
       # CLIENTE: Build y despliegue si hay cambios
