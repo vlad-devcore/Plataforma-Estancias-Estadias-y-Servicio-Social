@@ -20,8 +20,8 @@ const ProgramaEducativoForm = () => {
     const fetchData = async () => {
       try {
         const [programasRes, periodosRes] = await Promise.all([
-          axios.get('http://189.203.249.19:3011/api/programas'),
-          axios.get('http://189.203.249.19:3011/api/periodos'),
+          axios.get('http://189.203.249.19:9999/api/programas'),
+          axios.get('http://189.203.249.19:9999/api/periodos'),
         ]);
         setProgramas(programasRes.data);
         const periodosActivos = periodosRes.data.filter((p) => p.EstadoActivo === 'Activo');
@@ -65,7 +65,7 @@ const ProgramaEducativoForm = () => {
       const user = JSON.parse(localStorage.getItem('user'));
       if (!user?.id) throw new Error('Usuario no autenticado');
 
-      await axios.post('http://189.203.249.19:3011/api/procesos/inicial', {
+      await axios.post('http://189.203.249.19:9999/api/procesos/inicial', {
         id_user: user.id,
         id_programa: idPrograma,
         id_periodo: idPeriodo,
@@ -87,12 +87,12 @@ const ProgramaEducativoForm = () => {
 
   const getProgramaNombre = () => {
     console.log('getProgramaNombre:', { idPrograma, programas }); // Debug
-    const programa = programas.find((p) => p.id_programa == idPrograma); // Comparación no estricta
+    const programa = programas.find((p) => p.id_programa === idPrograma); // Comparación no estricta
     return programa ? programa.nombre : 'No seleccionado';
   };
 
   const getPeriodoNombre = () => {
-    const periodo = periodos.find((p) => p.IdPeriodo == idPeriodo); // Comparación no estricta
+    const periodo = periodos.find((p) => p.IdPeriodo === idPeriodo); // Comparación no estricta
     return periodo ? `${periodo.Fase} ${periodo.Año}` : 'No seleccionado';
   };
 

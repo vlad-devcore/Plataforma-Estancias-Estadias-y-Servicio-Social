@@ -31,7 +31,7 @@ const ServicioSocial = () => {
       console.log("🔍 Depuración: Iniciando fetchProcesoActivo, user.id:", user.id);
 
       // Obtener periodo activo
-      const { data: periodos } = await axios.get("http://189.203.249.19:3011/api/periodos");
+      const { data: periodos } = await axios.get("http://189.203.249.19:9999/api/periodos");
       console.log("🔍 Depuración: Periodos recibidos:", periodos);
       const periodoActivo = periodos.find((p) => p.EstadoActivo === "Activo");
       if (!periodoActivo) throw new Error("No hay periodo activo");
@@ -39,7 +39,7 @@ const ServicioSocial = () => {
 
       // Validar proceso en el periodo activo
       const { data } = await axios.get(
-        `http://189.203.249.19:3011/api/procesos/validar/${user.id}/${periodoActivo.IdPeriodo}`
+        `http://189.203.249.19:9999/api/procesos/validar/${user.id}/${periodoActivo.IdPeriodo}`
       );
       console.log("🔐 Validación proceso (Servicio Social):", data);
 
@@ -79,6 +79,7 @@ const ServicioSocial = () => {
   useEffect(() => {
     console.log("🔍 Depuración: Ejecutando useEffect para fetchProcesoActivo");
     fetchProcesoActivo();
+     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

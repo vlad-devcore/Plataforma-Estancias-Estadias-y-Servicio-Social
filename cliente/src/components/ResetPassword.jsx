@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Key } from 'lucide-react';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import axios from 'axios';
 import '../components_student/Login.css'; // Asegúrate de que la ruta sea correcta
@@ -43,7 +42,7 @@ const ResetPassword = () => {
       return;
     }
     try {
-      await axios.post('http://189.203.249.19:3011/api/auth/reset-password', { token, newPassword });
+      await axios.post('http://189.203.249.19:9999/api/auth/reset-password', { token, newPassword });
       setToast({ message: 'Contraseña restablecida correctamente', type: 'success' });
       setTimeout(() => navigate('/login'), 2000);
     } catch (error) {

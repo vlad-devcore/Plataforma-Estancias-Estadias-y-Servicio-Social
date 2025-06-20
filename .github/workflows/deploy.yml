@@ -1,55 +1,83 @@
-name: Deploy to SFTP
+name: Full Deploy to SFTP
 
-# Dispara el workflow en cada push a la rama especificada
 on:
   push:
     branches:
-      - main  # [EDITA] Cambia a tu rama de trabajo (ej. develop, CTS-BRANCH) si es diferente
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Clona el repositorio con historial
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Asegura que se obtenga todo el historial
+          fetch-depth: 0
 
-      # Configura Node.js
       - name: Setup Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: '16'
 
-      # Instala dependencias y construye el frontend
-      - name: Build Frontend
+      #####################################
+      # CLIENTE: Build y despliegue completo
+      #####################################
+      - name: Build React app
         run: |
           cd cliente
-          npm install
+          npm ci
           npm run build
 
-      # Instala dependencias para mini/
-      - name: Install Mini Dependencies
-        run: |
-          cd mini
-          npm install
-
-      # Instala dependencias para Servidor/
-      - name: Install Backend Dependencies
-        run: |
-          cd Servidor
-          npm install
-
-      # Despliegue via SFTP
-      - name: Deploy to Server
+      - name: Deploy cliente/build
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
-          username: ${{ secrets.SFTP_USERNAME }}  
-          server: academico.upqroo.edu.mx        
-          port: 22                               
-          password: ${{ secrets.SFTP_PASSWORD }} 
-          local_path: './*'                     
-          remote_path: '/home/gestionvinculacion'
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          server: academico.upqroo.edu.mx
+          port: 22
+          local_path: 'cliente/build/*'
+          remote_path: '/home/gestionvinculacion/cliente/build'
+          exclude: '.git/**,node_modules/**,package.json,package-lock.json'
 
+      #####################################
+      # MINI: Despliegue completo
+      #####################################
+      - name: Deploy mini folder
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          server: academico.upqroo.edu.mx
+          port: 22
+          local_path: 'mini/'
+          remote_path: '/home/gestionvinculacion/mini'
+          exclude: '.git/**,node_modules/**,package.json,package-lock.json'
+
+      #####################################
+      # BACKEND: Despliegue completo
+      #####################################
+      - name: Deploy backend (Servidor)
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          server: academico.upqroo.edu.mx
+          port: 22
+          local_path: 'Servidor/'
+          remote_path: '/home/gestionvinculacion/Servidor'
+          exclude: '.git/**,node_modules/**,package.json,package-lock.json'
+
+      #####################################
+      # Reiniciar servicios con pm2
+      #####################################
+      - name: Restart PM2 processes
+        uses: appleboy/ssh-action@master
+        with:
+          host: academico.upqroo.edu.mx
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          port: 22
+          script: |
+            pm2 restart mini-server
+            pm2 restart servidor

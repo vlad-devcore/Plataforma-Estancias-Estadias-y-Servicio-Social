@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { User, Mail, Key, Eye, EyeOff } from 'lucide-react';
@@ -127,7 +126,6 @@ const FormInput = ({ icon: Icon, label, type = "text", value, onChange, options 
 // Profile Component
 export default function Profile() {
   const { user, loading, changePassword } = useAuth();
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     antiguaContrasena: '',
     nuevaContrasena: '',

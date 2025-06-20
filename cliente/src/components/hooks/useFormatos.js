@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 const useFormatos = () => {
   const [formatos, setFormatos] = useState([]);
@@ -8,17 +8,17 @@ const useFormatos = () => {
   const [success, setSuccess] = useState(null);
 
   // Base URL completa para las peticiones
-  const API_BASE = 'http://189.203.249.19:3011/api/documentosAdmin';
+  const API_BASE = "http://189.203.249.19:9999/api/documentosAdmin";
 
   // Tipos de documentos predefinidos
   const tiposDocumentos = [
-    'Carta de presentación',
-    'Carta de aceptación',
-    'Cédula de registro',
-    'Definición de proyecto',
-    'Carta de liberación',
-    'Guía de uso',
-    'Reporte Mensual'
+    "Carta de presentación",
+    "Carta de aceptación",
+    "Cédula de registro",
+    "Definición de proyecto",
+    "Carta de liberación",
+    "Guía de uso",
+    "Reporte Mensual",
   ];
 
   // Obtener todos los formatos
@@ -28,21 +28,21 @@ const useFormatos = () => {
     try {
       const response = await axios.get(API_BASE);
       const data = response.data;
-      
+
       // Combinar con documentos predefinidos
-      const combined = tiposDocumentos.map(tipo => {
-        const formatoExistente = data.find(f => f.nombre_documento === tipo);
+      const combined = tiposDocumentos.map((tipo) => {
+        const formatoExistente = data.find((f) => f.nombre_documento === tipo);
         return {
           nombre_documento: tipo,
           nombre_archivo: formatoExistente?.nombre_archivo || null,
-          id: formatoExistente?.id || null
+          id: formatoExistente?.id || null,
         };
       });
 
       setFormatos(combined);
       return combined;
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al cargar formatos');
+      setError(err.response?.data?.error || "Error al cargar formatos");
       throw err;
     } finally {
       setLoading(false);
@@ -56,20 +56,20 @@ const useFormatos = () => {
     setSuccess(null);
     try {
       const formData = new FormData();
-      formData.append('archivo', archivo);
-      formData.append('nombre_documento', nombreDocumento);
+      formData.append("archivo", archivo);
+      formData.append("nombre_documento", nombreDocumento);
 
       const response = await axios.post(`${API_BASE}/upload`, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+          "Content-Type": "multipart/form-data",
+        },
       });
 
-      setSuccess('Formato subido correctamente');
+      setSuccess("Formato subido correctamente");
       await fetchFormatos(); // Refrescar la lista
       return response.data;
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al subir formato');
+      setError(err.response?.data?.error || "Error al subir formato");
       throw err;
     } finally {
       setLoading(false);
@@ -78,22 +78,26 @@ const useFormatos = () => {
 
   // Descargar un formato
   // En tu useFormatos.js
-const downloadFormato = async (nombreDocumento) => {
-  setLoading(true);
-  setError(null);
-  try {
-    // Abrir en nueva pestaña primero para forzar la descarga
-    window.open(`http://189.203.249.19:3011/api/documentosAdmin/download/${encodeURIComponent(nombreDocumento)}`, '_blank');
-    
-    return true;
-  } catch (err) {
-    setError(err.response?.data?.error || 'Error al descargar formato');
-    throw err;
-  } finally {
-    setLoading(false);
-  }
-};
+  const downloadFormato = async (nombreDocumento) => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Abrir en nueva pestaña primero para forzar la descarga
+      window.open(
+        `http://189.203.249.19:9999/api/documentosAdmin/download/${encodeURIComponent(
+          nombreDocumento
+        )}`,
+        "_blank"
+      );
 
+      return true;
+    } catch (err) {
+      setError(err.response?.data?.error || "Error al descargar formato");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Eliminar un formato
   const deleteFormato = async (nombreDocumento) => {
@@ -102,11 +106,11 @@ const downloadFormato = async (nombreDocumento) => {
     setSuccess(null);
     try {
       await axios.delete(`${API_BASE}/${encodeURIComponent(nombreDocumento)}`);
-      setSuccess('Formato eliminado correctamente');
+      setSuccess("Formato eliminado correctamente");
       await fetchFormatos(); // Refrescar la lista
       return true;
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al eliminar formato');
+      setError(err.response?.data?.error || "Error al eliminar formato");
       throw err;
     } finally {
       setLoading(false);
@@ -116,12 +120,13 @@ const downloadFormato = async (nombreDocumento) => {
   // Obtener la extensión del archivo
   const getFileExtension = (filename) => {
     if (!filename) return null;
-    return filename.split('.').pop().toLowerCase();
+    return filename.split(".").pop().toLowerCase();
   };
 
   // Cargar formatos al inicializar
   useEffect(() => {
     fetchFormatos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {
@@ -138,7 +143,7 @@ const downloadFormato = async (nombreDocumento) => {
     resetMessages: () => {
       setError(null);
       setSuccess(null);
-    }
+    },
   };
 };
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const useUsers = () => {
-  const [users, setUsers] = useState([]);
+
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [rolFilter, setRolFilter] = useState('Todos');
@@ -28,17 +28,17 @@ const useUsers = () => {
           role: rolFilter !== 'Todos' ? rolFilter : undefined
         };
         console.log('Fetching users with params:', params);
-        const response = await axios.get('http://189.203.249.19:3011/api/users', {
+        const response = await axios.get('http://189.203.249.19:9999/api/users', {
           headers: { Authorization: `Bearer ${token}` },
           params
         });
-        setUsers(response.data.users);
+       
         setFilteredUsers(response.data.users);
         setTotalPages(response.data.totalPages);
         setTotalUsers(response.data.total);
       } catch (err) {
         setError(err.response?.data?.error || 'Error al cargar usuarios');
-        setUsers([]);
+        
         setFilteredUsers([]);
         setTotalPages(1);
         setTotalUsers(0);
@@ -56,7 +56,7 @@ const useUsers = () => {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem('token');
-      const response = await axios.post('http://189.203.249.19:3011/api/users', userData, {
+      const response = await axios.post('http://189.203.249.19:9999/api/users', userData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       // Refrescar datos para reflejar el nuevo usuario
@@ -75,7 +75,7 @@ const useUsers = () => {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem('token');
-      const response = await axios.put(`http://189.203.249.19:3011/api/users/${id_user}`, userData, {
+      const response = await axios.put(`http://189.203.249.19:9999/api/users/${id_user}`, userData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       // Refrescar datos
@@ -94,7 +94,7 @@ const useUsers = () => {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem('token');
-      await axios.delete(`http://189.203.249.19:3011/api/users/${id_user}`, {
+      await axios.delete(`http://189.203.249.19:9999/api/users/${id_user}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       // Refrescar datos
@@ -115,7 +115,7 @@ const useUsers = () => {
       const token = localStorage.getItem('token');
       const formData = new FormData();
       formData.append('file', file);
-      const response = await axios.post('http://189.203.249.19:3011/api/users/upload', formData, {
+      const response = await axios.post('http://189.203.249.19:9999/api/users/upload', formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'

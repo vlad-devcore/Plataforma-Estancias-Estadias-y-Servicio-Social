@@ -23,7 +23,6 @@ const UserManagement = () => {
     setCurrentPage,
     totalPages,
     totalUsers,
-    usersPerPage,
     rolFilter,
     setRolFilter
   } = useUsers();

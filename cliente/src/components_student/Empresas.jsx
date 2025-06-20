@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Search } from 'lucide-react';
 import Header from './HeaderEstudiante';
@@ -65,7 +64,6 @@ const Modal = ({ company, onClose }) => (
 
 // Main Component
 export default function Empresas() {
-  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIndustry, setSelectedIndustry] = useState('Todas');
   const [companies, setCompanies] = useState([]);
@@ -79,7 +77,7 @@ export default function Empresas() {
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
-        const response = await axios.get('http://189.203.249.19:3011/api/empresas', {
+        const response = await axios.get('http://189.203.249.19:9999/api/empresas', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         if (!Array.isArray(response.data)) {
