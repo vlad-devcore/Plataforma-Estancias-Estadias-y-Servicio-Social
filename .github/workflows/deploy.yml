@@ -37,7 +37,7 @@ jobs:
           server: academico.upqroo.edu.mx
           port: 22
           local_path: 'cliente/build/*'
-          remote_path: '/home/gestionvinculacion/cliente/build'
+          remote_path: '/var/www/PEE/cliente/build'
           exclude: '.git/**,node_modules/**,package.json,package-lock.json'
 
       #####################################
@@ -51,7 +51,7 @@ jobs:
           server: academico.upqroo.edu.mx
           port: 22
           local_path: 'mini/'
-          remote_path: '/home/gestionvinculacion/mini'
+          remote_path: '/var/www/PEE/mini'
           exclude: '.git/**,node_modules/**,package.json,package-lock.json'
 
       #####################################
@@ -65,13 +65,13 @@ jobs:
           server: academico.upqroo.edu.mx
           port: 22
           local_path: 'Servidor/'
-          remote_path: '/home/gestionvinculacion/Servidor'
+          remote_path: '/var/www/PEE/Servidor'
           exclude: '.git/**,node_modules/**,package.json,package-lock.json'
 
       #####################################
-      # Reiniciar servicios con pm2
+      # Instalar dependencias y reiniciar
       #####################################
-      - name: Restart PM2 processes
+      - name: Install dependencies and restart PM2
         uses: appleboy/ssh-action@master
         with:
           host: academico.upqroo.edu.mx
@@ -79,5 +79,9 @@ jobs:
           password: ${{ secrets.SFTP_PASSWORD }}
           port: 22
           script: |
+            cd /var/www/PEE/cliente
+            npm ci
+            cd /var/www/PEE/Servidor
+            npm ci
             pm2 restart mini-server
             pm2 restart servidor
