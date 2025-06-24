@@ -61,7 +61,7 @@ jobs:
           password: ${{ secrets.SFTP_PASSWORD }}
           server: academico.upqroo.edu.mx
           port: 22
-          local_path: 'mini/'
+          local_path: 'mini/*'
           remote_path: '/var/www/PEE/mini'
           exclude: '.git/**,node_modules/**,package.json,package-lock.json'
 
@@ -75,7 +75,7 @@ jobs:
           password: ${{ secrets.SFTP_PASSWORD }}
           server: academico.upqroo.edu.mx
           port: 22
-          local_path: 'Servidor/'
+          local_path: 'Servidor/*'
           remote_path: '/var/www/PEE/Servidor'
           exclude: '.git/**,node_modules/**,package.json,package-lock.json'
 
