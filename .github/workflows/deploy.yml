@@ -38,7 +38,6 @@ jobs:
           port: 22
           local_path: 'cliente/build/*'
           remote_path: '/var/www/Plataforma_Estadias/cliente/build'
-          exclude: '.git/**,node_modules/**,package.json,package-lock.json'
 
       - name: Deploy cliente/src
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
@@ -49,7 +48,6 @@ jobs:
           port: 22
           local_path: 'cliente/src/'
           remote_path: '/var/www/Plataforma_Estadias/cliente/'
-          exclude: '.git/**,node_modules/**'
 
       - name: Deploy cliente/public
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
@@ -60,7 +58,6 @@ jobs:
           port: 22
           local_path: 'cliente/public/'
           remote_path: '/var/www/Plataforma_Estadias/cliente/'
-          exclude: '.git/**,node_modules/**'
 
       #####################################
       # MINI: Despliegue completo
@@ -74,7 +71,6 @@ jobs:
           port: 22
           local_path: 'mini/*'
           remote_path: '/var/www/Plataforma_Estadias/mini'
-          exclude: '.git/**,node_modules/**,package.json,package-lock.json'
 
       #####################################
       # BACKEND: Despliegue completo
@@ -88,7 +84,6 @@ jobs:
           port: 22
           local_path: 'Servidor/*'
           remote_path: '/var/www/Plataforma_Estadias/Servidor'
-          exclude: '.git/**,node_modules/**,package.json,package-lock.json'
 
       #####################################
       # Instalar dependencias y reiniciar
