@@ -37,7 +37,7 @@ jobs:
           server: academico.upqroo.edu.mx
           port: 22
           local_path: 'cliente/build/*'
-          remote_path: '/var/www/Plataforma_Estadias/cliente/build'
+          remote_path: '/var/www/PEE/cliente/build'
 
       - name: Deploy cliente/src
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
@@ -47,7 +47,7 @@ jobs:
           server: academico.upqroo.edu.mx
           port: 22
           local_path: 'cliente/src/'
-          remote_path: '/var/www/Plataforma_Estadias/cliente/'
+          remote_path: '/var/www/PEE/cliente/'
 
       - name: Deploy cliente/public
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
@@ -57,7 +57,7 @@ jobs:
           server: academico.upqroo.edu.mx
           port: 22
           local_path: 'cliente/public/'
-          remote_path: '/var/www/Plataforma_Estadias/cliente/'
+          remote_path: '/var/www/PEE/cliente/'
 
       #####################################
       # MINI: Despliegue completo
@@ -70,7 +70,7 @@ jobs:
           server: academico.upqroo.edu.mx
           port: 22
           local_path: 'mini/*'
-          remote_path: '/var/www/Plataforma_Estadias/mini'
+          remote_path: '/var/www/PEE/mini'
 
       #####################################
       # BACKEND: Despliegue completo
@@ -83,7 +83,7 @@ jobs:
           server: academico.upqroo.edu.mx
           port: 22
           local_path: 'Servidor/*'
-          remote_path: '/var/www/Plataforma_Estadias/Servidor'
+          remote_path: '/var/www/PEE/Servidor'
 
       #####################################
       # Instalar dependencias y reiniciar
@@ -97,13 +97,13 @@ jobs:
           port: 22
           script: |
             # Intentar ajustar permisos sin sudo
-            chown -R gestionvinculacion:www-data /var/www/Plataforma_Estadias || true
-            chmod -R 755 /var/www/Plataforma_Estadias || true
+            chown -R gestionvinculacion:www-data /var/www/PEE || true
+            chmod -R 755 /var/www/PEE || true
             # Forzar instalación local
             export NPM_CONFIG_GLOBAL=false
-            cd /var/www/Plataforma_Estadias/cliente
+            cd /var/www/PEE/cliente
             npm ci --force --no-global
-            cd /var/www/Plataforma_Estadias/Servidor
+            cd /var/www/PEE/Servidor
             npm ci --force --no-global
             pm2 restart mini-server
             pm2 restart servidor
