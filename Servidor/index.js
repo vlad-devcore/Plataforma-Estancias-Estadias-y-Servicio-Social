@@ -20,7 +20,7 @@ import tareaActualizarPeriodos from "./cron/actualizarPeriodos.js";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.SERVER_PORT || 9999;
+const PORT = process.env.SERVER_PORT;
 
 // Obtener __dirname en módulos de ES
 const __filename = fileURLToPath(import.meta.url);
