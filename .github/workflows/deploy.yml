@@ -40,6 +40,17 @@ jobs:
           remote_path: '/var/www/PEE/cliente/build'
           exclude: '.git/**,node_modules/**,package.json,package-lock.json'
 
+      - name: Deploy cliente/src (opcional)
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          server: academico.upqroo.edu.mx
+          port: 22
+          local_path: 'cliente/src/'
+          remote_path: '/var/www/PEE/cliente/src'
+          exclude: '.git/**,node_modules/**'
+
       #####################################
       # MINI: Despliegue completo
       #####################################
