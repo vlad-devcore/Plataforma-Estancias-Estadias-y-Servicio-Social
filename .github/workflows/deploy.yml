@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'cliente/**'
+      - 'mini/**'
+      - 'Servidor/**'
 
 jobs:
   deploy:
@@ -24,12 +28,14 @@ jobs:
       # CLIENTE: Build y despliegue completo
       #####################################
       - name: Build React app
+        if: contains(github.event.head_commit.message, '[cliente]')
         run: |
           cd cliente
           npm ci
           npm run build
 
       - name: Deploy cliente/build
+        if: contains(github.event.head_commit.message, '[cliente]')
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           username: ${{ secrets.SFTP_USERNAME }}
@@ -38,8 +44,10 @@ jobs:
           port: 22
           local_path: 'cliente/build/*'
           remote_path: '/var/www/PEE/cliente/build'
+          exclude: '.git/**,node_modules/**,package.json,package-lock.json'
 
       - name: Deploy cliente/src
+        if: contains(github.event.head_commit.message, '[cliente]')
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           username: ${{ secrets.SFTP_USERNAME }}
@@ -48,47 +56,43 @@ jobs:
           port: 22
           local_path: 'cliente/src/'
           remote_path: '/var/www/PEE/cliente/'
-
-      - name: Deploy cliente/public
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
-        with:
-          username: ${{ secrets.SFTP_USERNAME }}
-          password: ${{ secrets.SFTP_PASSWORD }}
-          server: academico.upqroo.edu.mx
-          port: 22
-          local_path: 'cliente/public/'
-          remote_path: '/var/www/PEE/cliente/'
+          exclude: '.git/**,node_modules/**'
 
       #####################################
       # MINI: Despliegue completo
       #####################################
       - name: Deploy mini folder
+        if: contains(github.event.head_commit.message, '[mini]')
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           username: ${{ secrets.SFTP_USERNAME }}
           password: ${{ secrets.SFTP_PASSWORD }}
           server: academico.upqroo.edu.mx
           port: 22
-          local_path: 'mini/*'
+          local_path: 'mini/'
           remote_path: '/var/www/PEE/mini'
+          exclude: '.git/**,node_modules/**,package.json,package-lock.json'
 
       #####################################
       # BACKEND: Despliegue completo
       #####################################
       - name: Deploy backend (Servidor)
+        if: contains(github.event.head_commit.message, '[Servidor]')
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           username: ${{ secrets.SFTP_USERNAME }}
           password: ${{ secrets.SFTP_PASSWORD }}
           server: academico.upqroo.edu.mx
           port: 22
-          local_path: 'Servidor/*'
+          local_path: 'Servidor/'
           remote_path: '/var/www/PEE/Servidor'
+          exclude: '.git/**,node_modules/**,package.json,package-lock.json'
 
       #####################################
-      # Instalar dependencias y reiniciar
+      # Reiniciar PM2
       #####################################
-      - name: Install dependencies and restart PM2
+      - name: Restart PM2
+        if: success() && (contains(github.event.head_commit.message, '[cliente]') || contains(github.event.head_commit.message, '[mini]') || contains(github.event.head_commit.message, '[Servidor]'))
         uses: appleboy/ssh-action@master
         with:
           host: academico.upqroo.edu.mx
@@ -96,14 +100,9 @@ jobs:
           password: ${{ secrets.SFTP_PASSWORD }}
           port: 22
           script: |
-            # Intentar ajustar permisos sin sudo
-            chown -R gestionvinculacion:www-data /var/www/PEE || true
-            chmod -R 755 /var/www/PEE || true
-            # Forzar instalación local
-            export NPM_CONFIG_GLOBAL=false
-            cd /var/www/PEE/cliente
-            npm ci --force --no-global
-            cd /var/www/PEE/Servidor
-            npm ci --force --no-global
-            pm2 restart mini-server
-            pm2 restart servidor
+            if [ "$(pm2 list | grep mini-server | wc -l)" -gt 0 ]; then
+              pm2 restart mini-server
+            fi
+            if [ "$(pm2 list | grep servidor | wc -l)" -gt 0 ]; then
+              pm2 restart servidor
+            fi
