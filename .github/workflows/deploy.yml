@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'cliente/**'
+      - 'mini/**'
+      - 'Servidor/**'
 
 jobs:
   deploy:
@@ -24,12 +28,14 @@ jobs:
       # CLIENTE: Build y despliegue completo
       #####################################
       - name: Build React app
+        if: contains(github.event.head_commit.message, '[cliente]')
         run: |
           cd cliente
           npm ci
           npm run build
 
       - name: Deploy cliente/build
+        if: contains(github.event.head_commit.message, '[cliente]')
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           username: ${{ secrets.SFTP_USERNAME }}
@@ -41,6 +47,7 @@ jobs:
           exclude: '.git/**,node_modules/**,package.json,package-lock.json'
 
       - name: Deploy cliente/src
+        if: contains(github.event.head_commit.message, '[cliente]')
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           username: ${{ secrets.SFTP_USERNAME }}
@@ -55,6 +62,7 @@ jobs:
       # MINI: Despliegue completo
       #####################################
       - name: Deploy mini folder
+        if: contains(github.event.head_commit.message, '[mini]')
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           username: ${{ secrets.SFTP_USERNAME }}
@@ -69,6 +77,7 @@ jobs:
       # BACKEND: Despliegue completo
       #####################################
       - name: Deploy backend (Servidor)
+        if: contains(github.event.head_commit.message, '[Servidor]')
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           username: ${{ secrets.SFTP_USERNAME }}
@@ -80,9 +89,10 @@ jobs:
           exclude: '.git/**,node_modules/**,package.json,package-lock.json'
 
       #####################################
-      # Instalar dependencias y reiniciar
+      # Reiniciar PM2
       #####################################
-      - name: Install dependencies and restart PM2
+      - name: Restart PM2
+        if: success() && (contains(github.event.head_commit.message, '[cliente]') || contains(github.event.head_commit.message, '[mini]') || contains(github.event.head_commit.message, '[Servidor]'))
         uses: appleboy/ssh-action@master
         with:
           host: academico.upqroo.edu.mx
@@ -90,9 +100,9 @@ jobs:
           password: ${{ secrets.SFTP_PASSWORD }}
           port: 22
           script: |
-            cd /var/www/PEE/cliente
-            npm ci
-            cd /var/www/PEE/Servidor
-            npm ci
-            pm2 restart mini-server
-            pm2 restart servidor
+            if [ "$(pm2 list | grep mini-server | wc -l)" -gt 0 ]; then
+              pm2 restart mini-server
+            fi
+            if [ "$(pm2 list | grep servidor | wc -l)" -gt 0 ]; then
+              pm2 restart servidor
+            fi
