@@ -120,15 +120,6 @@ export default function Home() {
     console.log('Services:', services); // Depuración
   }, [services]);
 
-  // Función para scroll manual a la sección principal
-  const scrollToMain = useCallback(() => {
-    if (mainContentRef.current) {
-      mainContentRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      });
-    }
-  }, []);
 
   return (
     <AnimatePresence mode="wait">
