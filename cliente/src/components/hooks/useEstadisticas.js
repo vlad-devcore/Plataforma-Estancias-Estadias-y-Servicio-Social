@@ -28,15 +28,15 @@ const useEstadisticas = () => {
       setError(null);
       try {
         // Obtener periodo activo
-        const { data: periodos } = await axios.get('http://localhost:9999/api/periodos');
+        const { data: periodos } = await axios.get('http://189.203.249.19:3011/periodos');
         const periodoActivo = periodos.find((p) => p.EstadoActivo === 'Activo');
         if (!periodoActivo) throw new Error('No hay periodo activo');
 
         // Obtener procesos
-        const { data: procesos } = await axios.get('http://localhost:9999/api/procesos');
+        const { data: procesos } = await axios.get('http://189.203.249.19:3011/procesos');
 
         // Obtener total de usuarios
-        const { data: estudiantes } = await axios.get('http://localhost:9999/api/estudiantes');
+        const { data: estudiantes } = await axios.get('http://189.203.249.19:3011/estudiantes');
 
         // Calcular estadísticas
         const tiposProceso = [

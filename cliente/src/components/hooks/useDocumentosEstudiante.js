@@ -70,7 +70,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     try {
       console.log("Fetching plantillas para tipoProceso:", tipoProceso);
       const response = await axios.get(
-        "http://localhost:9999/api/documentosAdmin"
+        "http://189.203.249.19:3011/documentosAdmin"
       );
       const data = response.data;
       console.log("Plantillas recibidas:", data);
@@ -107,7 +107,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
         `Fetching documentos para proceso ${procesoId}, usuario ${user.id}`
       );
       const { data } = await axios.get(
-        `http://localhost:9999/api/documentos`,
+        `http://189.203.249.19:3011/documentos`,
         {
           params: { id_proceso: procesoId, id_usuario: user.id },
         }
@@ -159,7 +159,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
         id_proceso: procesoId,
       });
       await axios.post(
-        "http://localhost:9999/api/documentos/upload",
+        "http://189.203.249.19:3011/documentos/upload",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -186,7 +186,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     try {
       console.log(`Eliminando documento ${idDocumento}`);
       await axios.delete(
-        `http://localhost:9999/api/documentos/${idDocumento}`
+        `http://189.203.249.19:3011/documentos/${idDocumento}`
       );
       setSuccess("Documento eliminado correctamente");
       await fetchDocumentos();
