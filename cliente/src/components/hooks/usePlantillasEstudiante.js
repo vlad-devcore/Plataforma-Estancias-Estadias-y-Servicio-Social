@@ -26,7 +26,7 @@ const usePlantillasEstudiante = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('http://localhost:9999/api/documentosAdmin');
+      const response = await axios.get('http://189.203.249.19:3011/documentosAdmin');
       const data = response.data;
 
       const combined = tiposDocumentos.map(tipo => {
