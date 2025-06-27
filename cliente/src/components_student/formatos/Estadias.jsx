@@ -22,13 +22,13 @@ const Estadias = () => {
       if (!user?.id) throw new Error("Usuario no autenticado");
 
       // Obtener periodo activo
-      const { data: periodos } = await axios.get("http://189.203.249.19:3011/periodos");
+      const { data: periodos } = await axios.get("http://189.203.249.19:3011/api/periodos");
       const periodoActivo = periodos.find((p) => p.EstadoActivo === "Activo");
       if (!periodoActivo) throw new Error("No hay periodo activo");
 
       // Validar proceso en el periodo activo
       const { data } = await axios.get(
-        `http://189.203.249.19:3011/procesos/validar/${user.id}/${periodoActivo.IdPeriodo}`
+        `http://189.203.249.19:3011/api/procesos/validar/${user.id}/${periodoActivo.IdPeriodo}`
       );
       console.log("🔐 Validación proceso (Estadía):", data);
 
