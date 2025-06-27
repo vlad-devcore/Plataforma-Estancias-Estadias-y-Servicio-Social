@@ -32,7 +32,7 @@ const Login = () => {
       if (response.user.role === 'estudiante') {
         try {
           const { data: estudiante } = await axios.get(
-            `http://189.203.249.19:9999/api/estudiantes/by-user/${response.user.id}`
+            `http://189.203.249.19:3011/estudiantes/by-user/${response.user.id}`
           );
           if (estudiante.id_programa) {
             localStorage.setItem(
@@ -70,7 +70,7 @@ const Login = () => {
   const handleRequestReset = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://189.203.249.19:9999/api/auth/request-password-reset', { email: resetEmail });
+      await axios.post('http://189.203.249.19:3011/auth/request-password-reset', { email: resetEmail });
       setShowForgotPassword(false);
       setResetEmail('');
       setShowSuccessModal(true);

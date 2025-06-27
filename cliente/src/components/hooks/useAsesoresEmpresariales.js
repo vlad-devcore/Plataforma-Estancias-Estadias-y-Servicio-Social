@@ -8,7 +8,7 @@ const useAsesoresEmpresariales = () => {
 
   const fetchAsesoresEmpresariales = async () => {
     try {
-      const { data } = await axios.get("http://189.203.249.19:9999/api/asesores/empresariales");
+      const { data } = await axios.get("http://189.203.249.19:3011/asesores/empresariales");
       setAsesoresEmpresariales(data);
     } catch (err) {
       setError(err.response?.data?.message || err.message);

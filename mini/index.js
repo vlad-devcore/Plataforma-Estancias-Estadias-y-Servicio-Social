@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 
 const app = express();
-const PORT = 3012;
+const PORT = 3088;
 
 // Ruta absoluta a la carpeta dist (React build)
 const distPath = path.join(__dirname, '../cliente/build');

@@ -25,7 +25,7 @@ const useEmpresas = () => {
         );
       }
       const { data } = await axios.get(
-        "http://189.203.249.19:9999/api/empresas",
+        "http://189.203.249.19:3011/empresas",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -101,7 +101,7 @@ const useEmpresas = () => {
         empresa_pagina_web: data.empresa_pagina_web || "",
       };
       const response = await axios.post(
-        "http://189.203.249.19:9999/api/empresas",
+        "http://189.203.249.19:3011/empresas",
         payload,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -145,7 +145,7 @@ const useEmpresas = () => {
         empresa_pagina_web: updatedData.empresa_pagina_web || "",
       };
       await axios.put(
-        `http://189.203.249.19:9999/api/empresas/${id}`,
+        `http://189.203.249.19:3011/empresas/${id}`,
         payload,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -178,7 +178,7 @@ const useEmpresas = () => {
         );
       }
       const response = await axios.delete(
-        `http://189.203.249.19:9999/api/empresas/${id}`,
+        `http://189.203.249.19:3011/empresas/${id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -213,7 +213,7 @@ const useEmpresas = () => {
       const formData = new FormData();
       formData.append("file", file);
       const { data } = await axios.post(
-        "http://189.203.249.19:9999/api/empresas/upload",
+        "http://189.203.249.19:3011/empresas/upload",
         formData,
         {
           headers: {

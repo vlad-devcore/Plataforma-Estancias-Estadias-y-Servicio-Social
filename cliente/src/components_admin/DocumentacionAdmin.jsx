@@ -33,7 +33,7 @@ const DocumentManagement = () => {
   const [rejectionNote, setRejectionNote] = useState('');
 
   const handleViewDocument = (document) => {
-    window.open(`http://189.203.249.19:9999/api/documentos/download/${document.id_Documento}`, '_blank');
+    window.open(`http://189.203.249.19:3011/documentos/download/${document.id_Documento}`, '_blank');
   };
 
   const openConfirmApproveModal = (document) => {
