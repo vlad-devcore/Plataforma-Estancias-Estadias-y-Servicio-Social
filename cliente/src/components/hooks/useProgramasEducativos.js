@@ -13,7 +13,7 @@ const useProgramas = () => {
   // Cargar programas educativos
   const fetchProgramas = async () => {
     try {
-      const { data } = await axios.get('http://189.203.249.19:3011/programas');
+      const { data } = await axios.get('http://189.203.249.19:3011/api/programas');
       setProgramas(data);
     } catch (err) {
       setError(err.response?.data?.error || 'Error al cargar programas educativos.');
@@ -29,7 +29,7 @@ const useProgramas = () => {
     }
     try {
       const { data } = await axios.get(
-        `http://189.203.249.19:3011/estudiantes/by-user/${user.id}`
+        `http://189.203.249.19:3011/api/estudiantes/by-user/${user.id}`
       );
       setIdPrograma(data.id_programa);
     } catch (err) {
@@ -42,7 +42,7 @@ const useProgramas = () => {
     if (!idPrograma) return;
     try {
       const { data } = await axios.get(
-        `http://189.203.249.19:3011/programas/${idPrograma}/procesos`
+        `http://189.203.249.19:3011/api/programas/${idPrograma}/procesos`
       );
       setProcesosPermitidos(data);
     } catch (err) {

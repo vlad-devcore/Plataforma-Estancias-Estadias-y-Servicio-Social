@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: "http://189.203.249.19:3011", // 🔹 Ajusta según el puerto de tu servidor
+    baseURL: "http://189.203.249.19:3011/api", // 🔹 Ajusta según el puerto de tu servidor
     withCredentials: true, // 🔹 Permite el envío de cookies o autenticación si es necesario
 });
 

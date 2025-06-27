@@ -161,7 +161,7 @@ const FormatosAdmin = () => {
                               <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                onClick={() => window.open(`http://189.203.249.19:3011/documentosAdmin/view/${encodeURIComponent(formato.nombre_documento)}`, '_blank')}
+                                onClick={() => window.open(`http://189.203.249.19:3011/api/documentosAdmin/view/${encodeURIComponent(formato.nombre_documento)}`, '_blank')}
                                 className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700"
                                 disabled={loading}
                               >

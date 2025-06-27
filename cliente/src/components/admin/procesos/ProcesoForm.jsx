@@ -17,8 +17,8 @@ const ProcesoForm = ({ initialData = {}, onSubmit, onCancel }) => {
       setLoading(true);
       try {
         const [empresasRes, asesoresRes] = await Promise.all([
-          axios.get('http://189.203.249.19:3011/empresas'),
-          axios.get('http://189.203.249.19:3011/asesores')
+          axios.get('http://189.203.249.19:3011/api/empresas'),
+          axios.get('http://189.203.249.19:3011/api/asesores')
         ]);
         setEmpresas(empresasRes.data);
         setAsesores(asesoresRes.data);
