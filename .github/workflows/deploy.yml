@@ -8,6 +8,7 @@ on:
       - 'cliente/**'
       - 'mini/**'
       - 'Servidor/**'
+  workflow_dispatch: # Esto permite ejecutarlo manualmente
 
 jobs:
   deploy:
