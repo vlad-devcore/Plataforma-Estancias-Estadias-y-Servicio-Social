@@ -31,10 +31,8 @@ jobs:
         if: contains(github.event.head_commit.message, '[cliente]')
         run: |
           cd cliente
-          # Deshabilitar ESLint durante el build
-          CI=false npm ci
-          CI=false npm run build
-
+          npm ci
+          npm run build
       - name: Deploy cliente/build
         if: contains(github.event.head_commit.message, '[cliente]')
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
