@@ -1,7 +1,8 @@
 {
-  "extends": ["react-app"], // Usa la configuración base de CRA
+  "extends": ["react-app", "plugin:react/recommended"], // Usa la configuración base de CRA
   "rules": {
     "no-dupe-keys": "off", // Mantiene tu desactivación actual
-    "react-hooks/exhaustive-deps": "warn" // Ajusta esta regla específicamente
+    "react-hooks/exhaustive-deps": "warn", // Ajusta esta regla específicamente
+    "no-template-curly-in-string": "off"
   }
 }
