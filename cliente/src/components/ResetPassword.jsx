@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import axios from 'axios';
 import '../components_student/Login.css'; // Asegúrate de que la ruta sea correcta
+ 
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -42,7 +43,7 @@ const ResetPassword = () => {
       return;
     }
     try {
-      await axios.post('http://189.203.249.19:3011/api/auth/reset-password', { token, newPassword });
+      await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/auth/reset-password`, { token, newPassword });
       setToast({ message: 'Contraseña restablecida correctamente', type: 'success' });
       setTimeout(() => navigate('/login'), 2000);
     } catch (error) {

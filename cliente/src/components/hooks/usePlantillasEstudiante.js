@@ -1,6 +1,7 @@
 // src/hooks/usePlantillasEstudiante.js
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+ 
 
 const usePlantillasEstudiante = () => {
   const [plantillas, setPlantillas] = useState([]);
@@ -26,7 +27,7 @@ const usePlantillasEstudiante = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('http://189.203.249.19:3011/api/documentosAdmin');
+      const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin`);
       const data = response.data;
 
       const combined = tiposDocumentos.map(tipo => {

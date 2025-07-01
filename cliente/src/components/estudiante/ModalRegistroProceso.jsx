@@ -3,6 +3,7 @@ import axios from "axios";
 import useEmpresas from "../hooks/useEmpresas";
 import useAsesoresAcademicos from "../hooks/useAsesoresAcademicos";
 import { motion, AnimatePresence } from "framer-motion";
+ 
 
 const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoExistente }) => {
   const { companies, setSearchTerm, loading: empresasLoading } = useEmpresas();
@@ -104,17 +105,17 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
     setLoading(true);
     try {
       if (procesoExistente) {
-        await axios.put(`http://189.203.249.19:3011/api/procesos/${procesoExistente.id_proceso}`, {
+        await axios.put(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos/${procesoExistente.id_proceso}`, {
           id_empresa: form.empresa,
           id_asesor_academico: form.asesorAcademico,
           tipo_proceso: tipoProceso,
         });
       } else {
-        const { data: periodos } = await axios.get("http://189.203.249.19:3011/api/periodos");
+        const { data: periodos } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/periodos`);
         const periodoActivo = periodos.find((p) => p.EstadoActivo === "Activo");
         if (!periodoActivo) throw new Error("No hay periodo activo");
 
-        await axios.post("http://189.203.249.19:3011/api/procesos", {
+        await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos`, {
           id_user: user.id,
           id_empresa: form.empresa,
           id_asesor_academico: form.asesorAcademico,

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
+ 
 
 const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
   const [plantillas, setPlantillas] = useState([]);
@@ -70,7 +71,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     try {
       console.log("Fetching plantillas para tipoProceso:", tipoProceso);
       const response = await axios.get(
-        "http://189.203.249.19:3011/api/documentosAdmin"
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin`
       );
       const data = response.data;
       console.log("Plantillas recibidas:", data);
@@ -107,7 +108,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
         `Fetching documentos para proceso ${procesoId}, usuario ${user.id}`
       );
       const { data } = await axios.get(
-        `http://189.203.249.19:3011/api/documentos`,
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos`,
         {
           params: { id_proceso: procesoId, id_usuario: user.id },
         }
@@ -159,7 +160,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
         id_proceso: procesoId,
       });
       await axios.post(
-        "http://189.203.249.19:3011/api/documentos/upload",
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/upload`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -186,7 +187,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     try {
       console.log(`Eliminando documento ${idDocumento}`);
       await axios.delete(
-        `http://189.203.249.19:3011/api/documentos/${idDocumento}`
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/${idDocumento}`
       );
       setSuccess("Documento eliminado correctamente");
       await fetchDocumentos();

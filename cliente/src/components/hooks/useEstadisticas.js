@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+ 
 
 const useEstadisticas = () => {
   const [estadisticas, setEstadisticas] = useState({
@@ -28,15 +29,15 @@ const useEstadisticas = () => {
       setError(null);
       try {
         // Obtener periodo activo
-        const { data: periodos } = await axios.get('http://189.203.249.19:3011/api/periodos');
+        const { data: periodos } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/periodos`);
         const periodoActivo = periodos.find((p) => p.EstadoActivo === 'Activo');
         if (!periodoActivo) throw new Error('No hay periodo activo');
 
         // Obtener procesos
-        const { data: procesos } = await axios.get('http://189.203.249.19:3011/api/procesos');
+        const { data: procesos } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos`);
 
         // Obtener total de usuarios
-        const { data: estudiantes } = await axios.get('http://189.203.249.19:3011/api/estudiantes');
+        const { data: estudiantes } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/estudiantes`);
 
         // Calcular estadísticas
         const tiposProceso = [

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+ 
 
-const API_URL = "http://189.203.249.19:3011/api/periodos";
+const API_URL = `${process.env.REACT_APP_API_ENDPOINT}/api/periodos`;
 
 const usePeriodos = () => {
   const [periodos, setPeriodos] = useState([]);

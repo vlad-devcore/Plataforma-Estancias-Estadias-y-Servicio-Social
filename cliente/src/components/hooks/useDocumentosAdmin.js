@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+ 
 
 const useDocumentosAdmin = () => {
   const [documents, setDocuments] = useState([]);
@@ -26,10 +27,10 @@ const useDocumentosAdmin = () => {
   const fetchPeriodos = async () => {
     try {
       console.log(
-        "Fetching periodos from http://189.203.249.19:3011/api/documentos/periodos"
+        "Fetching periodos from ${process.env.REACT_APP_API_ENDPOINT}/api/documentos/periodos"
       );
       const { data } = await axios.get(
-        "http://189.203.249.19:3011/api/documentos/periodos"
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/periodos`
       );
       console.log("Periodos recibidos:", data);
       setPeriodos(data);
@@ -54,10 +55,10 @@ const useDocumentosAdmin = () => {
   const fetchTiposDocumento = async () => {
     try {
       console.log(
-        "Fetching tipos de documento from http://189.203.249.19:3011/api/documentos/tipo_documento"
+        "Fetching tipos de documento from ${process.env.REACT_APP_API_ENDPOINT}/api/documentos/tipo_documento"
       );
       const { data } = await axios.get(
-        "http://189.203.249.19:3011/api/documentos/tipo_documento"
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/tipo_documento`
       );
       console.log("Tipos de documento recibidos:", data);
       setTiposDocumento(data);
@@ -82,10 +83,10 @@ const useDocumentosAdmin = () => {
   const fetchProgramasEducativos = async () => {
     try {
       console.log(
-        "Fetching programas educativos from http://189.203.249.19:3011/api/documentos/programas_educativos"
+        "Fetching programas educativos from ${process.env.REACT_APP_API_ENDPOINT}/api/documentos/programas_educativos"
       );
       const { data } = await axios.get(
-        "http://189.203.249.19:3011/api/documentos/programas_educativos"
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/programas_educativos`
       );
       console.log("Programas educativos recibidos:", data);
       setProgramasEducativos(data);
@@ -125,7 +126,7 @@ const useDocumentosAdmin = () => {
       };
       console.log("Parámetros enviados al backend:", params);
       const { data } = await axios.get(
-        "http://189.203.249.19:3011/api/documentos",
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos`,
         { params }
       );
       console.log("Documentos recibidos:", data);
@@ -189,7 +190,7 @@ const useDocumentosAdmin = () => {
     try {
       console.log(`Aprobando documento ${idDocumento}`);
       await axios.put(
-        `http://189.203.249.19:3011/api/documentos/approve/${idDocumento}`
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/approve/${idDocumento}`
       );
       setSuccess("Documento aprobado correctamente");
       setCurrentPage(1); // Volver a la primera página
@@ -220,7 +221,7 @@ const useDocumentosAdmin = () => {
         `Rechazando documento ${idDocumento} con comentarios: ${comentarios}`
       );
       await axios.put(
-        `http://189.203.249.19:3011/api/documentos/reject/${idDocumento}`,
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/reject/${idDocumento}`,
         { comentarios }
       );
       setSuccess("Documento rechazado correctamente");

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, AlertCircle, BookOpen, Calendar } from 'lucide-react';
+ 
 
 const ProgramaEducativoForm = () => {
   const [programas, setProgramas] = useState([]);
@@ -20,8 +21,8 @@ const ProgramaEducativoForm = () => {
     const fetchData = async () => {
       try {
         const [programasRes, periodosRes] = await Promise.all([
-          axios.get('http://189.203.249.19:3011/api/programas'),
-          axios.get('http://189.203.249.19:3011/api/periodos'),
+          axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/programas`),
+          axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/periodos`),
         ]);
         setProgramas(programasRes.data);
         const periodosActivos = periodosRes.data.filter((p) => p.EstadoActivo === 'Activo');
@@ -65,7 +66,7 @@ const ProgramaEducativoForm = () => {
       const user = JSON.parse(localStorage.getItem('user'));
       if (!user?.id) throw new Error('Usuario no autenticado');
 
-      await axios.post('http://189.203.249.19:3011/api/procesos/inicial', {
+      await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos/inicial`, {
         id_user: user.id,
         id_programa: idPrograma,
         id_periodo: idPeriodo,

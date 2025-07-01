@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+ 
 
 const AuthContext = createContext();
 
@@ -16,7 +17,7 @@ export const AuthProvider = ({ children }) => {
 
       if (token && userData) {
         try {
-          const response = await axios.get('http://189.203.249.19:3011/api/auth/verify', {
+          const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/auth/verify`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           const verifiedUser = response.data.user;
@@ -37,7 +38,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('http://189.203.249.19:3011/api/auth/login', {
+      const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/auth/login`, {
         email,
         password
       });
@@ -68,7 +69,7 @@ export const AuthProvider = ({ children }) => {
   const updateUser = async (userData) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.put(`http://189.203.249.19:3011/api/users/${userData.id}`, userData, {
+      const response = await axios.put(`${process.env.REACT_APP_API_ENDPOINT}/api/users/${userData.id}`, userData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const updatedUser = {
@@ -96,7 +97,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        'http://189.203.249.19:3011/api/auth/change-password',
+        `${process.env.REACT_APP_API_ENDPOINT}/api/auth/change-password`,
         { oldPassword, newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -3,6 +3,7 @@ import { Search, Eye, CheckCircle, XCircle, File, MessageSquare } from 'lucide-r
 import { useState } from 'react';
 import Sidebar from './Sidebar';
 import useDocumentosAdmin from '../components/hooks/useDocumentosAdmin';
+ 
 
 const DocumentManagement = () => {
   const {
@@ -33,7 +34,7 @@ const DocumentManagement = () => {
   const [rejectionNote, setRejectionNote] = useState('');
 
   const handleViewDocument = (document) => {
-    window.open(`http://189.203.249.19:3011/api/documentos/download/${document.id_Documento}`, '_blank');
+    window.open(`${process.env.REACT_APP_API_ENDPOINT}/api/documentos/download/${document.id_Documento}`, '_blank');
   };
 
   const openConfirmApproveModal = (document) => {

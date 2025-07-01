@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import CreditsModal from '../components/CreditsModal';
 import './Login.css';
+ 
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -32,7 +33,7 @@ const Login = () => {
       if (response.user.role === 'estudiante') {
         try {
           const { data: estudiante } = await axios.get(
-            `http://189.203.249.19:3011/api/estudiantes/by-user/${response.user.id}`
+            `${process.env.REACT_APP_API_ENDPOINT}/api/estudiantes/by-user/${response.user.id}`
           );
           if (estudiante.id_programa) {
             localStorage.setItem(
@@ -70,7 +71,7 @@ const Login = () => {
   const handleRequestReset = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://189.203.249.19:3011/api/auth/request-password-reset', { email: resetEmail });
+      await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/auth/request-password-reset`, { email: resetEmail });
       setShowForgotPassword(false);
       setResetEmail('');
       setShowSuccessModal(true);

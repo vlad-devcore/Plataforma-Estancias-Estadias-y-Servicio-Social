@@ -5,6 +5,7 @@ import { FileText } from "lucide-react";
 import ModalRegistroProceso from "../../components/estudiante/ModalRegistroProceso";
 import axios from "axios";
 import TablaDocumentos from "../../components_student/TablaDocumentoss";
+ 
 
 const Estancia1 = () => {
   const [isRegistered, setIsRegistered] = useState(false);
@@ -19,13 +20,13 @@ const Estancia1 = () => {
       if (!user?.id) throw new Error("Usuario no autenticado");
 
       // Obtener periodo activo
-      const { data: periodos } = await axios.get("http://189.203.249.19:3011/api/periodos");
+      const { data: periodos } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/periodos`);
       const periodoActivo = periodos.find((p) => p.EstadoActivo === "Activo");
       if (!periodoActivo) throw new Error("No hay periodo activo");
 
       // Validar proceso en el periodo activo
       const { data } = await axios.get(
-        `http://189.203.249.19:3011/api/procesos/validar/${user.id}/${periodoActivo.IdPeriodo}`
+        `${process.env.REACT_APP_API_ENDPOINT}/api/procesos/validar/${user.id}/${periodoActivo.IdPeriodo}`
       );
       console.log("Validación proceso:", data);
 
