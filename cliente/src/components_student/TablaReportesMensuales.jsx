@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Upload, Trash2, FileText, MessageSquare } from 'lucide-react';
 import useDocumentosEstudiante from '../components/hooks/useDocumentosEstudiante';
 import { motion, AnimatePresence } from 'framer-motion';
+ 
 
 const TablaReportesMensuales = ({ tipoProceso, procesoId: procesoIdProp, documentosRequeridos }) => {
   const fileInputRefs = useRef({});
@@ -133,7 +134,7 @@ const TablaReportesMensuales = ({ tipoProceso, procesoId: procesoIdProp, documen
                     <td className="px-6 py-4">
                       {doc?.RutaArchivo ? (
                         <motion.a
-                          href={`http://189.203.249.19:3011/api/documentos/download/${doc.id_Documento}`}
+                          href={`${process.env.REACT_APP_API_ENDPOINT}/api/documentos/download/${doc.id_Documento}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center justify-center w-10 h-10 bg-teal-500 text-white rounded-full hover:bg-teal-600 transition-colors"

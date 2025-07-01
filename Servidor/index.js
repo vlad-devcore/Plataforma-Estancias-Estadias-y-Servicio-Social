@@ -4,7 +4,7 @@ import cors from "cors";
 import fs from "fs";
 import path from "path";
 import morgan from 'morgan';
-import { fileURLToPath } from "url";
+import { fileURLToPath } from "url"; 
 import userRouter from "./routes/users.js";
 import estudianteRouter from "./routes/estudiantes.js";
 import empresaRouter from "./routes/empresas.js";

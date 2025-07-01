@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search } from 'lucide-react';
 import Header from './HeaderEstudiante';
+ 
 
 // Modal Component (sin cambios)
 const Modal = ({ company, onClose }) => (
@@ -77,7 +78,7 @@ export default function Empresas() {
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
-        const response = await axios.get('http://189.203.249.19:3011/api/empresas', {
+        const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/empresas`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         if (!Array.isArray(response.data)) {

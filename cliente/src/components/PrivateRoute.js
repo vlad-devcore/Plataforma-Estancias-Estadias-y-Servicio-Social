@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+ 
 
 const PrivateRoute = ({ element, allowedRoles }) => {
   const { user, logout } = useAuth();
@@ -18,7 +19,7 @@ const PrivateRoute = ({ element, allowedRoles }) => {
       }
 
       try {
-        await axios.get('http://189.203.249.19:3011/api/auth/verify', {
+        await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/auth/verify`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (!allowedRoles.includes(user.role)) {

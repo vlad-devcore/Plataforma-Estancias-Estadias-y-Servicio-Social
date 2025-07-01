@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+ 
 
 const useProcesos = () => {
   const [procesos, setProcesos] = useState([]);
@@ -23,7 +24,7 @@ const useProcesos = () => {
   const fetchProcesos = async () => {
     try {
       console.log('Haciendo solicitud para obtener todos los procesos');
-      const { data } = await axios.get(`http://189.203.249.19:3011/api/procesos`);
+      const { data } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos`);
       console.log('Respuesta del backend:', JSON.stringify(data, null, 2));
       setProcesos(data);
       setTotalProcesos(data.length);
@@ -91,7 +92,7 @@ const useProcesos = () => {
 
     try {
       console.log('Creando proceso con payload:', payload);
-      const { data } = await axios.post("http://189.203.249.19:3011/api/procesos", payload);
+      const { data } = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos`, payload);
       await fetchProcesos();
       setSuccess("Proceso creado con éxito");
       return data;
@@ -115,7 +116,7 @@ const useProcesos = () => {
 
     try {
       console.log(`Actualizando proceso ${id_proceso} con payload:`, payload);
-      await axios.put(`http://189.203.249.19:3011/api/procesos/${id_proceso}`, payload);
+      await axios.put(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos/${id_proceso}`, payload);
       setSuccess("Proceso actualizado con éxito");
       await fetchProcesos();
     } catch (err) {
@@ -128,7 +129,7 @@ const useProcesos = () => {
   const deleteProceso = async (id_proceso) => {
     try {
       console.log(`Eliminando proceso ${id_proceso}`);
-      await axios.delete(`http://189.203.249.19:3011/api/procesos/${id_proceso}`);
+      await axios.delete(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos/${id_proceso}`);
       setSuccess("Proceso eliminado con éxito");
       await fetchProcesos();
     } catch (err) {
@@ -146,7 +147,7 @@ const useProcesos = () => {
 
     try {
       console.log(`Validando registro para id_user: ${user.id}, id_periodo: ${idPeriodo}`);
-      const { data } = await axios.get(`http://189.203.249.19:3011/api/procesos/validar/${user.id}/${idPeriodo}`);
+      const { data } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos/validar/${user.id}/${idPeriodo}`);
       console.log('Respuesta de validarRegistroEnPeriodo:', data);
       return data;
     } catch (err) {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+ 
 
 const useProgramas = () => {
   const [programas, setProgramas] = useState([]);
@@ -13,7 +14,7 @@ const useProgramas = () => {
   // Cargar programas educativos
   const fetchProgramas = async () => {
     try {
-      const { data } = await axios.get('http://189.203.249.19:3011/api/programas');
+      const { data } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/programas`);
       setProgramas(data);
     } catch (err) {
       setError(err.response?.data?.error || 'Error al cargar programas educativos.');
@@ -29,7 +30,7 @@ const useProgramas = () => {
     }
     try {
       const { data } = await axios.get(
-        `http://189.203.249.19:3011/api/estudiantes/by-user/${user.id}`
+        `${process.env.REACT_APP_API_ENDPOINT}/api/estudiantes/by-user/${user.id}`
       );
       setIdPrograma(data.id_programa);
     } catch (err) {
@@ -42,7 +43,7 @@ const useProgramas = () => {
     if (!idPrograma) return;
     try {
       const { data } = await axios.get(
-        `http://189.203.249.19:3011/api/programas/${idPrograma}/procesos`
+        `${process.env.REACT_APP_API_ENDPOINT}/api/programas/${idPrograma}/procesos`
       );
       setProcesosPermitidos(data);
     } catch (err) {

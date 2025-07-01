@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+ 
 
 const ProcesoForm = ({ initialData = {}, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -11,14 +12,15 @@ const ProcesoForm = ({ initialData = {}, onSubmit, onCancel }) => {
   const [asesores, setAsesores] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+   
 
   useEffect(() => {
     const fetchOptions = async () => {
       setLoading(true);
       try {
         const [empresasRes, asesoresRes] = await Promise.all([
-          axios.get('http://189.203.249.19:3011/api/empresas'),
-          axios.get('http://189.203.249.19:3011/api/asesores')
+          axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/empresas`),
+          axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/asesores`)
         ]);
         setEmpresas(empresasRes.data);
         setAsesores(asesoresRes.data);

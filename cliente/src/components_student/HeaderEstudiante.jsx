@@ -4,6 +4,7 @@ import { Menu, X } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+ 
 
 const NavLink = ({ text, path, currentPath, onClick }) => {
   const isActive = currentPath === path;
@@ -75,7 +76,7 @@ const Header = () => {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        await axios.post('http://189.203.249.19:3011/api/auth/logout', {}, {
+        await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/auth/logout`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
       }

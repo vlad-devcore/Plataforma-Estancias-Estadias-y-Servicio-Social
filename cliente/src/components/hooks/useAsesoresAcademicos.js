@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+ 
 
 const useAsesoresAcademicos = () => {
   const [asesoresAcademicos, setAsesoresAcademicos] = useState([]);
@@ -8,7 +9,7 @@ const useAsesoresAcademicos = () => {
 
   const fetchAsesoresAcademicos = async () => {
     try {
-      const { data } = await axios.get("http://189.203.249.19:3011/api/asesores/academicos");
+      const { data } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/asesores/academicos`);
       setAsesoresAcademicos(data);
     } catch (err) {
       setError(err.response?.data?.message || err.message);
