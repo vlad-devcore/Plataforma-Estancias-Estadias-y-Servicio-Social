@@ -210,10 +210,24 @@ router.post("/request-password-reset", async (req, res) => {
     );
 
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: process.env.EMAIL_HOST,
+      port: process.env.EMAIL_PORT,
+      secure: false, // false para 587, true para 465
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
+        pass: process.env.EMAIL_PASS,
+      },
+      tls: {
+        rejectUnauthorized: false, // Opcional, para evitar problemas con certificados no confiables (usa con precaución)
+      },
+    });
+
+    // Verifica la conexión antes de enviar
+    transporter.verify((error, success) => {
+      if (error) {
+        console.error('Error al conectar con el servidor de correo:', error);
+      } else {
+        console.log('Conexión exitosa al servidor de correo');
       }
     });
 
@@ -246,7 +260,7 @@ router.post("/request-password-reset", async (req, res) => {
             <p style="font-size: 12px; margin-top: 10px;">© 2025 UPQROO. Todos los derechos reservados.</p>
           </div>
         </div>
-      `
+      `,
     };
 
     await transporter.sendMail(mailOptions);
