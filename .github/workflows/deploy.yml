@@ -32,7 +32,8 @@ jobs:
         if: contains(github.event.head_commit.message, '[cliente]')
         run: |
           cd cliente
-          cp .env cliente/.env  # Asegura que .env se copie al directorio cliente
+          # Copia el .env desde la raíz de cliente, no desde la raíz del repo
+          if [ -f .env ]; then cp .env .env; else echo "No .env found, using default"; fi
           CI=false npm ci
           CI=false npm run build
         working-directory: ${{ github.workspace }}
@@ -47,7 +48,7 @@ jobs:
           port: 22
           local_path: 'cliente/build/*'
           remote_path: '/var/www/PEE/cliente/build'
-          exclude: '.git/**,node_modules/**'  # Excluye node_modules
+          exclude: '.git/**,node_modules/**'
 
       - name: Deploy cliente/src and package.json
         if: contains(github.event.head_commit.message, '[cliente]')
@@ -59,7 +60,7 @@ jobs:
           port: 22
           local_path: 'cliente/'
           remote_path: '/var/www/PEE/cliente/'
-          exclude: '.git/**,node_modules/**'  # Excluye solo node_modules, incluye package.json y .env
+          exclude: '.git/**,node_modules/**'
 
       #####################################
       # MINI: Despliegue completo
