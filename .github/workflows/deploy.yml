@@ -32,8 +32,8 @@ jobs:
         if: contains(github.event.head_commit.message, '[cliente]')
         run: |
           cd cliente
-          # Copia el .env desde la raíz de cliente, no desde la raíz del repo
-          if [ -f .env ]; then cp .env .env; else echo "No .env found, using default"; fi
+          # Verifica si .env existe y usa el build sin copiar innecesariamente
+          if [ -f .env ]; then echo ".env found, proceeding with build"; else echo "No .env found, build may use defaults"; fi
           CI=false npm ci
           CI=false npm run build
         working-directory: ${{ github.workspace }}
