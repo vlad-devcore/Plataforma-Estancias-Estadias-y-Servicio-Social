@@ -1,14 +1,14 @@
-name: Full Deploy to SFTP
+name: Optimized Deploy to SFTP
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'cliente/**'
-      - 'mini/**'
-      - 'Servidor/**'
-      - '**/.github/workflows/**'
+      - 'cliente/'
+      - 'mini/'
+      - 'Servidor/'
+      - '/.github/workflows/'
 
 jobs:
   deploy:
@@ -20,37 +20,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16'
-
       #####################################
-      # CLIENTE: Build y despliegue completo
+      # CLIENTE: Despliegue y build remoto
       #####################################
-      - name: Build React app
-        if: contains(github.event.head_commit.message, '[cliente]')
-        run: |
-          cd cliente
-          # Verifica si .env existe y usa el build sin copiar innecesariamente
-          if [ -f .env ]; then echo ".env found, proceeding with build"; else echo "No .env found, build may use defaults"; fi
-          CI=false npm ci
-          CI=false npm run build
-        working-directory: ${{ github.workspace }}
-
-      - name: Deploy cliente/build
-        if: contains(github.event.head_commit.message, '[cliente]')
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
-        with:
-          username: ${{ secrets.SFTP_USERNAME }}
-          password: ${{ secrets.SFTP_PASSWORD }}
-          server: academico.upqroo.edu.mx
-          port: 22
-          local_path: 'cliente/build/*'
-          remote_path: '/var/www/PEE/cliente/build'
-          exclude: '.git/**,node_modules/**'
-
-      - name: Deploy cliente/src and package.json
+      - name: Deploy cliente source and config
         if: contains(github.event.head_commit.message, '[cliente]')
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
@@ -60,7 +33,28 @@ jobs:
           port: 22
           local_path: 'cliente/'
           remote_path: '/var/www/PEE/cliente/'
-          exclude: '.git/**,node_modules/**'
+          exclude: '.git/,node_modules/,package-lock.json,build/,.env'  # Excluye .env
+
+      - name: Install dependencies and build on remote
+        if: contains(github.event.head_commit.message, '[cliente]')
+        uses: appleboy/ssh-action@master
+        with:
+          host: academico.upqroo.edu.mx
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          port: 22
+          script: |
+            cd /var/www/PEE/cliente
+            if [ -f package.json ]; then
+              echo "Installing dependencies..."
+              npm install --prefix /var/www/PEE/cliente
+              echo "Building React app..."
+              npm run build --prefix /var/www/PEE/cliente
+              echo "Build completed"
+            else
+              echo "package.json not found, deployment aborted"
+              exit 1
+            fi
 
       #####################################
       # MINI: Despliegue completo
@@ -75,7 +69,7 @@ jobs:
           port: 22
           local_path: 'mini/'
           remote_path: '/var/www/PEE/mini'
-          exclude: '.git/**,node_modules/**,package.json,package-lock.json'
+          exclude: '.git/,node_modules/,package.json,package-lock.json,.env'
 
       #####################################
       # BACKEND: Despliegue completo
@@ -89,8 +83,8 @@ jobs:
           server: academico.upqroo.edu.mx
           port: 22
           local_path: 'Servidor/'
-          remote_path: '/var/www/PEE/Servidor'
-          exclude: '.git/**,node_modules/**,package.json,package-lock.json'
+          remote_path: '/var/www/Plataforma_Estadias/Servidor'
+          exclude: '.git/,node_modules/,package.json,package-lock.json,.env'
 
       #####################################
       # Reiniciar PM2
