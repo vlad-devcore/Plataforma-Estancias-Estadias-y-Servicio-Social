@@ -8,6 +8,7 @@ on:
       - 'cliente/**'
       - 'mini/**'
       - 'Servidor/**'
+      - '**/.github/workflows/**'
 
 jobs:
   deploy:
@@ -31,8 +32,11 @@ jobs:
         if: contains(github.event.head_commit.message, '[cliente]')
         run: |
           cd cliente
-          npm ci
-          npm run build
+          cp .env cliente/.env  # Asegura que .env se copie al directorio cliente
+          CI=false npm ci
+          CI=false npm run build
+        working-directory: ${{ github.workspace }}
+
       - name: Deploy cliente/build
         if: contains(github.event.head_commit.message, '[cliente]')
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
@@ -43,9 +47,9 @@ jobs:
           port: 22
           local_path: 'cliente/build/*'
           remote_path: '/var/www/PEE/cliente/build'
-          exclude: '.git/**,node_modules/**,package.json,package-lock.json'
+          exclude: '.git/**,node_modules/**'  # Excluye node_modules
 
-      - name: Deploy cliente/src
+      - name: Deploy cliente/src and package.json
         if: contains(github.event.head_commit.message, '[cliente]')
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
@@ -53,9 +57,9 @@ jobs:
           password: ${{ secrets.SFTP_PASSWORD }}
           server: academico.upqroo.edu.mx
           port: 22
-          local_path: 'cliente/src/'
+          local_path: 'cliente/'
           remote_path: '/var/www/PEE/cliente/'
-          exclude: '.git/**,node_modules/**'
+          exclude: '.git/**,node_modules/**'  # Excluye solo node_modules, incluye package.json y .env
 
       #####################################
       # MINI: Despliegue completo
