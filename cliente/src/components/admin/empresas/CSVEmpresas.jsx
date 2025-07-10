@@ -40,10 +40,10 @@ const CSVEmpresas = ({ onSubmit, onCancel }) => {
           />
           {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
           <p className="mt-2 text-sm text-gray-500">
-            El archivo CSV debe contener las columnas: <strong>empresa_rfc</strong>, <strong>empresa_nombre</strong>, empresa_direccion, empresa_email, empresa_telefono, <strong>empresa_tamano</strong>, <strong>empresa_sociedad</strong>, empresa_pagina_web.<br />
-            - <strong>Campos obligatorios</strong>: empresa_rfc (12-13 caracteres alfanuméricos, ej. NUE123456XYZ), empresa_nombre, empresa_tamano (Grande, Mediana, Pequeña), empresa_sociedad (Privada, Pública).<br />
+            El archivo CSV debe contener las columnas: <strong>empresa_nombre</strong>, empresa_direccion, empresa_email, empresa_telefono, <strong>empresa_tamano</strong>, <strong>empresa_sociedad</strong>, empresa_pagina_web.<br />
+            - <strong>Campos obligatorios</strong>: empresa_nombre, empresa_tamano (Grande, Mediana, Pequeña), empresa_sociedad (Privada, Pública).<br />
             - <strong>empresa_email</strong>: Debe ser válido (ej. nombre@dominio.com) o estar vacío.<br />
-            - Cada empresa_rfc debe ser único y no estar registrado previamente.
+            - No se requiere empresa_rfc, ya que se generará automáticamente. Cada empresa_nombre debe ser único y no estar registrado previamente.
           </p>
         </div>
 

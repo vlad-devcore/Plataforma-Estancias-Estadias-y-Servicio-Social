@@ -7,7 +7,6 @@ on:
     paths:
       - 'cliente/**'
       - 'mini/**'
-      - 'Servidor/**'
       - '**/.github/workflows/**'
 
 jobs:
@@ -72,42 +71,10 @@ jobs:
           exclude: '.git/**,node_modules/**,package.json,package-lock.json,.env'
 
       #####################################
-      # BACKEND: Despliegue completo
-      #####################################
-      - name: Create backend directory and set permissions
-        if: contains(github.event.head_commit.message, '[Servidor]')
-        uses: appleboy/ssh-action@master
-        with:
-          host: academico.upqroo.edu.mx
-          username: ${{ secrets.SFTP_USERNAME }}
-          password: ${{ secrets.SFTP_PASSWORD }}
-          port: 22
-          script: |
-            if [ ! -d "/var/www/Plataforma_Estadias/Servidor" ]; then
-              mkdir -p /var/www/Plataforma_Estadias/Servidor
-              echo "Directory created"
-            fi
-            chmod -R 775 /var/www/Plataforma_Estadias/Servidor
-            chown -R gestionvinculacion:server4 /var/www/Plataforma_Estadias/Servidor
-            echo "Permissions set"
-
-      - name: Deploy backend (Servidor)
-        if: contains(github.event.head_commit.message, '[Servidor]')
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
-        with:
-          username: ${{ secrets.SFTP_USERNAME }}
-          password: ${{ secrets.SFTP_PASSWORD }}
-          server: academico.upqroo.edu.mx
-          port: 22
-          local_path: 'Servidor/'
-          remote_path: '/var/www/Plataforma_Estadias/Servidor'
-          exclude: '.git/**,node_modules/**,package.json,package-lock.json,.env'
-
-      #####################################
-      # Reiniciar PM2
+      # Reiniciar PM2 (solo si cliente o mini cambian)
       #####################################
       - name: Restart PM2
-        if: success() && (contains(github.event.head_commit.message, '[cliente]') || contains(github.event.head_commit.message, '[mini]') || contains(github.event.head_commit.message, '[Servidor]'))
+        if: success() && (contains(github.event.head_commit.message, '[cliente]') || contains(github.event.head_commit.message, '[mini]'))
         uses: appleboy/ssh-action@master
         with:
           host: academico.upqroo.edu.mx
