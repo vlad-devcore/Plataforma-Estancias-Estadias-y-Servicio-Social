@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
- 
 
 const useEmpresas = () => {
   const [companies, setCompanies] = useState([]);
@@ -72,7 +71,6 @@ const useEmpresas = () => {
           "No se pudieron cargar las empresas. Por favor, intenta de nuevo."
       );
       setCompanies([]);
-
       setTotalPages(1);
       setTotalCompanies(0);
     } finally {
@@ -92,7 +90,6 @@ const useEmpresas = () => {
         );
       }
       const payload = {
-        empresa_rfc: data.empresa_rfc,
         empresa_nombre: data.empresa_nombre,
         empresa_direccion: data.empresa_direccion || "",
         empresa_email: data.empresa_email || "",
@@ -136,7 +133,6 @@ const useEmpresas = () => {
         );
       }
       const payload = {
-        empresa_rfc: updatedData.empresa_rfc,
         empresa_nombre: updatedData.empresa_nombre,
         empresa_direccion: updatedData.empresa_direccion || "",
         empresa_email: updatedData.empresa_email || "",
@@ -229,7 +225,6 @@ const useEmpresas = () => {
       const totalOmitted =
         data.existingCount +
         data.invalidEmailCount +
-        data.invalidRFCCount +
         data.invalidTamanoCount +
         data.invalidSociedadCount +
         data.missingFieldsCount;
@@ -243,18 +238,9 @@ const useEmpresas = () => {
         const reasons = [];
         if (data.existingCount > 0) {
           reasons.push(
-            `${data.existingCount} RFC${
+            `${data.existingCount} empresa${
               data.existingCount !== 1 ? "s" : ""
-            } ya registrado${data.existingCount !== 1 ? "s" : ""} o repetido${
-              data.existingCount !== 1 ? "s" : ""
-            } en el archivo`
-          );
-        }
-        if (data.invalidRFCCount > 0) {
-          reasons.push(
-            `${data.invalidRFCCount} RFC${
-              data.invalidRFCCount !== 1 ? "s" : ""
-            } con formato no válido (debe tener 12 o 13 caracteres alfanuméricos)`
+            } con nombre ya registrado${data.existingCount !== 1 ? "s" : ""}`
           );
         }
         if (data.invalidEmailCount > 0) {
@@ -288,7 +274,7 @@ const useEmpresas = () => {
           reasons.push(
             `${data.missingFieldsCount} registro${
               data.missingFieldsCount !== 1 ? "s" : ""
-            } con campos obligatorios faltantes o errores generales`
+            } con campos obligatorios faltantes`
           );
         }
         if (reasons.length > 0) {

@@ -37,7 +37,7 @@ const CreditsModal = () => {
       linkedin: 'https://www.linkedin.com/in/alberto-castrejon-1b061a291/'
     },
     {
-      name: 'Juan Och',
+      name: 'Pablo Mian',
       role: 'Desarrollador Backend',
       emoji: '👨🏾‍💻',
       image: '/team/juan.jpg',
