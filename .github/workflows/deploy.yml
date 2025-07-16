@@ -20,9 +20,9 @@ jobs:
           fetch-depth: 0
 
       #####################################
-      # CLIENTE: Despliegue y build remoto
+      # CLIENTE: Subir solo el build
       #####################################
-      - name: Deploy cliente source and config
+      - name: Deploy cliente build folder only
         if: contains(github.event.head_commit.message, '[cliente]')
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
@@ -30,30 +30,9 @@ jobs:
           password: ${{ secrets.SFTP_PASSWORD }}
           server: academico.upqroo.edu.mx
           port: 22
-          local_path: 'cliente/'
+          local_path: 'cliente/build/'
           remote_path: '/var/www/PEE/cliente/'
-          exclude: '.git/**,node_modules/**,package-lock.json,.env,build/**'
-
-      - name: Install dependencies and build on remote
-        if: contains(github.event.head_commit.message, '[cliente]')
-        uses: appleboy/ssh-action@master
-        with:
-          host: academico.upqroo.edu.mx
-          username: ${{ secrets.SFTP_USERNAME }}
-          password: ${{ secrets.SFTP_PASSWORD }}
-          port: 22
-          script: |
-            cd /var/www/PEE/cliente
-            if [ -f package.json ]; then
-              echo "Installing dependencies..."
-              npm install --prefix /var/www/PEE/cliente
-              echo "Building React app..."
-              npm run build --prefix /var/www/PEE/cliente
-              echo "Build completed"
-            else
-              echo "package.json not found, deployment aborted"
-              exit 1
-            fi
+          exclude: '.git/**'
 
       #####################################
       # MINI: Despliegue completo
