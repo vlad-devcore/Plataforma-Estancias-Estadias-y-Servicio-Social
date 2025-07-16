@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, AlertCircle, BookOpen, Calendar } from 'lucide-react';
- 
 
 const ProgramaEducativoForm = () => {
   const [programas, setProgramas] = useState([]);
@@ -24,6 +23,7 @@ const ProgramaEducativoForm = () => {
           axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/programas`),
           axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/periodos`),
         ]);
+        console.log('Datos API:', { programas: programasRes.data, periodos: periodosRes.data });
         setProgramas(programasRes.data);
         const periodosActivos = periodosRes.data.filter((p) => p.EstadoActivo === 'Activo');
         setPeriodos(periodosActivos);
@@ -38,7 +38,6 @@ const ProgramaEducativoForm = () => {
     fetchData();
   }, []);
 
-  // Cooldown timer
   useEffect(() => {
     if (showConfirmModal && confirmCooldown > 0) {
       const timer = setInterval(() => {
@@ -48,6 +47,7 @@ const ProgramaEducativoForm = () => {
     }
   }, [showConfirmModal, confirmCooldown]);
 
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!idPrograma) {
@@ -55,7 +55,7 @@ const ProgramaEducativoForm = () => {
       return;
     }
     setError(null);
-    console.log('handleSubmit:', { idPrograma, programas }); // Debug
+    console.log('Antes del modal:', { idPrograma, programas, selectedPrograma: getProgramaNombre() });
     setShowConfirmModal(true);
   };
 
@@ -88,12 +88,12 @@ const ProgramaEducativoForm = () => {
 
   const getProgramaNombre = () => {
     console.log('getProgramaNombre:', { idPrograma, programas }); // Debug
-    const programa = programas.find((p) => p.id_programa === idPrograma); // Comparación no estricta
+    const programa = programas.find((p) => String(p.id_programa) === String(idPrograma)); // Forzar string
     return programa ? programa.nombre : 'No seleccionado';
   };
 
   const getPeriodoNombre = () => {
-    const periodo = periodos.find((p) => p.IdPeriodo === idPeriodo); // Comparación no estricta
+    const periodo = periodos.find((p) => String(p.IdPeriodo) === String(idPeriodo)); // Forzar string
     return periodo ? `${periodo.Fase} ${periodo.Año}` : 'No seleccionado';
   };
 
@@ -320,6 +320,7 @@ const ProgramaEducativoForm = () => {
       </AnimatePresence>
     </motion.div>
   );
+
 };
 
 export default ProgramaEducativoForm;

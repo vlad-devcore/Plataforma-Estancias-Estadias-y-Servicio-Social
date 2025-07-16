@@ -26,7 +26,7 @@ const EmpresaTable = ({ empresas, loading, error, onEdit, onDelete }) => {
         <table className="min-w-full divide-y divide-gray-200 text-sm">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RFC</th>
+            
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
@@ -43,9 +43,7 @@ const EmpresaTable = ({ empresas, loading, error, onEdit, onDelete }) => {
                 transition={{ duration: 0.3, delay: index * 0.1 }}
                 className="hover:bg-gray-50"
               >
-                <td className="px-6 py-4 truncate max-w-[150px] font-medium text-gray-900">
-                  {empresa.empresa_rfc}
-                </td>
+                
                 <td className="px-6 py-4 truncate max-w-[200px] text-gray-500">
                   {empresa.empresa_nombre}
                 </td>
