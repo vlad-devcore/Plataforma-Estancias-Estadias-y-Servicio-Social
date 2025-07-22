@@ -1,32 +1,25 @@
 import React, { useState, useEffect, useCallback, memo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { DocumentTextIcon, VideoCameraIcon, ChevronRightIcon, } from '@heroicons/react/24/outline';
+import {
+  DocumentTextIcon,
+  VideoCameraIcon,
+  ChevronRightIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
 import Header from './HeaderEstudiante';
 import useProgramas from '../components/hooks/useProgramasEducativos';
 
 // Page transition variants
 const pageVariants = {
-  initial: {
-    opacity: 0,
-    x: -20,
-    scale: 0.98
-  },
-  animate: {
-    opacity: 1,
-    x: 0,
-    scale: 1
-  },
-  exit: {
-    opacity: 0,
-    x: 20,
-    scale: 0.98
-  }
+  initial: { opacity: 0, x: -20, scale: 0.98 },
+  animate: { opacity: 1, x: 0, scale: 1 },
+  exit: { opacity: 0, x: 20, scale: 0.98 }
 };
 
 const pageTransition = {
-  type: "tween",
-  ease: "anticipate",
+  type: 'tween',
+  ease: 'anticipate',
   duration: 0.5
 };
 
@@ -61,11 +54,12 @@ const ServiceCard = memo(({ title, icon, delay, path, navigate }) => {
 });
 
 // GuideButton Component
-const GuideButton = memo(({ icon, text, gradient }) => (
+const GuideButton = memo(({ icon, text, gradient, onClick }) => (
   <motion.button
     whileHover={{ scale: 1.02 }}
     whileTap={{ scale: 0.98 }}
     className={`${gradient} text-white px-6 py-3 rounded-xl flex items-center justify-center gap-3 font-medium shadow-lg transition-shadow duration-300 hover:shadow-xl`}
+    onClick={onClick}
   >
     <div className="p-1.5 bg-white/20 rounded-lg">
       {icon}
@@ -74,15 +68,55 @@ const GuideButton = memo(({ icon, text, gradient }) => (
   </motion.button>
 ));
 
+// VideoModal integrado aquí
+const VideoModal = ({ isOpen, onClose }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-4 rounded-lg max-w-3xl w-full relative shadow-lg">
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+        >
+          <XMarkIcon className="w-6 h-6" />
+        </button>
+
+        {isLoading && (
+          <div className="text-center text-gray-600 mb-4">
+            <div className="inline-flex items-center">
+              <div className="w-5 h-5 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mr-2"></div>
+              Cargando video... por favor espera un momento
+            </div>
+          </div>
+        )}
+
+        <div className="aspect-w-16 aspect-h-9">
+          <iframe
+            className="w-full h-[400px]"
+            src="https://www.youtube.com/embed/fSxLK-3L51A?autoplay=1"
+            title="Guía en Video"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            onLoad={() => setIsLoading(false)}
+          ></iframe>
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Main Home component
 export default function Home() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mounted, setMounted] = useState(false);
   const [showAutoScroll, setShowAutoScroll] = useState(true);
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
   const { procesosPermitidos, loading, error } = useProgramas();
-  
-  // Ref para hacer scroll a la sección principal
   const mainContentRef = useRef(null);
 
   const procesoRoutes = {
@@ -90,17 +124,16 @@ export default function Home() {
     'Estancia II': '/formatos/Estancia2',
     'Estadía': '/formatos/Estadias',
     'Servicio Social': '/formatos/ServicioSocial',
-    'Estadía Nacional': '/formatos/EstadiasNacionales',
+    'Estadía Nacional': '/formatos/EstadiasNacionales'
   };
 
   const services = procesosPermitidos.map((proceso, index) => ({
     title: proceso,
     icon: <DocumentTextIcon className="w-7 h-7 text-white" />,
     delay: 0.7 + index * 0.1,
-    path: procesoRoutes[proceso] || '#',
+    path: procesoRoutes[proceso] || '#'
   }));
 
-  // Efecto para el scroll automático
   useEffect(() => {
     const timer = setTimeout(() => {
       if (mainContentRef.current && showAutoScroll) {
@@ -110,16 +143,15 @@ export default function Home() {
         });
         setShowAutoScroll(false);
       }
-    }, 4000); // 4 segundos de delay
+    }, 4000);
 
     return () => clearTimeout(timer);
   }, [showAutoScroll]);
 
   useEffect(() => {
     setMounted(true);
-    console.log('Services:', services); // Depuración
+    console.log('Services:', services);
   }, [services]);
-
 
   return (
     <AnimatePresence mode="wait">
@@ -132,12 +164,9 @@ export default function Home() {
         transition={pageTransition}
         className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100"
       >
-        {/* Header Component */}
         <Header />
 
-        {/* Contenido Principal - Portada y Servicios */}
         <main ref={mainContentRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-
           <AnimatePresence>
             {mounted && (
               <motion.div
@@ -165,31 +194,25 @@ export default function Home() {
             )}
           </AnimatePresence>
 
-          {/* Guía de Usuarios Section - Ahora más prominente */}
+          {/* Guía de Usuario */}
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
             className="bg-gradient-to-r from-white-50 to-indigo-50 border border-white-200 p-8 rounded-2xl shadow-lg mb-12"
           >
-            <div className="flex items-center justify-center mb-6">
-              
-                
-              </div>
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-                ¿Primera vez aquí?
-              </h2>
-           
-            
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+              ¿Primera vez aquí?
+            </h2>
             <p className="text-center text-gray-700 mb-6 text-lg">
               Consulta nuestra guía de usuarios para aprender a usar el portal
             </p>
-            
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <GuideButton
                 icon={<VideoCameraIcon className="w-5 h-5" />}
                 text="Ver Guía en Video"
                 gradient="bg-gradient-to-r from-blue-500 to-blue-600"
+                onClick={() => setIsVideoOpen(true)}
               />
               <GuideButton
                 icon={<DocumentTextIcon className="w-5 h-5" />}
@@ -199,7 +222,10 @@ export default function Home() {
             </div>
           </motion.section>
 
-          {/* Error Message */}
+          {/* Video Modal embebido aquí */}
+          <VideoModal isOpen={isVideoOpen} onClose={() => setIsVideoOpen(false)} />
+
+          {/* Errores */}
           {error && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -210,7 +236,7 @@ export default function Home() {
             </motion.div>
           )}
 
-
+          {/* Servicios */}
           {loading ? (
             <motion.div
               initial={{ opacity: 0 }}
@@ -251,10 +277,8 @@ export default function Home() {
               ))}
             </motion.div>
           )}
-
         </main>
 
-        {/* Footer espaciador */}
         <div className="h-20"></div>
       </motion.div>
     </AnimatePresence>

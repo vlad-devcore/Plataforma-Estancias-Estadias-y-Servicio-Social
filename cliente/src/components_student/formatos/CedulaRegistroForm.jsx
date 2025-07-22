@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, FileText, Save, User, Building, Briefcase, BookOpen, HelpCircle } from 'lucide-react';
-import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import './CedulaRegistroForm.css';
 
 // Define PDF styles
@@ -10,17 +10,43 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica',
   },
   header: {
-    textAlign: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 10,
+    padding: 5,
+    borderBottomWidth: 2,
+    borderBottomColor: '#000',
+  },
+  logo: {
+    width: 80,
+    height: 40,
+  },
+  headerText: {
+    textAlign: 'center',
+    flexGrow: 1,
   },
   title: {
     fontSize: 14,
     fontWeight: 'bold',
-    marginBottom: 3,
   },
   subtitle: {
-    fontSize: 12,
-    marginBottom: 8,
+    fontSize: 10,
+  },
+  registro: {
+    backgroundColor: '#4A2C2A',
+    color: 'white',
+    padding: 2,
+    textAlign: 'center',
+  },
+  metaData: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    fontSize: 8,
+    marginTop: 2,
+  },
+  metaItem: {
+    marginLeft: 10,
   },
   section: {
     marginBottom: 6,
@@ -165,9 +191,19 @@ const CedulaRegistroPDF = ({ formData }) => (
   <Document>
     <Page size="A4" style={styles.page}>
       <View style={styles.header}>
-        <Text style={styles.title}>Universidad Politécnica de Quintana Roo</Text>
-        <Text style={styles.subtitle}>Dirección de Vinculación, Difusión y Extensión Universitaria</Text>
-        <Text style={styles.subtitle}>Cédula de Registro</Text>
+        <Image style={styles.logo} src="/logoUNI.png" />
+        <View style={styles.headerText}>
+          <Text style={styles.title}>Universidad Politécnica de Quintana Roo</Text>
+          <Text style={styles.subtitle}>Dirección de Vinculación, Difusión y Extensión Universitaria</Text>
+          <Text style={styles.subtitle}>Cédula de Registro</Text>
+        </View>
+
+      </View>
+      <View style={styles.metaData}>
+        <Text style={styles.metaItem}>Fecha emisión: abril 2022</Text>
+        <Text style={styles.metaItem}>Versión: 01</Text>
+        <Text style={styles.metaItem}>Última actualización: N/A</Text>
+        <Text style={styles.metaItem}>Página: 1 de 1</Text>
       </View>
 
       {/* Datos del Alumno */}
@@ -191,7 +227,7 @@ const CedulaRegistroPDF = ({ formData }) => (
             <Text style={styles.label}>Teléfono</Text>
           </View>
         </View>
-        
+
         <View style={styles.row}>
           <View style={styles.field}>
             <Text style={styles.value}>{formData.alumno.matricula || ' '}</Text>
@@ -210,7 +246,7 @@ const CedulaRegistroPDF = ({ formData }) => (
             <Text style={styles.label}>E-mail (UPQROO)</Text>
           </View>
         </View>
-        
+
         <View style={styles.row}>
           <View style={styles.field}>
             <Text style={styles.value}>{formData.alumno.numeroSS || ' '}</Text>
@@ -240,15 +276,15 @@ const CedulaRegistroPDF = ({ formData }) => (
             <Text style={styles.label}>Tipo</Text>
           </View>
         </View>
-        
+
         <View style={styles.row}>
           <View style={styles.fieldWide}>
             <Text style={styles.value}>{formData.empresa.direccion || ' '}</Text>
             <Text style={styles.label}>Dirección</Text>
           </View>
         </View>
-        
-        <Text style={{fontSize: 10, marginTop: 5, marginBottom: 3}}>Responsable de RH:</Text>
+
+        <Text style={{ fontSize: 10, marginTop: 5, marginBottom: 3 }}>Responsable de RH:</Text>
         <View style={styles.row}>
           <View style={styles.field}>
             <Text style={styles.value}>{formData.empresa.responsableRH.apellidoPaterno || ' '}</Text>
@@ -263,7 +299,7 @@ const CedulaRegistroPDF = ({ formData }) => (
             <Text style={styles.label}>Nombre(s)</Text>
           </View>
         </View>
-        
+
         <View style={styles.row}>
           <View style={styles.field}>
             <Text style={styles.value}>{formData.empresa.responsableRH.telefono || ' '}</Text>
@@ -301,7 +337,7 @@ const CedulaRegistroPDF = ({ formData }) => (
             <Text style={styles.label}>Cargo</Text>
           </View>
         </View>
-        
+
         <View style={styles.row}>
           <View style={styles.field}>
             <Text style={styles.value}>{formData.asesorEmpresarial.telefono || ' '}</Text>
@@ -339,7 +375,7 @@ const CedulaRegistroPDF = ({ formData }) => (
             <Text style={styles.label}>Cargo</Text>
           </View>
         </View>
-        
+
         <View style={styles.row}>
           <View style={styles.field}>
             <Text style={styles.value}>{formData.asesorAcademico.telefono || ' '}</Text>
@@ -370,7 +406,7 @@ const CedulaRegistroPDF = ({ formData }) => (
       {/* Sección de Firmas Mejorada */}
       <View style={styles.signatureSection}>
         <Text style={styles.signatureTitle}>FIRMAS DE AUTORIZACIÓN</Text>
-        
+
         <View style={styles.signatureRow}>
           <View style={styles.signatureBox}>
             <Text style={styles.signatureName}>
@@ -379,7 +415,7 @@ const CedulaRegistroPDF = ({ formData }) => (
             <View style={styles.signatureLine}></View>
             <Text style={styles.signatureLabelFinal}>NOMBRE Y FIRMA DEL ESTUDIANTE</Text>
           </View>
-          
+
           <View style={styles.signatureBox}>
             <Text style={styles.signatureName}>
               {`${formData.asesorAcademico.nombre} ${formData.asesorAcademico.apellidoPaterno} ${formData.asesorAcademico.apellidoMaterno}`.trim() || '_________________________'}
@@ -387,7 +423,7 @@ const CedulaRegistroPDF = ({ formData }) => (
             <View style={styles.signatureLine}></View>
             <Text style={styles.signatureLabelFinal}>NOMBRE Y FIRMA DEL ASESOR ACADÉMICO</Text>
           </View>
-          
+
           <View style={styles.signatureBox}>
             <Text style={styles.signatureName}>
               {`${formData.asesorEmpresarial.nombre} ${formData.asesorEmpresarial.apellidoPaterno} ${formData.asesorEmpresarial.apellidoMaterno}`.trim() || '_________________________'}
@@ -523,8 +559,8 @@ const CedulaRegistroForm = () => {
       <div className="cedula-header">
         {/* Botón de regresar */}
         <div className="cedula-back-button-wrapper">
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="cedula-back-btn"
             onClick={() => window.history.back()}
           >
@@ -542,7 +578,7 @@ const CedulaRegistroForm = () => {
         <form onSubmit={handleSubmit} className="cedula-form">
           {/* Datos del Alumno */}
           <div className="cedula-section">
-            <div 
+            <div
               className="cedula-section-header"
               onClick={() => toggleSection('alumno')}
             >
@@ -622,13 +658,11 @@ const CedulaRegistroForm = () => {
                     />
                   </div>
                   <div className="cedula-field">
-
                     <Tooltip text="Tu correo institucional que termina en @upqroo.edu.mx">
                       <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                         Correo Institucional <HelpCircle size={16} color="#666" />
                       </label>
                     </Tooltip>
-
                     <input
                       type="email"
                       value={cedulaData.alumno.emailInstitucional}
@@ -665,7 +699,7 @@ const CedulaRegistroForm = () => {
 
           {/* Datos de la Empresa */}
           <div className="cedula-section">
-            <div 
+            <div
               className="cedula-section-header"
               onClick={() => toggleSection('empresa')}
             >
@@ -728,15 +762,13 @@ const CedulaRegistroForm = () => {
                     />
                   </div>
                 </div>
-                
-                <div className="cedula-subsection">
 
+                <div className="cedula-subsection">
                   <Tooltip text="Persona encargada del departamento de personal y contrataciones">
                     <h4 className="cedula-subsection-title" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                       Responsable de Recursos Humanos <HelpCircle size={16} color="#666" />
                     </h4>
                   </Tooltip>
-
                   <div className="cedula-grid">
                     <div className="cedula-field">
                       <label>Apellido Paterno</label>
@@ -800,7 +832,7 @@ const CedulaRegistroForm = () => {
 
           {/* Datos del Asesor Empresarial */}
           <div className="cedula-section">
-            <div 
+            <div
               className="cedula-section-header"
               onClick={() => toggleSection('asesorEmpresarial')}
             >
@@ -878,7 +910,7 @@ const CedulaRegistroForm = () => {
 
           {/* Datos del Asesor Académico */}
           <div className="cedula-section">
-            <div 
+            <div
               className="cedula-section-header"
               onClick={() => toggleSection('asesorAcademico')}
             >
@@ -956,7 +988,7 @@ const CedulaRegistroForm = () => {
 
           {/* Datos del Proyecto */}
           <div className="cedula-section">
-            <div 
+            <div
               className="cedula-section-header"
               onClick={() => toggleSection('proyecto')}
             >
@@ -987,7 +1019,7 @@ const CedulaRegistroForm = () => {
               <Save className="btn-icon" />
               Preparar PDF
             </button>
-            
+
             {isPdfReady && (
               <PDFDownloadLink
                 document={<CedulaRegistroPDF formData={cedulaData} />}
