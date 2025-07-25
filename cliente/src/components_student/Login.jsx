@@ -226,7 +226,7 @@ const Login = () => {
                 Obtener Acceso
               </h2>
               <p className="text-gray-700 mb-6">
-                Por favor, contacta a gestion gestion empresarial.
+                Por favor, contacta al departamento de Gestion Empresarial.
               </p>
               <div className="flex justify-end">
                 <button
