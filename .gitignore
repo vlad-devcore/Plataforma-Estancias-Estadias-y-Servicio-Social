@@ -2,3 +2,6 @@ node_modules/
 Servidor/public/uploads/
 
 
+Servidor/.env
+
+cliente/.env
