@@ -16,6 +16,8 @@ import procesoRouter from './routes/proceso.js';
 import programasRouter from './routes/programas.js';
 import asesoresRouter from './routes/asesores.js';
 import tareaActualizarPeriodos from "./cron/actualizarPeriodos.js";
+import chatbotRouter from './routes/chatbot.js';
+
 
 dotenv.config();
 
@@ -66,6 +68,8 @@ app.use("/api/auth", authRouter);
 app.use("/api/procesos", procesoRouter);
 app.use("/api/programas", programasRouter);
 app.use("/api/asesores", asesoresRouter);
+app.use("/api/chatbot", chatbotRouter);
+
 
 // Ruta de prueba
 app.get("/", (req, res) => {
