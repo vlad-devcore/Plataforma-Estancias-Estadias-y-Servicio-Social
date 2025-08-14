@@ -22,15 +22,19 @@ jobs:
         run: |
           git diff --quiet HEAD^ HEAD -- cliente/ && echo "cliente_changed=false" >> $GITHUB_ENV || echo "cliente_changed=true" >> $GITHUB_ENV
           git diff --quiet HEAD^ HEAD -- Servidor/ && echo "servidor_changed=false" >> $GITHUB_ENV || echo "servidor_changed=true" >> $GITHUB_ENV
+          echo "Files changed in cliente/:"
+          git diff --name-only HEAD^ HEAD -- cliente/
+          echo "Files changed in Servidor/:"
+          git diff --name-only HEAD^ HEAD -- Servidor/
 
       - name: Deploy cliente
         if: env.cliente_changed == 'true'
         run: |
-          sshpass -p ${{ secrets.SFTP_PASSWORD }} scp -o StrictHostKeyChecking=no -r $(find cliente -maxdepth 1 -type f -not -name 'node_modules' -not -name '.env') ${{ secrets.SFTP_USERNAME }}@academico.upqroo.edu.mx:/var/www/PEE/cliente
-          sshpass -p ${{ secrets.SFTP_PASSWORD }} ssh -o StrictHostKeyChecking=no ${{ secrets.SFTP_USERNAME }}@academico.upqroo.edu.mx "cd /var/www/PEE/cliente && npm ci && npm run build && pm2 restart front-PEE"
+          sshpass -p ${{ secrets.SFTP_PASSWORD }} scp -o StrictHostKeyChecking=no -r cliente/* ${{ secrets.SFTP_USERNAME }}@academico.upqroo.edu.mx:/var/www/PEE/cliente
+          sshpass -p ${{ secrets.SFTP_PASSWORD }} ssh -o StrictHostKeyChecking=no ${{ secrets.SFTP_USERNAME }}@academico.upqroo.edu.mx "cd /var/www/PEE/cliente && find . -name 'node_modules' -type d -exec rm -rf {} + && find . -name '.env' -type f -exec rm -f {} + && npm ci && npm run build && pm2 restart front-PEE"
 
       - name: Deploy Servidor
         if: env.servidor_changed == 'true'
         run: |
-          sshpass -p ${{ secrets.SFTP_PASSWORD }} scp -o StrictHostKeyChecking=no -r $(find Servidor -maxdepth 1 -type f -not -name 'node_modules' -not -name '.env') ${{ secrets.SFTP_USERNAME }}@academico.upqroo.edu.mx:/var/www/PEE/Servidor
-          sshpass -p ${{ secrets.SFTP_PASSWORD }} ssh -o StrictHostKeyChecking=no ${{ secrets.SFTP_USERNAME }}@academico.upqroo.edu.mx "cd /var/www/PEE/Servidor && npm ci && pm2 restart Back-PEE"
+          sshpass -p ${{ secrets.SFTP_PASSWORD }} scp -o StrictHostKeyChecking=no -r Servidor/* ${{ secrets.SFTP_USERNAME }}@academico.upqroo.edu.mx:/var/www/PEE/Servidor
+          sshpass -p ${{ secrets.SFTP_PASSWORD }} ssh -o StrictHostKeyChecking=no ${{ secrets.SFTP_USERNAME }}@academico.upqroo.edu.mx "cd /var/www/PEE/Servidor && find . -name 'node_modules' -type d -exec rm -rf {} + && find . -name '.env' -type f -exec rm -f {} + && npm ci && pm2 restart Back-PEE"
