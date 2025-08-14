@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
- 
 
 const useFormatos = () => {
   const [formatos, setFormatos] = useState([]);
@@ -37,6 +36,8 @@ const useFormatos = () => {
           nombre_documento: tipo,
           nombre_archivo: formatoExistente?.nombre_archivo || null,
           id: formatoExistente?.id || null,
+          estado: formatoExistente?.estado || 'Activo',
+          ultima_modificacion_manual: formatoExistente?.ultima_modificacion_manual || null,
         };
       });
 
@@ -77,8 +78,29 @@ const useFormatos = () => {
     }
   };
 
+  // Actualizar el estado de un formato
+  const updateEstadoFormato = async (nombreDocumento, nuevoEstado) => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const response = await axios.put(`${API_BASE}/estado`, {
+        nombre_documento: nombreDocumento,
+        estado: nuevoEstado,
+      });
+
+      setSuccess(`Estado actualizado a "${nuevoEstado}" correctamente`);
+      await fetchFormatos(); // Refrescar la lista
+      return response.data;
+    } catch (err) {
+      setError(err.response?.data?.error || "Error al actualizar el estado");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Descargar un formato
-  // En tu useFormatos.js
   const downloadFormato = async (nombreDocumento) => {
     setLoading(true);
     setError(null);
@@ -138,6 +160,7 @@ const useFormatos = () => {
     tiposDocumentos,
     fetchFormatos,
     uploadFormato,
+    updateEstadoFormato,
     downloadFormato,
     deleteFormato,
     getFileExtension,

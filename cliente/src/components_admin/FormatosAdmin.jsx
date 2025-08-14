@@ -3,7 +3,6 @@ import useFormatos from '../components/hooks/useFormatos';
 import { Upload, Download, Trash2 } from 'lucide-react';
 import Sidebar from '../components_admin/Sidebar';
 import { motion } from 'framer-motion';
- 
 
 const FormatosAdmin = () => {
   const fileInputRef = useRef(null);
@@ -13,16 +12,17 @@ const FormatosAdmin = () => {
     error,
     success,
     uploadFormato,
+    updateEstadoFormato,
     downloadFormato,
     deleteFormato,
     getFileExtension,
-    resetMessages
+    resetMessages,
   } = useFormatos();
 
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmData, setConfirmData] = useState(null);
-                                                                        
+
   const handleFileChange = async (e, nombreDocumento) => {
     if (e.target.files.length > 0) {
       try {
@@ -59,20 +59,29 @@ const FormatosAdmin = () => {
     setConfirmData(null);
   };
 
+  const handleToggleEstado = async (nombreDocumento, currentEstado) => {
+    const nuevoEstado = currentEstado === 'Activo' ? 'Bloqueado' : 'Activo';
+    try {
+      await updateEstadoFormato(nombreDocumento, nuevoEstado);
+    } catch (error) {
+      console.error('Error al actualizar el estado:', error);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
       <Sidebar />
-      
+
       {/* Contenido principal con scroll horizontal */}
       <div className="flex-1 p-4 md:p-8 overflow-x-auto">
         <div className="max-w-7xl mx-auto w-full">
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-2xl font-bold mb-6 flex items-center"
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               className="w-6 h-6 text-blue-600 mr-2"
@@ -81,7 +90,7 @@ const FormatosAdmin = () => {
             </motion.div>
             Gestión de Formatos
           </motion.h1>
-          
+
           {error && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -96,7 +105,7 @@ const FormatosAdmin = () => {
               </div>
             </motion.div>
           )}
-          
+
           {success && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -124,6 +133,8 @@ const FormatosAdmin = () => {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Documento</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Archivo</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Última Modificación</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                   </tr>
                 </thead>
@@ -143,6 +154,26 @@ const FormatosAdmin = () => {
                           </div>
                         ) : (
                           <span className="text-gray-400">No subido</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => handleToggleEstado(formato.nombre_documento, formato.estado)}
+                          className={`px-3 py-1 rounded-full text-white text-xs font-medium ${
+                            formato.estado === 'Activo' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'
+                          }`}
+                          disabled={loading}
+                        >
+                          {formato.estado}
+                        </motion.button>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formato.ultima_modificacion_manual ? (
+                          new Date(formato.ultima_modificacion_manual).toLocaleString()
+                        ) : (
+                          'Nunca'
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -193,6 +224,7 @@ const FormatosAdmin = () => {
                               className="hidden"
                               onChange={(e) => handleFileChange(e, formato.nombre_documento)}
                               accept=".pdf,.doc,.docx"
+                              disabled={loading}
                             />
                           </motion.label>
                         </div>
@@ -209,7 +241,7 @@ const FormatosAdmin = () => {
       {/* Modal de Confirmación */}
       {showConfirmation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <motion.div 
+          <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className="bg-white rounded-lg p-6 shadow-lg max-w-md w-full mx-4"

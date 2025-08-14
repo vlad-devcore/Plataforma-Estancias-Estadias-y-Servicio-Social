@@ -5,7 +5,6 @@ import { FileText } from "lucide-react";
 import ModalRegistroProceso from "../../components/estudiante/ModalRegistroProceso";
 import axios from "axios";
 import TablaDocumentos from "../../components_student/TablaDocumentoss";
- 
 
 const Estancia2 = () => {
   const [isRegistered, setIsRegistered] = useState(false);
@@ -13,41 +12,48 @@ const Estancia2 = () => {
   const [procesoActivo, setProcesoActivo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [periodoExpirado, setPeriodoExpirado] = useState(false);
+  const [todosBloqueados, setTodosBloqueados] = useState(false);
 
   const user = JSON.parse(localStorage.getItem("user"));
 
   const fetchProcesoActivo = async () => {
     setLoading(true);
     setError(null);
+    setPeriodoExpirado(false);
+    setTodosBloqueados(false);
     try {
       if (!user?.id) throw new Error("Usuario no autenticado");
 
-      // Obtener periodo activo
       const { data: periodos } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/periodos`);
       const periodoActivo = periodos.find((p) => p.EstadoActivo === "Activo");
-      if (!periodoActivo) throw new Error("No hay periodo activo");
+      setPeriodoExpirado(!periodoActivo);
 
-      // Validar proceso en el periodo activo
+      const { data: formatos } = await axios.get(
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin`
+      );
+      const hayFormatosActivos = formatos.some((f) => f.estado === "Activo");
+      if (!periodoActivo && !hayFormatosActivos) setTodosBloqueados(true);
+
+      const periodoId = periodoActivo?.IdPeriodo || (periodos.length > 0 ? periodos[periodos.length - 1].IdPeriodo : null);
+      if (!periodoId) throw new Error("No hay periodos disponibles.");
+
       const { data } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/procesos/validar/${user.id}/${periodoActivo.IdPeriodo}`
+        `${process.env.REACT_APP_API_ENDPOINT}/api/procesos/validar/${user.id}/${periodoId}`
       );
       console.log("🔐 Validación proceso (Estancia II):", data);
 
       if (data.registrado) {
         if (data.proceso.tipo_proceso === "Estancia II") {
-          // Proceso completo para Estancia II
           setIsRegistered(true);
           setProcesoActivo(data.proceso);
         } else if (data.proceso.tipo_proceso) {
-          // Otro tipo de proceso registrado
           setError(`Ya estás registrado en ${data.proceso.tipo_proceso} para este periodo.`);
         } else {
-          // Proceso incompleto (tipo_proceso es NULL)
           setProcesoActivo(data.proceso);
           setShowModal(true);
         }
       } else {
-        // No hay proceso, crear uno nuevo
         setShowModal(true);
       }
     } catch (err) {
@@ -60,16 +66,8 @@ const Estancia2 = () => {
 
   useEffect(() => {
     fetchProcesoActivo();
-     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const handleOpenModal = () => {
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-  };
 
   useEffect(() => {
     const checkRegistro = async () => {
@@ -89,12 +87,19 @@ const Estancia2 = () => {
     checkRegistro();
   }, []); // Solo se ejecuta una vez cuando el componente se monta
 
-  const handleSuccess = async () => {
-    setIsRegistered(true);
-    await fetchProcesoActivo(); // Refrescar procesoActivo
-    handleCloseModal();
+  const handleOpenModal = () => {
+    setShowModal(true);
   };
 
+  const handleCloseModal = () => {
+    setShowModal(false);
+  };
+
+  const handleSuccess = async () => {
+    setIsRegistered(true);
+    await fetchProcesoActivo();
+    handleCloseModal();
+  };
 
   return (
     <PlantillaServicio
@@ -107,7 +112,6 @@ const Estancia2 = () => {
         transition={{ duration: 0.5 }}
         className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
       >
-        {/* Mensaje de error */}
         {error && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -116,11 +120,9 @@ const Estancia2 = () => {
             className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 flex justify-between items-center"
           >
             <span>{error}</span>
-            
           </motion.div>
         )}
 
-        {/* Loader */}
         {loading && (
           <div className="text-center text-gray-500 animate-pulse">
             Verificando registro...
@@ -129,7 +131,6 @@ const Estancia2 = () => {
 
         {!loading && (
           <>
-            {/* Botón de registro */}
             {!isRegistered && !error && (
               <motion.button
                 onClick={handleOpenModal}
@@ -142,7 +143,6 @@ const Estancia2 = () => {
               </motion.button>
             )}
 
-            {/* Sección de documentos */}
             <div className="bg-white rounded-xl shadow-lg mb-6 overflow-hidden border border-gray-100">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-gradient-to-r from-red-900 to-red-700 text-white">
                 <h2 className="text-white sm:text-2xl font-semibold">
@@ -150,12 +150,19 @@ const Estancia2 = () => {
                 </h2>
               </div>
 
+              {(periodoExpirado || todosBloqueados) && isRegistered && procesoActivo && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-2 rounded-t-lg text-center"
+                >
+                  <span>⚠️ {todosBloqueados ? "No hay periodo activo ni formatos manualmente activados. Todos los documentos están bloqueados." : "El periodo ha expirado. Los documentos manualmente activados están disponibles."}</span>
+                </motion.div>
+              )}
+
               {isRegistered && procesoActivo ? (
                 <div className="p-4">
-                  <TablaDocumentos
-                    tipoProceso="Estancia II"
-                    procesoId={procesoActivo.id_proceso}
-                  />
+                  <TablaDocumentos tipoProceso="Estancia II" procesoId={procesoActivo.id_proceso} todosBloqueados={todosBloqueados} />
                 </div>
               ) : (
                 <div className="p-4 text-gray-500 italic">
@@ -167,7 +174,6 @@ const Estancia2 = () => {
         )}
       </motion.div>
 
-      {/* Modal de registro */}
       {showModal && (
         <ModalRegistroProceso
           open={showModal}

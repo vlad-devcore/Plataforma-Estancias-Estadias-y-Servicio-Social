@@ -5,7 +5,6 @@ import { FileText } from "lucide-react";
 import ModalRegistroProceso from "../../components/estudiante/ModalRegistroProceso";
 import axios from "axios";
 import TablaDocumentos from "../../components_student/TablaDocumentoss";
- 
 
 const Estadias = () => {
   const [isRegistered, setIsRegistered] = useState(false);
@@ -13,23 +12,43 @@ const Estadias = () => {
   const [procesoActivo, setProcesoActivo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [periodoExpirado, setPeriodoExpirado] = useState(false);
+  const [todosBloqueados, setTodosBloqueados] = useState(false);
 
   const user = JSON.parse(localStorage.getItem("user"));
 
   const fetchProcesoActivo = async () => {
     setLoading(true);
     setError(null);
+    setPeriodoExpirado(false);
+    setTodosBloqueados(false);
     try {
       if (!user?.id) throw new Error("Usuario no autenticado");
 
-      // Obtener periodo activo
+      // Obtener todos los periodos
       const { data: periodos } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/periodos`);
       const periodoActivo = periodos.find((p) => p.EstadoActivo === "Activo");
-      if (!periodoActivo) throw new Error("No hay periodo activo");
 
-      // Validar proceso en el periodo activo
+      // Determinar si el periodo ha expirado
+      setPeriodoExpirado(!periodoActivo);
+
+      // Obtener estados de los formatos
+      const { data: formatos } = await axios.get(
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin`
+      );
+      const hayFormatosActivos = formatos.some((f) => f.estado === "Activo");
+
+      // Si no hay periodo activo ni formatos manualmente activados, marcar todo como bloqueado
+      if (!periodoActivo && !hayFormatosActivos) {
+        setTodosBloqueados(true);
+      }
+
+      // Validar proceso en el periodo activo (si existe) o usar el último periodo
+      const periodoId = periodoActivo?.IdPeriodo || (periodos.length > 0 ? periodos[periodos.length - 1].IdPeriodo : null);
+      if (!periodoId) throw new Error("No hay periodos disponibles.");
+
       const { data } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/procesos/validar/${user.id}/${periodoActivo.IdPeriodo}`
+        `${process.env.REACT_APP_API_ENDPOINT}/api/procesos/validar/${user.id}/${periodoId}`
       );
       console.log("🔐 Validación proceso (Estadía):", data);
 
@@ -56,7 +75,7 @@ const Estadias = () => {
         setShowModal(true);
       }
     } catch (err) {
-      setError(err.response?.data?.error || "Error al verificar el proceso.");
+      setError(err.response?.data?.error || err.message || "Error al verificar el proceso.");
       setIsRegistered(false);
       setProcesoActivo(null);
       console.error("Error al verificar registro (Estadía):", err);
@@ -67,7 +86,7 @@ const Estadias = () => {
 
   useEffect(() => {
     fetchProcesoActivo();
-     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleOpenModal = () => {
@@ -103,7 +122,7 @@ const Estadias = () => {
             className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 flex justify-between items-center"
           >
             <span>{error}</span>
-           
+            {/* Agregar botón para cerrar si quieres */}
           </motion.div>
         )}
 
@@ -134,9 +153,19 @@ const Estadias = () => {
                 </h2>
               </div>
 
+              {(periodoExpirado || todosBloqueados) && isRegistered && procesoActivo && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-2 rounded-t-lg text-center"
+                >
+                  <span>⚠️ {todosBloqueados ? "No hay periodo activo ni formatos manualmente activados. Todos los documentos están bloqueados." : "El periodo ha expirado. Los documentos manualmente activados están disponibles."}</span>
+                </motion.div>
+              )}
+
               {isRegistered && procesoActivo ? (
                 <div className="p-4">
-                  <TablaDocumentos tipoProceso="Estadía" procesoId={procesoActivo.id_proceso} />
+                  <TablaDocumentos tipoProceso="Estadía" procesoId={procesoActivo.id_proceso} todosBloqueados={todosBloqueados} />
                 </div>
               ) : (
                 <div className="p-4 text-gray-500 italic">

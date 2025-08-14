@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
- 
 
 const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
   const [plantillas, setPlantillas] = useState([]);
@@ -83,6 +82,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
           IdTipoDoc: tipoDocumentoMap[tipo] || null,
           nombre_documento: tipo,
           nombre_archivo: match?.nombre_archivo || null,
+          estado: match?.estado || 'Activo', // Añadir estado desde la API
         };
       });
 
@@ -138,6 +138,12 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
 
     if (!allowedTypes.includes(fileExtension)) {
       setError("Solo se permiten archivos PDF, Word (.docx) o Excel (.xlsx)");
+      return;
+    }
+
+    const plantilla = plantillas.find((p) => p.IdTipoDoc === idTipoDoc);
+    if (!plantilla || plantilla.estado !== 'Activo') {
+      setError('El formato está bloqueado o no está disponible');
       return;
     }
 

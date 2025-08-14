@@ -1,4 +1,4 @@
-// En tu archivo de rutas (documentosAdmin.js)
+// documentosAdmin.js
 import express from "express";
 import multer from "multer";
 import fs from "fs";
@@ -27,7 +27,7 @@ const upload = multer({ storage });
 // Obtener todos los formatos
 router.get("/", async (req, res) => {
   try {
-    const [results] = await pool.query("SELECT * FROM formatos_admin");
+    const [results] = await pool.query("SELECT id, nombre_documento, nombre_archivo, estado, ultima_modificacion_manual FROM formatos_admin");
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -44,30 +44,25 @@ router.post("/upload", upload.single("archivo"), async (req, res) => {
       return res.status(400).json({ error: "Faltan campos obligatorios" });
     }
 
-    // Verificar si ya existe
     const [existing] = await pool.query(
       "SELECT * FROM formatos_admin WHERE nombre_documento = ?",
       [nombre_documento]
     );
 
     if (existing.length > 0) {
-      // Eliminar archivo antiguo si existe
       if (existing[0].nombre_archivo) {
         const oldFilePath = path.join("public/uploads/formatos", existing[0].nombre_archivo);
         if (fs.existsSync(oldFilePath)) {
           fs.unlinkSync(oldFilePath);
         }
       }
-
-      // Actualizar registro
       await pool.query(
-        "UPDATE formatos_admin SET nombre_archivo = ? WHERE nombre_documento = ?",
+        "UPDATE formatos_admin SET nombre_archivo = ?, estado = 'Activo' WHERE nombre_documento = ?",
         [file.filename, nombre_documento]
       );
     } else {
-      // Insertar nuevo registro
       await pool.query(
-        "INSERT INTO formatos_admin (nombre_documento, nombre_archivo) VALUES (?, ?)",
+        "INSERT INTO formatos_admin (nombre_documento, nombre_archivo, estado) VALUES (?, ?, 'Activo')",
         [nombre_documento, file.filename]
       );
     }
@@ -78,13 +73,41 @@ router.post("/upload", upload.single("archivo"), async (req, res) => {
   }
 });
 
+// Actualizar el estado de un formato
+router.put("/estado", async (req, res) => {
+  try {
+    const { nombre_documento, estado } = req.body;
+
+    if (!nombre_documento || !estado) {
+      return res.status(400).json({ error: "Faltan campos obligatorios: nombre_documento o estado" });
+    }
+
+    if (!['Activo', 'Bloqueado'].includes(estado)) {
+      return res.status(400).json({ error: "Estado no válido, debe ser 'Activo' o 'Bloqueado'" });
+    }
+
+    const [result] = await pool.query(
+      "UPDATE formatos_admin SET estado = ?, ultima_modificacion_manual = NOW() WHERE nombre_documento = ?",
+      [estado, nombre_documento]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Formato no encontrado" });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error en el servidor:', error);
+    res.status(500).json({ error: "Error interno del servidor: " + error.message });
+  }
+});
+
 // Descargar formato
 router.get("/download/:nombre_documento", async (req, res) => {
   try {
     const { nombre_documento } = req.params;
-    
     const [formato] = await pool.query(
-      "SELECT nombre_archivo FROM formatos_admin WHERE nombre_documento = ?", 
+      "SELECT nombre_archivo FROM formatos_admin WHERE nombre_documento = ?",
       [nombre_documento]
     );
 
@@ -94,14 +117,13 @@ router.get("/download/:nombre_documento", async (req, res) => {
 
     const filePath = path.join("public/uploads/formatos", formato[0].nombre_archivo);
     const fileExtension = path.extname(formato[0].nombre_archivo).toLowerCase();
-    
+
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: "Archivo no encontrado" });
     }
 
-    // Determinar el tipo de contenido según la extensión
     let contentType;
-    switch(fileExtension) {
+    switch (fileExtension) {
       case '.pdf':
         contentType = 'application/pdf';
         break;
@@ -115,12 +137,10 @@ router.get("/download/:nombre_documento", async (req, res) => {
         contentType = 'application/octet-stream';
     }
 
-    // Configurar headers
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Disposition', `attachment; filename="${formato[0].nombre_archivo}"`);
     res.setHeader('Content-Length', fs.statSync(filePath).size);
 
-    // Stream el archivo
     const fileStream = fs.createReadStream(filePath);
     fileStream.pipe(res);
   } catch (error) {
@@ -132,9 +152,8 @@ router.get("/download/:nombre_documento", async (req, res) => {
 router.get("/view/:nombre_documento", async (req, res) => {
   try {
     const { nombre_documento } = req.params;
-    
     const [formato] = await pool.query(
-      "SELECT nombre_archivo FROM formatos_admin WHERE nombre_documento = ?", 
+      "SELECT nombre_archivo FROM formatos_admin WHERE nombre_documento = ?",
       [nombre_documento]
     );
 
@@ -144,18 +163,16 @@ router.get("/view/:nombre_documento", async (req, res) => {
 
     const filePath = path.join("public/uploads/formatos", formato[0].nombre_archivo);
     const fileExtension = path.extname(formato[0].nombre_archivo).toLowerCase();
-    
+
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: "Archivo no encontrado" });
     }
 
-    // Solo permitimos visualizar PDFs directamente en el navegador
     if (fileExtension === '.pdf') {
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `inline; filename="${formato[0].nombre_archivo}"`);
       res.sendFile(path.resolve(filePath));
     } else {
-      // Para otros tipos de archivo, forzar descarga
       res.redirect(`/api/documentosAdmin/download/${nombre_documento}`);
     }
   } catch (error) {
@@ -167,8 +184,6 @@ router.get("/view/:nombre_documento", async (req, res) => {
 router.delete("/:nombre_documento", async (req, res) => {
   try {
     const { nombre_documento } = req.params;
-
-    // Obtener nombre del archivo
     const [formato] = await pool.query(
       "SELECT nombre_archivo FROM formatos_admin WHERE nombre_documento = ?",
       [nombre_documento]
@@ -178,7 +193,6 @@ router.delete("/:nombre_documento", async (req, res) => {
       return res.status(404).json({ error: "Formato no encontrado" });
     }
 
-    // Eliminar archivo físico
     if (formato[0].nombre_archivo) {
       const filePath = path.join("public/uploads/formatos", formato[0].nombre_archivo);
       if (fs.existsSync(filePath)) {
@@ -186,7 +200,6 @@ router.delete("/:nombre_documento", async (req, res) => {
       }
     }
 
-    // Eliminar registro de la BD
     await pool.query(
       "DELETE FROM formatos_admin WHERE nombre_documento = ?",
       [nombre_documento]

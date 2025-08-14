@@ -5,7 +5,6 @@ import { FileText } from "lucide-react";
 import ModalRegistroProceso from "../../components/estudiante/ModalRegistroProceso";
 import axios from "axios";
 import TablaReportesMensuales from "../../components_student/TablaReportesMensuales";
- 
 
 const ServicioSocial = () => {
   const [isRegistered, setIsRegistered] = useState(false);
@@ -13,10 +12,11 @@ const ServicioSocial = () => {
   const [procesoActivo, setProcesoActivo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [periodoExpirado, setPeriodoExpirado] = useState(false);
+  const [todosBloqueados, setTodosBloqueados] = useState(false);
 
-  // Definir los 12 reportes mensuales con IdTipoDoc de 7 a 18
   const reportesMensuales = Array.from({ length: 12 }, (_, index) => ({
-    idTipoDoc: 7 + index, // IdTipoDoc de Reporte Mensual 1 (7) a Reporte Mensual 12 (18)
+    idTipoDoc: 7 + index,
     nombre: `Reporte Mensual ${index + 1}`,
     numeroReporte: index + 1
   }));
@@ -26,21 +26,29 @@ const ServicioSocial = () => {
   const fetchProcesoActivo = async () => {
     setLoading(true);
     setError(null);
+    setPeriodoExpirado(false);
+    setTodosBloqueados(false);
     try {
       if (!user?.id) throw new Error("Usuario no autenticado");
 
       console.log("🔍 Depuración: Iniciando fetchProcesoActivo, user.id:", user.id);
 
-      // Obtener periodo activo
       const { data: periodos } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/periodos`);
       console.log("🔍 Depuración: Periodos recibidos:", periodos);
       const periodoActivo = periodos.find((p) => p.EstadoActivo === "Activo");
-      if (!periodoActivo) throw new Error("No hay periodo activo");
-      console.log("🔍 Depuración: Periodo activo:", periodoActivo);
+      setPeriodoExpirado(!periodoActivo);
 
-      // Validar proceso en el periodo activo
+      const { data: formatos } = await axios.get(
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin`
+      );
+      const hayFormatosActivos = formatos.some((f) => f.estado === "Activo");
+      if (!periodoActivo && !hayFormatosActivos) setTodosBloqueados(true);
+
+      const periodoId = periodoActivo?.IdPeriodo || (periodos.length > 0 ? periodos[periodos.length - 1].IdPeriodo : null);
+      if (!periodoId) throw new Error("No hay periodos disponibles.");
+
       const { data } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/procesos/validar/${user.id}/${periodoActivo.IdPeriodo}`
+        `${process.env.REACT_APP_API_ENDPOINT}/api/procesos/validar/${user.id}/${periodoId}`
       );
       console.log("🔐 Validación proceso (Servicio Social):", data);
 
@@ -80,7 +88,7 @@ const ServicioSocial = () => {
   useEffect(() => {
     console.log("🔍 Depuración: Ejecutando useEffect para fetchProcesoActivo");
     fetchProcesoActivo();
-     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -122,7 +130,7 @@ const ServicioSocial = () => {
             exit={{ opacity: 0, y: -10 }}
             className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 flex justify-between items-center"
           >
-            <span>{error}</span>           
+            <span>{error}</span>
           </motion.div>
         )}
 
@@ -153,12 +161,23 @@ const ServicioSocial = () => {
                 </h2>
               </div>
 
+              {(periodoExpirado || todosBloqueados) && isRegistered && procesoActivo && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-2 rounded-t-lg text-center"
+                >
+                  <span>⚠️ {todosBloqueados ? "No hay periodo activo ni formatos manualmente activados. Todos los documentos están bloqueados." : "El periodo ha expirado. Los documentos manualmente activados están disponibles."}</span>
+                </motion.div>
+              )}
+
               {isRegistered && procesoActivo ? (
                 <div className="p-4">
                   <TablaReportesMensuales
                     tipoProceso="Servicio Social"
                     procesoId={procesoActivo.id_proceso}
                     documentosRequeridos={reportesMensuales}
+                    todosBloqueados={todosBloqueados}
                   />
                 </div>
               ) : (

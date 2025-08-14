@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Upload, Trash2, Download, MessageSquare, FileText, Eye } from 'lucide-react';
 import useDocumentosEstudiante from '../components/hooks/useDocumentosEstudiante';
 import { motion, AnimatePresence } from 'framer-motion';
- 
 
 const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
   const navigate = useNavigate();
@@ -213,12 +212,12 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
                       <motion.button
                         onClick={() => setModalSubirConfirm({ open: true, idTipoDoc: p.IdTipoDoc })}
                         className={`inline-flex items-center justify-center w-10 h-10 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors ${
-                          loading ? 'opacity-50 cursor-not-allowed' : ''
+                          loading || p.estado === 'Bloqueado' ? 'opacity-50 cursor-not-allowed' : ''
                         }`}
                         whileHover={{ scale: 1.1 }}
                         transition={{ duration: 0.2 }}
-                        disabled={loading}
-                        title="Subir documento"
+                        disabled={loading || p.estado === 'Bloqueado'}
+                        title={p.estado === 'Bloqueado' ? 'Subida bloqueada' : 'Subir documento'}
                       >
                         <Upload size={20} />
                       </motion.button>
