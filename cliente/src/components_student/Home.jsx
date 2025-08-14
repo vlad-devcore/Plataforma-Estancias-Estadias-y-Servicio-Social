@@ -9,6 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Header from './HeaderEstudiante';
 import useProgramas from '../components/hooks/useProgramasEducativos';
+import Chatbot from "../components/estudiante/Chatbot"; 
 
 // Page transition variants
 const pageVariants = {
@@ -102,7 +103,6 @@ const VideoModal = ({ isOpen, onClose }) => {
             allowFullScreen
             onLoad={() => setIsLoading(false)}
           ></iframe>
-
         </div>
       </div>
     </div>
@@ -280,6 +280,11 @@ export default function Home() {
         </main>
 
         <div className="h-20"></div>
+
+        {/* Chatbot en la esquina inferior derecha */}
+        <div className="fixed bottom-4 right-4 z-50">
+          <Chatbot />
+        </div>
       </motion.div>
     </AnimatePresence>
   );
