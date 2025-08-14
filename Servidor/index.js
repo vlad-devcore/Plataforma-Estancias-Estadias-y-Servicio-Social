@@ -73,7 +73,7 @@ app.use("/api/chatbot", chatbotRouter);
 
 // Ruta de prueba
 app.get("/", (req, res) => {
-    res.send("¡Servidor funcionando! 🚀");
+    res.send("¡Servidor funcionando! CH");
 });
 
 // Iniciar servidor
