@@ -239,7 +239,7 @@ router.post("/request-password-reset", async (req, res) => {
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f4f4f4;">
           <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <img src="https://i.freeimage.host/i/3USBpMx.png" alt="UPQROO Logo" style="display: block; margin: 0 auto; height: 80px;">
+            <img src="https://i.imgur.com/dJtjnin.png" alt="UPQROO Logo" style="display: block; margin: 0 auto; height: 80px;">
             <h2 style="color: #1a202c; text-align: center; margin-top: 20px;">Restablecimiento de Contraseña</h2>
             <p style="color: #4a5568; line-height: 1.6; text-align: center;">
               Estimado usuario, hemos recibido una solicitud para restablecer la contraseña de tu cuenta en el sistema de la Universidad Politécnica de Quintana Roo.
