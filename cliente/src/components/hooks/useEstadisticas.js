@@ -1,23 +1,22 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
- 
 
 const useEstadisticas = () => {
   const [estadisticas, setEstadisticas] = useState({
     periodoActual: {
       EstanciaI: 0,
       EstanciaII: 0,
-      Estadias: 0,
+      Estadia: 0,
       ServicioSocial: 0,
-      EstadiasNacionales: 0,
+      EstadiaNacional: 0,
     },
     globales: {
       totalUsuarios: 0,
       EstanciaI: 0,
       EstanciaII: 0,
-      Estadias: 0,
+      Estadia: 0,
       ServicioSocial: 0,
-      EstadiasNacionales: 0,
+      EstadiaNacional: 0,
     },
   });
   const [loading, setLoading] = useState(true);
@@ -35,6 +34,7 @@ const useEstadisticas = () => {
 
         // Obtener procesos
         const { data: procesos } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos`);
+        console.log('Datos crudos de procesos:', procesos); // Nuevo log
 
         // Obtener total de usuarios
         const { data: estudiantes } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/estudiantes`);
@@ -43,50 +43,59 @@ const useEstadisticas = () => {
         const tiposProceso = [
           'Estancia I',
           'Estancia II',
-          'Estadías',
+          'Estadía',
           'Servicio Social',
-          'Estadías Nacionales',
+          'Estadía Nacional',
         ];
 
         const periodoActual = {
           EstanciaI: 0,
           EstanciaII: 0,
-          Estadias: 0,
+          Estadia: 0,
           ServicioSocial: 0,
-          EstadiasNacionales: 0,
+          EstadiaNacional: 0,
         };
 
         const globales = {
           totalUsuarios: estudiantes.length,
           EstanciaI: 0,
           EstanciaII: 0,
-          Estadias: 0,
+          Estadia: 0,
           ServicioSocial: 0,
-          EstadiasNacionales: 0,
+          EstadiaNacional: 0,
         };
 
         // Contar procesos por tipo
         procesos.forEach((proceso) => {
           const tipo = proceso.tipo_proceso;
-          // Ignorar procesos sin tipo_proceso (incompletos)
           if (tipo && tiposProceso.includes(tipo)) {
-            // Normalizar nombres para las claves
-            const clave = tipo
+            let clave = tipo
+              .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
               .replace('Estancia I', 'EstanciaI')
               .replace('Estancia II', 'EstanciaII')
-              .replace('Estadías', 'Estadias')
+              .replace('Estadia', 'Estadia')
               .replace('Servicio Social', 'ServicioSocial')
-              .replace('Estadías Nacionales', 'EstadiasNacionales');
+              .replace('Estadia Nacional', 'EstadiaNacional');
 
-            // Contar para estadísticas globales
             globales[clave] += 1;
 
-            // Contar para periodo actual
-            if (proceso.id_periodo === periodoActivo.IdPeriodo) {
+            // Depuración detallada con conversión a número
+            const idPeriodoProc = Number(proceso.id_periodo); // Intenta otros nombres si falla
+            const idPeriodoActivo = Number(periodoActivo.IdPeriodo);
+            console.log('Procesando:', proceso, 'Clave:', clave, 'id_periodo:', idPeriodoProc, 'Periodo Activo:', idPeriodoActivo);
+            if (idPeriodoProc === idPeriodoActivo) {
+              console.log('Coincidencia encontrada para:', clave);
               periodoActual[clave] += 1;
             }
           }
         });
+
+        console.log('Periodos:', periodos);
+        console.log('Periodo Activo:', periodoActivo);
+        console.log('Procesos:', procesos);
+        console.log('Estudiantes:', estudiantes);
+        console.log('Periodo Actual Contadores:', periodoActual);
+        console.log('Globales Contadores:', globales);
 
         setEstadisticas({ periodoActual, globales });
       } catch (err) {
