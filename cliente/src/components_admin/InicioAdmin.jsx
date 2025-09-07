@@ -65,7 +65,6 @@ const EstadisticasGlobales = () => {
   return (
     <div className="flex bg-gray-100 min-h-screen">
       <Sidebar />
-      {/* Main Content */}
       <main className="flex-1 p-6 ml-0 md:ml-30">
         <AnimatePresence mode="wait">
           <motion.div
@@ -123,8 +122,8 @@ const EstadisticasGlobales = () => {
                       icon={Users}
                     />
                     <StatCard
-                      title="Estadías"
-                      value={estadisticas.periodoActual.Estadias}
+                      title="Estadía"
+                      value={estadisticas.periodoActual.Estadia}
                       subtitle="usuarios activos"
                       icon={Users}
                     />
@@ -135,8 +134,8 @@ const EstadisticasGlobales = () => {
                       icon={HeartHandshake}
                     />
                     <StatCard
-                      title="Estadías Nacionales"
-                      value={estadisticas.periodoActual.EstadiasNacionales}
+                      title="Estadía Nacional"
+                      value={estadisticas.periodoActual.EstadiaNacional}
                       subtitle="usuarios activos"
                       icon={Flag}
                     />
@@ -173,8 +172,8 @@ const EstadisticasGlobales = () => {
                       icon={Users}
                     />
                     <StatCard
-                      title="Estadías"
-                      value={estadisticas.globales.Estadias}
+                      title="Estadía"
+                      value={estadisticas.globales.Estadia}
                       subtitle="usuarios totales"
                       icon={Users}
                     />
@@ -185,8 +184,8 @@ const EstadisticasGlobales = () => {
                       icon={HeartHandshake}
                     />
                     <StatCard
-                      title="Estadías Nacionales"
-                      value={estadisticas.globales.EstadiasNacionales}
+                      title="Estadía Nacional"
+                      value={estadisticas.globales.EstadiaNacional}
                       subtitle="usuarios totales"
                       icon={Flag}
                     />

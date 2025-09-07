@@ -120,6 +120,7 @@ router.get("/", async (req, res) => {
     const [procesos] = await pool.query(
       `SELECT 
          p.id_proceso,
+         p.id_periodo, -- Añadido
          p.tipo_proceso,
          e.matricula,
          em.empresa_nombre,
@@ -166,6 +167,7 @@ router.get("/por-usuario/:id_user", async (req, res) => {
     const [procesos] = await pool.query(
       `SELECT 
          p.id_proceso,
+         p.id_periodo, -- Añadido
          p.tipo_proceso,
          e.matricula,
          em.empresa_nombre,
