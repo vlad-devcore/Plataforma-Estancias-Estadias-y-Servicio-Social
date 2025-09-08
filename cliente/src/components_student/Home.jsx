@@ -4,8 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
   DocumentTextIcon,
   VideoCameraIcon,
-  ChevronRightIcon,
-  XMarkIcon
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 import Header from './HeaderEstudiante';
 import useProgramas from '../components/hooks/useProgramasEducativos';
@@ -69,53 +68,12 @@ const GuideButton = memo(({ icon, text, gradient, onClick }) => (
   </motion.button>
 ));
 
-// VideoModal integrado aquí
-const VideoModal = ({ isOpen, onClose }) => {
-  const [isLoading, setIsLoading] = useState(true);
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-4 rounded-lg max-w-3xl w-full relative shadow-lg">
-        <button
-          onClick={onClose}
-          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-        >
-          <XMarkIcon className="w-6 h-6" />
-        </button>
-
-        {isLoading && (
-          <div className="text-center text-gray-600 mb-4">
-            <div className="inline-flex items-center">
-              <div className="w-5 h-5 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mr-2"></div>
-              Cargando video... por favor espera un momento
-            </div>
-          </div>
-        )}
-
-        <div className="aspect-w-16 aspect-h-9">
-          <iframe
-            className="w-full h-[400px]"
-            src="https://www.youtube.com/embed/fSxLK-3L51A?autoplay=1"
-            title="Guía en Video"
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            onLoad={() => setIsLoading(false)}
-          ></iframe>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // Main Home component
 export default function Home() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mounted, setMounted] = useState(false);
   const [showAutoScroll, setShowAutoScroll] = useState(true);
-  const [isVideoOpen, setIsVideoOpen] = useState(false);
   const { procesosPermitidos, loading, error } = useProgramas();
   const mainContentRef = useRef(null);
 
@@ -152,6 +110,10 @@ export default function Home() {
     setMounted(true);
     console.log('Services:', services);
   }, [services]);
+
+  const handleVideoGuideClick = () => {
+    window.open('https://drive.google.com/file/d/1ZWmNRTIQObrXt03jzEeUDZBhpeUSq1MN/view?usp=drive_link', '_blank');
+  };
 
   return (
     <AnimatePresence mode="wait">
@@ -212,7 +174,7 @@ export default function Home() {
                 icon={<VideoCameraIcon className="w-5 h-5" />}
                 text="Ver Guía en Video"
                 gradient="bg-gradient-to-r from-blue-500 to-blue-600"
-                onClick={() => setIsVideoOpen(true)}
+                onClick={handleVideoGuideClick}
               />
               <GuideButton
                 icon={<DocumentTextIcon className="w-5 h-5" />}
@@ -221,9 +183,6 @@ export default function Home() {
               />
             </div>
           </motion.section>
-
-          {/* Video Modal embebido aquí */}
-          <VideoModal isOpen={isVideoOpen} onClose={() => setIsVideoOpen(false)} />
 
           {/* Errores */}
           {error && (
