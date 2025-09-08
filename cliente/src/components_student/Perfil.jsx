@@ -144,6 +144,13 @@ export default function Profile() {
   const [toast, setToast] = useState({ message: '', type: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Normaliza el valor de género
+  const normalizeGender = (gender) => {
+    if (gender.toLowerCase() === 'femenino') return 'Mujer';
+    if (gender.toLowerCase() === 'masculino') return 'Hombre';
+    return 'Otro';
+  };
+
   // Cargar datos del usuario y programa educativo
   useEffect(() => {
     if (user) {
@@ -152,7 +159,7 @@ export default function Profile() {
         nombre: user.nombre || '',
         apellidos: `${user.apellido_paterno || ''} ${user.apellido_materno || ''}`.trim(),
         matricula: user.email ? user.email.split('@')[0] : '',
-        genero: user.genero || 'Hombre',
+        genero: normalizeGender(user.genero || ''), // Normaliza el género
         programaEducativo: programa,
         correo: user.email || '',
         antiguaContrasena: '',
