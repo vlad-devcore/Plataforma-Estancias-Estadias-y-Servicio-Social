@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, Trash2, Download, MessageSquare, FileText, Eye } from 'lucide-react';
+import { Upload, Trash2, Download, MessageSquare, FileText, Eye, ExternalLink } from 'lucide-react';
 import useDocumentosEstudiante from '../components/hooks/useDocumentosEstudiante';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -47,7 +47,6 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
   const getDocumentoSubido = (idTipoDoc) =>
     documentos.find((doc) => doc.IdTipoDoc === idTipoDoc);
 
-  // Función para manejar la redirección a vistas específicas
   const handlePlantillaClick = (nombreDocumento) => {
     const nombreLower = nombreDocumento.toLowerCase();
     
@@ -55,8 +54,9 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
       navigate('/DefinicionProyectoForm');
     } else if (nombreLower.includes('cédula de registro') || nombreLower.includes('cedula de registro')) {
       navigate('/CedulaRegistroForm');
+    } else if (nombreLower.includes('número nss')) {
+      window.open('https://serviciosdigitales.imss.gob.mx/gestionAsegurados-web-externo/asignacionNSS', '_blank');
     } else {
-      // Para otros documentos, mantener el comportamiento original de descarga
       const downloadUrl = `${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin/download/${encodeURIComponent(nombreDocumento)}`;
       window.open(downloadUrl, '_blank');
     }
@@ -74,7 +74,6 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
 
   return (
     <div className="p-4">
-      {/* Mensajes de error y éxito */}
       <AnimatePresence>
         {error && (
           <motion.div
@@ -104,17 +103,14 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
         )}
       </AnimatePresence>
 
-      {/* Indicador de carga */}
       {loading && <div className="text-center text-gray-500 animate-pulse">Cargando documentos...</div>}
 
-      {/* Mensaje si no hay plantillas */}
       {!loading && plantillas.length === 0 && (
         <div className="text-center text-gray-600 bg-gray-50 p-4 rounded-lg">
           No hay plantillas disponibles para este proceso.
         </div>
       )}
 
-      {/* Tabla de documentos */}
       {!loading && plantillas.length > 0 && (
         <div className="overflow-x-auto bg-white rounded-xl shadow-lg border border-gray-100">
           <table className="min-w-full divide-y divide-gray-200">
@@ -136,24 +132,27 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
                                        nombreLower.includes('definicion de proyecto') || 
                                        nombreLower.includes('cédula de registro') || 
                                        nombreLower.includes('cedula de registro');
+                const esEnlaceExterno = nombreLower.includes('número nss');
                 
                 return (
                   <tr key={p.id_plantilla} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 text-gray-800 font-medium">{p.nombre_documento}</td>
                     <td className="px-6 py-4">
-                      {p.nombre_archivo ? (
+                      {p.nombre_archivo || esEnlaceExterno ? (
                         <motion.button
                           onClick={() => handlePlantillaClick(p.nombre_documento)}
                           className={`inline-flex items-center justify-center w-10 h-10 ${
                             esVistaEspecial 
                               ? 'bg-purple-500 hover:bg-purple-600' 
+                              : esEnlaceExterno
+                              ? 'bg-blue-600 hover:bg-blue-700'
                               : 'bg-green-500 hover:bg-green-600'
                           } text-white rounded-full transition-colors`}
-                          whileHover={{ rotate: esVistaEspecial ? 0 : 360, scale: esVistaEspecial ? 1.1 : 1 }}
+                          whileHover={{ rotate: esVistaEspecial || esEnlaceExterno ? 0 : 360, scale: 1.1 }}
                           transition={{ duration: 0.3 }}
-                          title={esVistaEspecial ? 'Ir a vista específica' : 'Descargar plantilla'}
+                          title={esVistaEspecial ? 'Ir a vista específica' : esEnlaceExterno ? 'Ir al sitio del IMSS' : 'Descargar plantilla'}
                         >
-                          {esVistaEspecial ? <Eye size={20} /> : <Download size={20} />}
+                          {esVistaEspecial ? <Eye size={20} /> : esEnlaceExterno ? <ExternalLink size={20} /> : <Download size={20} />}
                         </motion.button>
                       ) : (
                         <span className="text-gray-500 italic">No disponible</span>
@@ -244,7 +243,6 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
         </div>
       )}
 
-      {/* Modal de confirmación para subir documento */}
       <AnimatePresence>
         {modalSubirConfirm.open && (
           <motion.div
@@ -286,7 +284,6 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
         )}
       </AnimatePresence>
 
-      {/* Modal para subir documento */}
       <AnimatePresence>
         {modalSubir.open && (
           <motion.div
@@ -334,7 +331,6 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
         )}
       </AnimatePresence>
 
-      {/* Modal para eliminar documento */}
       <AnimatePresence>
         {modalEliminar.open && (
           <motion.div
@@ -374,7 +370,6 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
         )}
       </AnimatePresence>
 
-      {/* Modal para mostrar feedback */}
       <AnimatePresence>
         {modalFeedback.open && (
           <motion.div

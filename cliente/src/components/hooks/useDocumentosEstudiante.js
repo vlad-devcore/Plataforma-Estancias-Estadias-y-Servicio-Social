@@ -29,6 +29,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
           "Reporte Mensual 12",
         ]
       : [
+          "Número NSS", // Movido al inicio para que sea la primera fila
           "Carta de presentación",
           "Carta de aceptación",
           "Cédula de registro",
@@ -53,6 +54,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
           "Reporte Mensual 12": 18,
         }
       : {
+          "Número NSS": 19, // Mapeo para IdTipoDoc 19
           "Carta de presentación": 1,
           "Carta de aceptación": 2,
           "Cédula de registro": 3,
@@ -82,7 +84,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
           IdTipoDoc: tipoDocumentoMap[tipo] || null,
           nombre_documento: tipo,
           nombre_archivo: match?.nombre_archivo || null,
-          estado: match?.estado || 'Activo', // Añadir estado desde la API
+          estado: match?.estado || 'Activo',
         };
       });
 
@@ -218,14 +220,12 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     if (user?.id) {
       fetchPlantillas();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, tipoProceso]);
 
   useEffect(() => {
     if (procesoId) {
       fetchDocumentos();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [procesoId]);
 
   return {

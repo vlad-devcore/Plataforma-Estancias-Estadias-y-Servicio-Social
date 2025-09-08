@@ -12,6 +12,7 @@ const useFormatos = () => {
 
   // Tipos de documentos predefinidos
   const tiposDocumentos = [
+    "Número NSS", 
     "Carta de presentación",
     "Carta de aceptación",
     "Cédula de registro",
@@ -105,7 +106,6 @@ const useFormatos = () => {
     setLoading(true);
     setError(null);
     try {
-      // Abrir en nueva pestaña primero para forzar la descarga
       window.open(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin/download/${encodeURIComponent(
           nombreDocumento
@@ -149,7 +149,6 @@ const useFormatos = () => {
   // Cargar formatos al inicializar
   useEffect(() => {
     fetchFormatos();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {

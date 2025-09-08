@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import useFormatos from '../components/hooks/useFormatos';
-import { Upload, Download, Trash2 } from 'lucide-react';
+import { Upload, Download, Trash2, ExternalLink } from 'lucide-react';
 import Sidebar from '../components_admin/Sidebar';
 import { motion } from 'framer-motion';
 
@@ -68,12 +68,13 @@ const FormatosAdmin = () => {
     }
   };
 
+  const handleExternalLinkClick = () => {
+    window.open('https://serviciosdigitales.imss.gob.mx/gestionAsegurados-web-externo/asignacionNSS', '_blank');
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
       <Sidebar />
-
-      {/* Contenido principal con scroll horizontal */}
       <div className="flex-1 p-4 md:p-8 overflow-x-auto">
         <div className="max-w-7xl mx-auto w-full">
           <motion.h1
@@ -121,7 +122,6 @@ const FormatosAdmin = () => {
             </motion.div>
           )}
 
-          {/* Contenedor de tabla con scroll horizontal */}
           <div className="w-full overflow-x-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -139,98 +139,118 @@ const FormatosAdmin = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {formatos.map((formato) => (
-                    <tr key={formato.nombre_documento} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {formato.nombre_documento}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formato.nombre_archivo ? (
-                          <div className="flex items-center">
-                            <span className="mr-2">
-                              {getFileExtension(formato.nombre_archivo) === 'pdf' ? '📄' : '📝'}
-                            </span>
-                            <span>{formato.nombre_archivo}</span>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">No subido</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => handleToggleEstado(formato.nombre_documento, formato.estado)}
-                          className={`px-3 py-1 rounded-full text-white text-xs font-medium ${
-                            formato.estado === 'Activo' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'
-                          }`}
-                          disabled={loading}
-                        >
-                          {formato.estado}
-                        </motion.button>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formato.ultima_modificacion_manual ? (
-                          new Date(formato.ultima_modificacion_manual).toLocaleString()
-                        ) : (
-                          'Nunca'
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-wrap gap-2">
-                          {formato.nombre_archivo && (
-                            <>
+                  {formatos.map((formato) => {
+                    const esNumeroNSS = formato.nombre_documento.toLowerCase().includes('número nss');
+                    return (
+                      <tr key={formato.nombre_documento} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {formato.nombre_documento}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {esNumeroNSS ? (
+                            <span className="text-gray-400">Enlace externo</span>
+                          ) : formato.nombre_archivo ? (
+                            <div className="flex items-center">
+                              <span className="mr-2">
+                                {getFileExtension(formato.nombre_archivo) === 'pdf' ? '📄' : '📝'}
+                              </span>
+                              <span>{formato.nombre_archivo}</span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">No subido</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleToggleEstado(formato.nombre_documento, formato.estado)}
+                            className={`px-3 py-1 rounded-full text-white text-xs font-medium ${
+                              formato.estado === 'Activo' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'
+                            }`}
+                            disabled={loading}
+                          >
+                            {formato.estado}
+                          </motion.button>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formato.ultima_modificacion_manual ? (
+                            new Date(formato.ultima_modificacion_manual).toLocaleString()
+                          ) : (
+                            'Nunca'
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex flex-wrap gap-2">
+                            {esNumeroNSS ? (
                               <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                onClick={() => downloadFormato(formato.nombre_documento)}
+                                onClick={handleExternalLinkClick}
                                 className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700"
                                 disabled={loading}
                               >
-                                <Download size={14} className="mr-1" />
-                                Descargar
+                                <ExternalLink size={14} className="mr-1" />
+                                Ir al sitio
                               </motion.button>
-                              <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => window.open(`${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin/view/${encodeURIComponent(formato.nombre_documento)}`, '_blank')}
-                                className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700"
-                                disabled={loading}
-                              >
-                                👁️ Ver
-                              </motion.button>
-                              <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => handleDeleteClick(formato.nombre_documento)}
-                                className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-red-600 hover:bg-red-700"
-                                disabled={loading}
-                              >
-                                <Trash2 size={14} className="mr-1" />
-                                Eliminar
-                              </motion.button>
-                            </>
-                          )}
-                          <motion.label
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
-                          >
-                            <Upload size={14} className="mr-1" />
-                            Subir
-                            <input
-                              type="file"
-                              ref={fileInputRef}
-                              className="hidden"
-                              onChange={(e) => handleFileChange(e, formato.nombre_documento)}
-                              accept=".pdf,.doc,.docx"
-                              disabled={loading}
-                            />
-                          </motion.label>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                            ) : (
+                              <>
+                                {formato.nombre_archivo && (
+                                  <>
+                                    <motion.button
+                                      whileHover={{ scale: 1.05 }}
+                                      whileTap={{ scale: 0.95 }}
+                                      onClick={() => downloadFormato(formato.nombre_documento)}
+                                      className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                                      disabled={loading}
+                                    >
+                                      <Download size={14} className="mr-1" />
+                                      Descargar
+                                    </motion.button>
+                                    <motion.button
+                                      whileHover={{ scale: 1.05 }}
+                                      whileTap={{ scale: 0.95 }}
+                                      onClick={() => window.open(`${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin/view/${encodeURIComponent(formato.nombre_documento)}`, '_blank')}
+                                      className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700"
+                                      disabled={loading}
+                                    >
+                                      👁️ Ver
+                                    </motion.button>
+                                    <motion.button
+                                      whileHover={{ scale: 1.05 }}
+                                      whileTap={{ scale: 0.95 }}
+                                      onClick={() => handleDeleteClick(formato.nombre_documento)}
+                                      className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-red-600 hover:bg-red-700"
+                                      disabled={loading}
+                                    >
+                                      <Trash2 size={14} className="mr-1" />
+                                      Eliminar
+                                    </motion.button>
+                                  </>
+                                )}
+                                <motion.label
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  className="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
+                                >
+                                  <Upload size={14} className="mr-1" />
+                                  Subir
+                                  <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    onChange={(e) => handleFileChange(e, formato.nombre_documento)}
+                                    accept=".pdf,.doc,.docx"
+                                    disabled={loading}
+                                  />
+                                </motion.label>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </motion.div>
@@ -238,7 +258,6 @@ const FormatosAdmin = () => {
         </div>
       </div>
 
-      {/* Modal de Confirmación */}
       {showConfirmation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <motion.div
