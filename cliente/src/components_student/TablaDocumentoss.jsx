@@ -55,7 +55,7 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
     } else if (nombreLower.includes('cédula de registro') || nombreLower.includes('cedula de registro')) {
       navigate('/CedulaRegistroForm');
     } else if (nombreLower.includes('número nss')) {
-      window.open('https://serviciosdigitales.imss.gob.mx/gestionAsegurados-web-externo/asignacionNSS', '_blank');
+      window.open('https://serviciosdigitales.imss.gob.mx/gestionAsegurados-web-externo/vigencia', '_blank');
     } else {
       const downloadUrl = `${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin/download/${encodeURIComponent(nombreDocumento)}`;
       window.open(downloadUrl, '_blank');
