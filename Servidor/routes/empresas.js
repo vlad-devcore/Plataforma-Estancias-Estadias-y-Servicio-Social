@@ -32,7 +32,6 @@ const errorHandler = (err, req, res, next) => {
     stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
   };
 
-  // Log detallado en consola
   console.error("Error en la solicitud:", JSON.stringify(errorDetails, null, 2));
 
   res.status(statusCode).json({
@@ -43,7 +42,7 @@ const errorHandler = (err, req, res, next) => {
 
 // Validaciones
 const isValidEmail = (email) => {
-  if (!email || email.trim() === "") return true; // Correo vacío es válido
+  if (!email || email.trim() === "") return true;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email.trim());
 };

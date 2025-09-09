@@ -4,7 +4,6 @@ import { useState } from 'react';
 
 const EmpresaForm = ({ initialData = {}, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
-    empresa_rfc: initialData.empresa_rfc || '',
     empresa_nombre: initialData.empresa_nombre || '',
     empresa_direccion: initialData.empresa_direccion || '',
     empresa_email: initialData.empresa_email || '',
@@ -17,7 +16,6 @@ const EmpresaForm = ({ initialData = {}, onSubmit, onCancel }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.empresa_rfc) newErrors.empresa_rfc = 'El RFC es obligatorio.';
     if (!formData.empresa_nombre) newErrors.empresa_nombre = 'El nombre es obligatorio.';
     if (!formData.empresa_tamano) newErrors.empresa_tamano = 'El tamaño es obligatorio.';
     if (!formData.empresa_sociedad) newErrors.empresa_sociedad = 'La sociedad es obligatoria.';
@@ -41,22 +39,6 @@ const EmpresaForm = ({ initialData = {}, onSubmit, onCancel }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">RFC</label>
-        <motion.input
-          whileFocus={{ scale: 1.02 }}
-          type="text"
-          name="empresa_rfc"
-          value={formData.empresa_rfc}
-          onChange={handleChange}
-          className={`w-full px-3 py-2 border rounded-md bg-blue-50 ${
-            errors.empresa_rfc ? 'border-red-500' : 'border-gray-300'
-          }`}
-          required
-        />
-        {errors.empresa_rfc && <p className="text-red-500 text-sm mt-1">{errors.empresa_rfc}</p>}
-      </div>
-
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
         <motion.input
