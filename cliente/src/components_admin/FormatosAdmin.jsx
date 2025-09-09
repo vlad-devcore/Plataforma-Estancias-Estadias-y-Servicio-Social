@@ -69,7 +69,7 @@ const FormatosAdmin = () => {
   };
 
   const handleExternalLinkClick = () => {
-    window.open('https://serviciosdigitales.imss.gob.mx/gestionAsegurados-web-externo/asignacionNSS', '_blank');
+    window.open('https://serviciosdigitales.imss.gob.mx/gestionAsegurados-web-externo/vigencia', '_blank');
   };
 
   return (
