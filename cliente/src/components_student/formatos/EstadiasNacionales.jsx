@@ -44,7 +44,7 @@ const EstadiasNacionales = () => {
       console.log("🔐 Validación proceso (Estadia Nacional):", data);
 
       if (data.registrado) {
-        if (data.proceso.tipo_proceso === "Estadia Nacional") {
+        if (data.proceso.tipo_proceso === "Estadía Nacional") {
           setIsRegistered(true);
           setProcesoActivo(data.proceso);
         } else if (data.proceso.tipo_proceso) {
