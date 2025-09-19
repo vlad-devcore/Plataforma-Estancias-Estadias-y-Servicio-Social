@@ -47,7 +47,7 @@ body {
   justify-content: center;
   align-items: center;
   background-color: #580000;
-  background-image: url('/public/fondo_UPQROO.PNG');
+  background-image: url('/public/RENDER_UPQROO.png');
   background-size: cover;
   background-position: center;
   position: relative;
@@ -100,8 +100,6 @@ body {
     opacity: 1;
   }
 }
-
-
 
 @keyframes slideInLeft {
   0% {
@@ -279,7 +277,7 @@ label {
 .login-button {
   width: 100%;
   padding: 15px;
-  background-color: var(--primary-color);
+  background-color: #e98138;
   color: var(--text-light);
   border: none;
   border-radius: 6px;
@@ -323,7 +321,7 @@ label {
 }
 
 .login-button:hover {
-  background-color: var(--primary-dark);
+  background-color: #d66f30;
   transform: translateY(-3px);
   box-shadow: 0 6px 12px rgba(139, 0, 0, 0.3);
 }
@@ -373,9 +371,6 @@ label {
 .register-link a:hover::after {
   width: 100%;
 }
-
-
-
 
 .particle:nth-child(1) {
   top: 20%;
@@ -431,8 +426,6 @@ label {
     opacity: 0.7;
   }
 }
-
-
 
 @keyframes shiningEffect {
   0% {
