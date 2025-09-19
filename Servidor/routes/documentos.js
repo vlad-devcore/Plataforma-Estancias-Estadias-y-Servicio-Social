@@ -182,6 +182,30 @@ router.put("/reject/:id_Documento", async (req, res) => {
   }
 });
 
+// Revertir documento a Pendiente
+router.put("/revert/:id_Documento", async (req, res) => {
+  try {
+    console.log(`PUT /api/documentos/revert/:id_Documento - Revertir documento con ID ${req.params.id_Documento}`);
+    const { id_Documento } = req.params;
+
+    const [result] = await pool.query(
+      `UPDATE documentos SET Estatus = 'Pendiente', Comentarios = NULL WHERE id_Documento = ?`,
+      [id_Documento]
+    );
+
+    if (result.affectedRows === 0) {
+      console.log(`Documento con ID ${id_Documento} no encontrado`);
+      return res.status(404).json({ error: "Documento no encontrado" });
+    }
+
+    console.log(`Documento con ID ${id_Documento} revertido a Pendiente`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error al revertir documento:", error.message);
+    res.status(500).json({ error: "Error al revertir documento" });
+  }
+});
+
 // Descargar documento
 router.get("/download/:id_Documento", async (req, res) => {
   try {

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
- 
 
 const useDocumentosAdmin = () => {
   const [documents, setDocuments] = useState([]);
@@ -243,6 +242,35 @@ const useDocumentosAdmin = () => {
     }
   };
 
+  // Revertir documento a Pendiente
+  const revertDocument = async (idDocumento) => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      console.log(`Revirtiendo documento ${idDocumento} a Pendiente`);
+      await axios.put(
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/revert/${idDocumento}`
+      );
+      setSuccess("Documento revertido a Pendiente correctamente");
+      setCurrentPage(1); // Volver a la primera página
+      await fetchDocuments();
+    } catch (err) {
+      console.error(
+        "Error al revertir documento:",
+        err.message,
+        err.response?.status
+      );
+      setError(
+        err.response?.status === 404
+          ? "Endpoint de revertir no encontrado (verifica documentos.js)"
+          : "Error al revertir documento"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Actualizar filtros
   const updateFilters = (newFilters) => {
     console.log("Actualizando filtros:", newFilters);
@@ -278,6 +306,7 @@ const useDocumentosAdmin = () => {
     updateFilters,
     approveDocument,
     rejectDocument,
+    revertDocument,
     resetMessages: () => {
       setError(null);
       setSuccess(null);

@@ -1,9 +1,8 @@
 import { motion } from 'framer-motion';
-import { Search, Eye, CheckCircle, XCircle, File, MessageSquare } from 'lucide-react';
+import { Search, Eye, CheckCircle, XCircle, File, MessageSquare, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import Sidebar from './Sidebar';
 import useDocumentosAdmin from '../components/hooks/useDocumentosAdmin';
- 
 
 const DocumentManagement = () => {
   const {
@@ -17,6 +16,7 @@ const DocumentManagement = () => {
     filters,
     approveDocument,
     rejectDocument,
+    revertDocument,
     updateFilters,
     resetMessages,
     searchTerm,
@@ -25,7 +25,6 @@ const DocumentManagement = () => {
     setCurrentPage,
     totalPages,
     totalDocuments,
-    
   } = useDocumentosAdmin();
 
   const [selectedDocument, setSelectedDocument] = useState(null);
@@ -46,6 +45,12 @@ const DocumentManagement = () => {
   const openConfirmRejectModal = (document) => {
     setSelectedDocument(document);
     setModalType('confirmReject');
+    setModalOpen(true);
+  };
+
+  const openConfirmRevertModal = (document) => {
+    setSelectedDocument(document);
+    setModalType('confirmRevert');
     setModalOpen(true);
   };
 
@@ -76,6 +81,17 @@ const DocumentManagement = () => {
     }
   };
 
+  const handleRevertDocument = async () => {
+    if (selectedDocument) {
+      try {
+        await revertDocument(selectedDocument.id_Documento);
+        setModalOpen(false);
+      } catch (err) {
+        console.error('Error al revertir documento:', err);
+      }
+    }
+  };
+
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     const newValue = value === 'Todos' ? '' : value;
@@ -97,13 +113,9 @@ const DocumentManagement = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
       <Sidebar />
-      
-      {/* Main Content with horizontal scroll */}
       <div className="flex-1 p-4 md:p-8 overflow-x-auto">
         <div className="max-w-7xl mx-auto w-full">
-          {/* Header */}
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -121,7 +133,6 @@ const DocumentManagement = () => {
             </h2>
           </motion.div>
 
-          {/* Messages */}
           {error && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -143,9 +154,7 @@ const DocumentManagement = () => {
             </motion.div>
           )}
 
-          {/* Filters and Search */}
           <div className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Status Filter */}
             <div>
               <label htmlFor="estatus" className="block text-sm font-medium text-gray-700 mb-1">
                 Filtrar por Estatus
@@ -163,8 +172,6 @@ const DocumentManagement = () => {
                 <option value="Rechazado">Rechazado</option>
               </select>
             </div>
-
-            {/* Period Filter */}
             <div>
               <label htmlFor="idPeriodo" className="block text-sm font-medium text-gray-700 mb-1">
                 Filtrar por Periodo
@@ -184,8 +191,6 @@ const DocumentManagement = () => {
                 ))}
               </select>
             </div>
-
-            {/* Document Type Filter */}
             <div>
               <label htmlFor="idTipoDoc" className="block text-sm font-medium text-gray-700 mb-1">
                 Filtrar por Tipo de Documento
@@ -205,8 +210,6 @@ const DocumentManagement = () => {
                 ))}
               </select>
             </div>
-
-            {/* Education Program Filter */}
             <div>
               <label htmlFor="programaEducativo" className="block text-sm font-medium text-gray-700 mb-1">
                 Filtrar por Programa Educativo
@@ -226,8 +229,6 @@ const DocumentManagement = () => {
                 ))}
               </select>
             </div>
-
-            {/* Search */}
             <div className="col-span-1 md:col-span-2 lg:col-span-1">
               <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
                 Buscar
@@ -250,7 +251,6 @@ const DocumentManagement = () => {
             </div>
           </div>
 
-          {/* Table Section with horizontal scroll */}
           <div className="w-full overflow-x-auto">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -352,6 +352,17 @@ const DocumentManagement = () => {
                                   </motion.button>
                                 </>
                               )}
+                              {(doc.Estatus === 'Aprobado' || doc.Estatus === 'Rechazado') && (
+                                <motion.button
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.9 }}
+                                  className="text-purple-600 hover:text-purple-800"
+                                  onClick={() => openConfirmRevertModal(doc)}
+                                  disabled={loading}
+                                >
+                                  <RotateCcw size={18} />
+                                </motion.button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -371,7 +382,6 @@ const DocumentManagement = () => {
                   Mostrando {documents.length} de {totalDocuments} registros
                 </p>
               </div>
-              {/* Pagination Controls */}
               {totalPages > 1 && (
                 <div className="px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
                   <motion.button
@@ -422,7 +432,6 @@ const DocumentManagement = () => {
             </motion.div>
           </div>
 
-          {/* Modal for confirmations, rejection or note viewing */}
           {modalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
               <motion.div 
@@ -446,6 +455,11 @@ const DocumentManagement = () => {
                       <>
                         <XCircle className="text-red-500 mr-2" size={20} />
                         Rechazar Documento
+                      </>
+                    ) : modalType === 'confirmRevert' ? (
+                      <>
+                        <RotateCcw className="text-purple-500 mr-2" size={20} />
+                        Confirmar Revertir a Pendiente
                       </>
                     ) : (
                       <>
@@ -516,7 +530,7 @@ const DocumentManagement = () => {
                   <>
                     <div className="mb-4">
                       <label htmlFor="rejection-note" className="block text-sm font-medium text-gray-700 mb-1">
-                        Motivo del rechazo:
+                        Motivo del rechazo (OBLIGATORIO) :
                       </label>
                       <textarea
                         id="rejection-note"
@@ -544,6 +558,31 @@ const DocumentManagement = () => {
                         disabled={!rejectionNote.trim() || loading}
                       >
                         Rechazar
+                      </motion.button>
+                    </div>
+                  </>
+                ) : modalType === 'confirmRevert' ? (
+                  <>
+                    <p className="text-gray-700 mb-4">
+                      ¿Estás seguro de que deseas revertir el documento "{selectedDocument?.Nombre_TipoDoc}" de la matrícula {selectedDocument?.Matricula} a Pendiente?
+                    </p>
+                    <div className="flex justify-end space-x-2">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setModalOpen(false)}
+                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                      >
+                        Cancelar
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleRevertDocument}
+                        className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors"
+                        disabled={loading}
+                      >
+                        Revertir
                       </motion.button>
                     </div>
                   </>
