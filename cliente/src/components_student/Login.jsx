@@ -89,7 +89,7 @@ const Login = () => {
         </div>
         <div className="login-form-section">
           <div className="login-form-content">
-            <h2>Bienvenidos a la Nueva Plataforma de Estancias, Estadías y Servicio Social</h2>
+            <h2>Bienvenidos a la Plataforma de Estancias, Estadías y Servicio Social</h2>
 
             <form onSubmit={handleSubmit}>
               <div className="form-group">
