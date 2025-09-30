@@ -27,8 +27,8 @@ const useEmpresas = () => {
         `${process.env.REACT_APP_API_ENDPOINT}/api/empresas`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        });      
 
+        });
       // Verificar que data sea un arreglo
       if (!Array.isArray(data)) {
         throw new Error(
