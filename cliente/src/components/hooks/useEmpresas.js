@@ -323,5 +323,5 @@ const useEmpresas = () => {
     setSociedadFilter,
   };
 };
-
+//corregido
 export default useEmpresas;
