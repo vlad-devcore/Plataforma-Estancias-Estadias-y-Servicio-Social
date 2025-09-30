@@ -30,14 +30,11 @@ const upload = multer({ storage });
 // Obtener tipos de documentos
 router.get("/tipo_documento", async (req, res) => {
   try {
-    console.log("GET /api/documentos/tipo_documento - Obtener todos los tipos de documentos");
     const [results] = await pool.query(
       `SELECT IdTipoDoc, Nombre_TipoDoc FROM tipo_documento ORDER BY Nombre_TipoDoc`
     );
-    console.log("Tipos de documentos obtenidos:", results);
     res.json(results);
   } catch (error) {
-    console.error("Error al obtener tipos de documentos:", error.message);
     res.status(500).json({ error: "Error al obtener tipos de documentos" });
   }
 });
@@ -45,14 +42,11 @@ router.get("/tipo_documento", async (req, res) => {
 // Obtener programas educativos
 router.get("/programas_educativos", async (req, res) => {
   try {
-    console.log("GET /api/documentos/programas_educativos - Obtener todos los programas educativos");
     const [results] = await pool.query(
       `SELECT DISTINCT nombre FROM programa_educativo WHERE nombre IS NOT NULL ORDER BY nombre`
     );
-    console.log("Programas educativos obtenidos:", results);
     res.json(results.map(row => row.nombre));
   } catch (error) {
-    console.error("Error al obtener programas educativos:", error.message);
     res.status(500).json({ error: "Error al obtener programas educativos" });
   }
 });
@@ -60,14 +54,11 @@ router.get("/programas_educativos", async (req, res) => {
 // Obtener periodos
 router.get("/periodos", async (req, res) => {
   try {
-    console.log("GET /api/documentos/periodos - Obtener todos los periodos");
     const [results] = await pool.query(
       `SELECT IdPeriodo, Año, Fase FROM periodos ORDER BY Año DESC, Fase`
     );
-    console.log("Periodos obtenidos:", results);
     res.json(results);
   } catch (error) {
-    console.error("Error al obtener periodos:", error.message);
     res.status(500).json({ error: "Error al obtener periodos" });
   }
 });
@@ -75,15 +66,10 @@ router.get("/periodos", async (req, res) => {
 // Subir/actualizar documento
 router.post("/upload", upload.single("archivo"), async (req, res) => {
   try {
-    console.log("POST /api/documentos/upload - Subir/actualizar documento");
-    console.log("Datos recibidos en el body:", req.body);
-    console.log("Archivo recibido:", req.file);
-
     const { IdTipoDoc, id_usuario, Comentarios = "", Estatus = "Pendiente", id_proceso } = req.body;
     const file = req.file;
 
     if (!IdTipoDoc || !id_usuario || !id_proceso || !file) {
-      console.log("Faltan campos obligatorios o archivo");
       return res.status(400).json({ error: "Faltan campos obligatorios o archivo" });
     }
 
@@ -101,7 +87,6 @@ router.post("/upload", upload.single("archivo"), async (req, res) => {
       const oldFilePath = path.join(__dirname, "..", "public", existing[0].RutaArchivo.replace(/^\/Uploads\//, 'uploads/'));
       if (fs.existsSync(oldFilePath)) {
         fs.unlinkSync(oldFilePath);
-        console.log(`Archivo antiguo ${oldFilePath} eliminado`);
       }
 
       // Actualizar documento existente
@@ -110,7 +95,6 @@ router.post("/upload", upload.single("archivo"), async (req, res) => {
          WHERE id_Documento = ?`,
         [nombreArchivo, rutaArchivo, existing[0].id_Documento]
       );
-      console.log(`Documento con ID ${existing[0].id_Documento} actualizado`);
     } else {
       // Insertar nuevo documento
       await pool.query(
@@ -118,12 +102,10 @@ router.post("/upload", upload.single("archivo"), async (req, res) => {
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [nombreArchivo, rutaArchivo, IdTipoDoc, id_usuario, Comentarios, Estatus, id_proceso]
       );
-      console.log("Documento insertado");
     }
 
     res.json({ success: true });
   } catch (error) {
-    console.error("Error al subir documento:", error.message);
     res.status(500).json({ error: "Error al subir documento" });
   }
 });
@@ -131,7 +113,6 @@ router.post("/upload", upload.single("archivo"), async (req, res) => {
 // Aprobar documento
 router.put("/approve/:id_Documento", async (req, res) => {
   try {
-    console.log(`PUT /api/documentos/approve/:id_Documento - Aprobar documento con ID ${req.params.id_Documento}`);
     const { id_Documento } = req.params;
 
     const [result] = await pool.query(
@@ -140,14 +121,11 @@ router.put("/approve/:id_Documento", async (req, res) => {
     );
 
     if (result.affectedRows === 0) {
-      console.log(`Documento con ID ${id_Documento} no encontrado`);
       return res.status(404).json({ error: "Documento no encontrado" });
     }
 
-    console.log(`Documento con ID ${id_Documento} aprobado`);
     res.json({ success: true });
   } catch (error) {
-    console.error("Error al aprobar documento:", error.message);
     res.status(500).json({ error: "Error al aprobar documento" });
   }
 });
@@ -155,12 +133,10 @@ router.put("/approve/:id_Documento", async (req, res) => {
 // Rechazar documento
 router.put("/reject/:id_Documento", async (req, res) => {
   try {
-    console.log(`PUT /api/documentos/reject/:id_Documento - Rechazar documento con ID ${req.params.id_Documento}`);
     const { id_Documento } = req.params;
     const { comentarios } = req.body;
 
     if (!comentarios) {
-      console.log("Falta el motivo del rechazo");
       return res.status(400).json({ error: "Falta el motivo del rechazo" });
     }
 
@@ -170,14 +146,11 @@ router.put("/reject/:id_Documento", async (req, res) => {
     );
 
     if (result.affectedRows === 0) {
-      console.log(`Documento con ID ${id_Documento} no encontrado`);
       return res.status(404).json({ error: "Documento no encontrado" });
     }
 
-    console.log(`Documento con ID ${id_Documento} rechazado`);
     res.json({ success: true });
   } catch (error) {
-    console.error("Error al rechazar documento:", error.message);
     res.status(500).json({ error: "Error al rechazar documento" });
   }
 });
@@ -185,7 +158,6 @@ router.put("/reject/:id_Documento", async (req, res) => {
 // Revertir documento a Pendiente
 router.put("/revert/:id_Documento", async (req, res) => {
   try {
-    console.log(`PUT /api/documentos/revert/:id_Documento - Revertir documento con ID ${req.params.id_Documento}`);
     const { id_Documento } = req.params;
 
     const [result] = await pool.query(
@@ -194,14 +166,11 @@ router.put("/revert/:id_Documento", async (req, res) => {
     );
 
     if (result.affectedRows === 0) {
-      console.log(`Documento con ID ${id_Documento} no encontrado`);
       return res.status(404).json({ error: "Documento no encontrado" });
     }
 
-    console.log(`Documento con ID ${id_Documento} revertido a Pendiente`);
     res.json({ success: true });
   } catch (error) {
-    console.error("Error al revertir documento:", error.message);
     res.status(500).json({ error: "Error al revertir documento" });
   }
 });
@@ -209,7 +178,6 @@ router.put("/revert/:id_Documento", async (req, res) => {
 // Descargar documento
 router.get("/download/:id_Documento", async (req, res) => {
   try {
-    console.log(`GET /api/documentos/download/:id_Documento - Descargar documento con ID ${req.params.id_Documento}`);
     const { id_Documento } = req.params;
     
     const [documento] = await pool.query(
@@ -218,16 +186,12 @@ router.get("/download/:id_Documento", async (req, res) => {
     );
 
     if (documento.length === 0) {
-      console.log(`Documento con ID ${id_Documento} no encontrado`);
       return res.status(404).json({ error: "Documento no encontrado" });
     }
-
-    console.log("Documento encontrado:", documento[0]);
 
     const filePath = path.join(__dirname, "..", "public", documento[0].RutaArchivo.replace(/^\/Uploads\//, 'uploads/'));
 
     if (!fs.existsSync(filePath)) {
-      console.log(`Archivo no encontrado en la ruta: ${filePath}`);
       return res.status(404).json({ error: "Archivo no encontrado" });
     }
 
@@ -254,7 +218,6 @@ router.get("/download/:id_Documento", async (req, res) => {
     const fileStream = fs.createReadStream(filePath);
     fileStream.pipe(res);
   } catch (error) {
-    console.error("Error al descargar documento:", error.message);
     res.status(500).json({ error: "Error al descargar documento" });
   }
 });
@@ -262,7 +225,6 @@ router.get("/download/:id_Documento", async (req, res) => {
 // Eliminar documento
 router.delete("/:id_Documento", async (req, res) => {
   try {
-    console.log(`DELETE /api/documentos/:id_Documento - Eliminar documento con ID ${req.params.id_Documento}`);
     const { id_Documento } = req.params;
 
     const [documento] = await pool.query(
@@ -271,18 +233,12 @@ router.delete("/:id_Documento", async (req, res) => {
     );
 
     if (documento.length === 0) {
-      console.log(`Documento con ID ${id_Documento} no encontrado`);
       return res.status(404).json({ error: "Documento no encontrado" });
     }
-
-    console.log("Documento encontrado para eliminación:", documento[0]);
 
     const filePath = path.join(__dirname, "..", "public", documento[0].RutaArchivo.replace(/^\/Uploads\//, 'uploads/'));
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
-      console.log(`Archivo ${filePath} eliminado correctamente`);
-    } else {
-      console.log(`Archivo no encontrado en ${filePath}, continuando con eliminación en BD`);
     }
 
     await pool.query(
@@ -290,10 +246,8 @@ router.delete("/:id_Documento", async (req, res) => {
       [id_Documento]
     );
 
-    console.log(`Documento con ID ${id_Documento} eliminado de la base de datos`);
     res.json({ success: true });
   } catch (error) {
-    console.error("Error al eliminar documento:", error.message);
     res.status(500).json({ error: "Error al eliminar documento" });
   }
 });
@@ -301,7 +255,6 @@ router.delete("/:id_Documento", async (req, res) => {
 // Obtener todos los documentos
 router.get("/", async (req, res) => {
   try {
-    console.log("GET /api/documentos - Obtener todos los documentos");
     const { estatus, idPeriodo, id_proceso, id_usuario, idTipoDoc, programaEducativo } = req.query;
 
     let query = `
@@ -357,14 +310,9 @@ router.get("/", async (req, res) => {
       query += ' WHERE ' + conditions.join(' AND ');
     }
 
-    console.log("Consulta SQL:", query);
-    console.log("Parámetros:", queryParams);
-
     const [results] = await pool.query(query, queryParams);
-    console.log("Documentos obtenidos:", results);
     res.json(results);
   } catch (error) {
-    console.error("Error al obtener documentos:", error.message);
     res.status(500).json({ error: "Error al obtener documentos" });
   }
 });

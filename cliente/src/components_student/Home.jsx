@@ -108,7 +108,6 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
-    console.log('Services:', services);
   }, [services]);
 
   const handleVideoGuideClick = () => {

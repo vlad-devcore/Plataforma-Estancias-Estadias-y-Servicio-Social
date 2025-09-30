@@ -50,8 +50,7 @@ const Estadias = () => {
       const { data } = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/procesos/validar/${user.id}/${periodoId}`
       );
-      console.log("🔐 Validación proceso (Estadía):", data);
-
+      
       if (data.registrado) {
         if (data.proceso.tipo_proceso === "Estadía") {
           // Proceso registrado es Estadía, mostrar tabla

@@ -115,8 +115,7 @@ router.delete("/:id_proceso", async (req, res) => {
 
 // Obtener todos los procesos
 router.get("/", async (req, res) => {
-  try {
-    console.log("Consultando todos los procesos");
+  try {    
     const [procesos] = await pool.query(
       `SELECT 
          p.id_proceso,
@@ -134,8 +133,7 @@ router.get("/", async (req, res) => {
        LEFT JOIN users u ON aa.id_user = u.id_user
        LEFT JOIN programa_educativo pr ON p.id_programa = pr.id_programa
        LEFT JOIN periodos pe ON p.id_periodo = pe.IdPeriodo`
-    );
-    console.log(`Procesos encontrados: ${JSON.stringify(procesos, null, 2)}`);
+    );    
     res.status(200).json(procesos);
   } catch (error) {
     console.error("Error al obtener procesos:", error);
@@ -162,8 +160,7 @@ router.get("/estudiante/:id_estudiante/periodo/:id_periodo", async (req, res) =>
 // Obtener procesos por id_user
 router.get("/por-usuario/:id_user", async (req, res) => {
   const { id_user } = req.params;
-  try {
-    console.log(`Consultando procesos para id_user: ${id_user}`);
+  try {    
     const [procesos] = await pool.query(
       `SELECT 
          p.id_proceso,
@@ -184,7 +181,6 @@ router.get("/por-usuario/:id_user", async (req, res) => {
        WHERE e.id_user = ?`,
       [id_user]
     );
-    console.log(`Procesos encontrados: ${JSON.stringify(procesos, null, 2)}`);
     res.status(200).json(procesos);
   } catch (error) {
     console.error("Error al obtener procesos por usuario:", error);
