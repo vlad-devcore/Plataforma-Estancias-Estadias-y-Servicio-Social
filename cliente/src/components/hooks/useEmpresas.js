@@ -17,7 +17,6 @@ const useEmpresas = () => {
     try {
       setLoading(true);
       setError(null);
-      // No reseteamos success aquí para que persista después de crear/importar
       const token = localStorage.getItem("token");
       if (!token) {
         throw new Error(
@@ -32,12 +31,12 @@ const useEmpresas = () => {
       );
       
       // Verificar que data sea un arreglo
+
       if (!Array.isArray(data)) {
         throw new Error(
           "Formato de respuesta inválido: se esperaba un arreglo de empresas"
         );
       }
-      // Filtrar localmente por búsqueda y sociedad
       const filtered = data.filter((empresa) => {
         const matchesSearch =
           (empresa.empresa_nombre?.toLowerCase() || "").includes(
@@ -51,7 +50,6 @@ const useEmpresas = () => {
           empresa.empresa_sociedad === sociedadFilter;
         return matchesSearch && matchesSociedad;
       });
-      // Calcular paginación local
       const total = filtered.length;
       const pages = Math.ceil(total / companiesPerPage);
       const startIndex = (currentPage - 1) * companiesPerPage;
@@ -105,9 +103,9 @@ const useEmpresas = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      setCurrentPage(1); // Volver a la primera página
+      setCurrentPage(1);
       setSuccess("Empresa creada con éxito.");
-      await fetchCompanies(); // Refrescar datos
+      await fetchCompanies();
       return response.data;
     } catch (err) {
       console.error("Error creating company:", err);
@@ -148,9 +146,9 @@ const useEmpresas = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      setCurrentPage(1); // Volver a la primera página
+      setCurrentPage(1);
       setSuccess("Empresa actualizada con éxito.");
-      await fetchCompanies(); // Refrescar datos
+      await fetchCompanies();
     } catch (err) {
       console.error("Error updating company:", err);
       setError(
@@ -180,9 +178,9 @@ const useEmpresas = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      setCurrentPage(1); // Volver a la primera página
+      setCurrentPage(1);
       setSuccess("Empresa eliminada con éxito.");
-      await fetchCompanies(); // Refrescar datos
+      await fetchCompanies();
       return response.data;
     } catch (err) {
       console.error("Error deleting company:", err);
@@ -220,8 +218,7 @@ const useEmpresas = () => {
         }
       );
 
-      setCurrentPage(1); // Volver a la primera página
-      // Construir mensaje amigable
+      setCurrentPage(1);
       const totalOmitted =
         data.existingCount +
         data.invalidEmailCount +
@@ -283,7 +280,7 @@ const useEmpresas = () => {
       }
 
       setSuccess(successMessage);
-      await fetchCompanies(); // Refrescar datos
+      await fetchCompanies();
       return data;
     } catch (err) {
       console.error("Error importing companies:", err);
