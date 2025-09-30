@@ -28,8 +28,9 @@ const useEmpresas = () => {
         {
           headers: { Authorization: `Bearer ${token}` },
 
-        });
-      // Verificar que data sea un arreglo
+        }
+      );
+            // Verificar que data sea un arreglo
       if (!Array.isArray(data)) {
         throw new Error(
           "Formato de respuesta inválido: se esperaba un arreglo de empresas"
