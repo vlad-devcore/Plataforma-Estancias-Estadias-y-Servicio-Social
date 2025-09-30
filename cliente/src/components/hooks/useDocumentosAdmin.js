@@ -25,23 +25,14 @@ const useDocumentosAdmin = () => {
   // Obtener todos los periodos
   const fetchPeriodos = async () => {
     try {
-      console.log(
-        "Fetching periodos from ${process.env.REACT_APP_API_ENDPOINT}/api/documentos/periodos"
-      );
       const { data } = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/periodos`
       );
-      console.log("Periodos recibidos:", data);
       setPeriodos(data);
       if (data.length === 0) {
         setError("No se encontraron periodos");
       }
     } catch (err) {
-      console.error(
-        "Error al obtener periodos:",
-        err.message,
-        err.response?.status
-      );
       setError(
         err.response?.status === 404
           ? "Endpoint de periodos no encontrado (verifica documentos.js)"
@@ -53,23 +44,14 @@ const useDocumentosAdmin = () => {
   // Obtener tipos de documentos
   const fetchTiposDocumento = async () => {
     try {
-      console.log(
-        "Fetching tipos de documento from ${process.env.REACT_APP_API_ENDPOINT}/api/documentos/tipo_documento"
-      );
       const { data } = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/tipo_documento`
       );
-      console.log("Tipos de documento recibidos:", data);
       setTiposDocumento(data);
       if (data.length === 0) {
         setError("No se encontraron tipos de documento");
       }
     } catch (err) {
-      console.error(
-        "Error al obtener tipos de documento:",
-        err.message,
-        err.response?.status
-      );
       setError(
         err.response?.status === 404
           ? "Endpoint de tipos de documento no encontrado (verifica documentos.js)"
@@ -81,23 +63,14 @@ const useDocumentosAdmin = () => {
   // Obtener programas educativos
   const fetchProgramasEducativos = async () => {
     try {
-      console.log(
-        "Fetching programas educativos from ${process.env.REACT_APP_API_ENDPOINT}/api/documentos/programas_educativos"
-      );
       const { data } = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/programas_educativos`
       );
-      console.log("Programas educativos recibidos:", data);
       setProgramasEducativos(data);
       if (data.length === 0) {
         setError("No se encontraron programas educativos");
       }
     } catch (err) {
-      console.error(
-        "Error al obtener programas educativos:",
-        err.message,
-        err.response?.status
-      );
       setError(
         err.response?.status === 404
           ? "Endpoint de programas educativos no encontrado (verifica documentos.js)"
@@ -111,24 +84,16 @@ const useDocumentosAdmin = () => {
     setLoading(true);
     setError(null);
     try {
-      console.log(
-        "Fetching documents for admin with filters:",
-        filters,
-        "searchTerm:",
-        searchTerm
-      );
       const params = {
         estatus: filters.estatus || undefined,
         idPeriodo: filters.idPeriodo ? Number(filters.idPeriodo) : undefined,
         idTipoDoc: filters.idTipoDoc ? Number(filters.idTipoDoc) : undefined,
         programaEducativo: filters.programaEducativo || undefined,
       };
-      console.log("Parámetros enviados al backend:", params);
       const { data } = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos`,
         { params }
       );
-      console.log("Documentos recibidos:", data);
       if (!Array.isArray(data)) {
         throw new Error(
           "Formato de respuesta inválido: se esperaba un arreglo de documentos"
@@ -162,11 +127,6 @@ const useDocumentosAdmin = () => {
       setTotalPages(pages);
       setTotalDocuments(total);
     } catch (err) {
-      console.error(
-        "Error al obtener documentos:",
-        err.message,
-        err.response?.status
-      );
       setError(
         err.response?.status === 404
           ? "Endpoint de documentos no encontrado (verifica documentos.js)"
@@ -187,7 +147,6 @@ const useDocumentosAdmin = () => {
     setError(null);
     setSuccess(null);
     try {
-      console.log(`Aprobando documento ${idDocumento}`);
       await axios.put(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/approve/${idDocumento}`
       );
@@ -195,11 +154,6 @@ const useDocumentosAdmin = () => {
       setCurrentPage(1); // Volver a la primera página
       await fetchDocuments();
     } catch (err) {
-      console.error(
-        "Error al aprobar documento:",
-        err.message,
-        err.response?.status
-      );
       setError(
         err.response?.status === 404
           ? "Endpoint de aprobación no encontrado (verifica documentos.js)"
@@ -216,9 +170,6 @@ const useDocumentosAdmin = () => {
     setError(null);
     setSuccess(null);
     try {
-      console.log(
-        `Rechazando documento ${idDocumento} con comentarios: ${comentarios}`
-      );
       await axios.put(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/reject/${idDocumento}`,
         { comentarios }
@@ -227,11 +178,6 @@ const useDocumentosAdmin = () => {
       setCurrentPage(1); // Volver a la primera página
       await fetchDocuments();
     } catch (err) {
-      console.error(
-        "Error al rechazar documento:",
-        err.message,
-        err.response?.status
-      );
       setError(
         err.response?.status === 404
           ? "Endpoint de rechazo no encontrado (verifica documentos.js)"
@@ -248,7 +194,6 @@ const useDocumentosAdmin = () => {
     setError(null);
     setSuccess(null);
     try {
-      console.log(`Revirtiendo documento ${idDocumento} a Pendiente`);
       await axios.put(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/revert/${idDocumento}`
       );
@@ -256,11 +201,6 @@ const useDocumentosAdmin = () => {
       setCurrentPage(1); // Volver a la primera página
       await fetchDocuments();
     } catch (err) {
-      console.error(
-        "Error al revertir documento:",
-        err.message,
-        err.response?.status
-      );
       setError(
         err.response?.status === 404
           ? "Endpoint de revertir no encontrado (verifica documentos.js)"
@@ -273,7 +213,6 @@ const useDocumentosAdmin = () => {
 
   // Actualizar filtros
   const updateFilters = (newFilters) => {
-    console.log("Actualizando filtros:", newFilters);
     setFilters((prev) => ({ ...prev, ...newFilters }));
     setCurrentPage(1); // Resetear a la primera página
   };

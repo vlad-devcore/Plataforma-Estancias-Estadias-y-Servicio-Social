@@ -36,8 +36,7 @@ const Estancia1 = () => {
       const { data } = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/procesos/validar/${user.id}/${periodoId}`
       );
-      console.log("Validación proceso:", data);
-
+      
       if (data.registrado) {
         if (data.proceso.tipo_proceso === "Estancia I") {
           setIsRegistered(true);

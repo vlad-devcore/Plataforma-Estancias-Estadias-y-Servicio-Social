@@ -13,7 +13,6 @@ const PeriodoForm = ({ mode, initialData = {}, onSubmit, onCancel }) => {
   const [errors, setErrors] = useState({});
 
   const validateForm = () => {
-    console.log('Validando formulario con datos:', formData);
     const newErrors = {};
     if (!formData.Año) newErrors.Año = 'El año es obligatorio.';
     if (!formData.FechaInicio) newErrors.FechaInicio = 'La fecha de inicio es obligatoria.';
@@ -23,20 +22,16 @@ const PeriodoForm = ({ mode, initialData = {}, onSubmit, onCancel }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    console.log(`Cambiando campo ${name} a: ${value}`);
     setFormData({ ...formData, [name]: value });
     setErrors({ ...errors, [name]: value ? '' : `${name} es obligatorio.` });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Intentando enviar formulario con datos:', formData);
     const validationErrors = validateForm();
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length === 0) {
       onSubmit(formData);
-    } else {
-      console.log('Errores de validación:', validationErrors);
     }
   };
 

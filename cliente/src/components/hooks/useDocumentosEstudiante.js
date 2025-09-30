@@ -70,12 +70,10 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     setLoading(true);
     setError(null);
     try {
-      console.log("Fetching plantillas para tipoProceso:", tipoProceso);
       const response = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin`
       );
       const data = response.data;
-      console.log("Plantillas recibidas:", data);
 
       const combined = tiposDocumentos.map((tipo) => {
         const match = data.find((d) => d.nombre_documento === tipo);
@@ -90,7 +88,6 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
 
       setPlantillas(combined);
     } catch (err) {
-      console.error("Error al obtener plantillas:", err);
       setError(err.response?.data?.error || "Error al obtener plantillas");
     } finally {
       setLoading(false);
@@ -99,26 +96,20 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
 
   const fetchDocumentos = async () => {
     if (!procesoId || !user?.id) {
-      console.log("No hay procesoId o id_usuario, omitiendo fetchDocumentos");
       setError("No hay proceso activo o usuario no autenticado");
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      console.log(
-        `Fetching documentos para proceso ${procesoId}, usuario ${user.id}`
-      );
       const { data } = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos`,
         {
           params: { id_proceso: procesoId, id_usuario: user.id },
         }
       );
-      console.log("Documentos recibidos:", data);
       setDocumentos(data);
     } catch (err) {
-      console.error("Error al obtener documentos:", err);
       setError(
         err.response?.data?.error || "Error al obtener documentos subidos"
       );
@@ -162,11 +153,6 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     formData.append("id_proceso", procesoId);
 
     try {
-      console.log("Subiendo documento:", {
-        IdTipoDoc: idTipoDoc,
-        id_usuario: user.id,
-        id_proceso: procesoId,
-      });
       await axios.post(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/upload`,
         formData,
@@ -177,7 +163,6 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
       setSuccess("Documento subido correctamente");
       await fetchDocumentos();
     } catch (err) {
-      console.error("Error al subir documento:", err);
       setError(err.response?.data?.error || "Error al subir documento");
     } finally {
       setLoading(false);
@@ -193,14 +178,12 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     setError(null);
     setSuccess(null);
     try {
-      console.log(`Eliminando documento ${idDocumento}`);
       await axios.delete(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/${idDocumento}`
       );
       setSuccess("Documento eliminado correctamente");
       await fetchDocumentos();
     } catch (err) {
-      console.error("Error al eliminar documento:", err);
       setError(err.response?.data?.error || "Error al eliminar documento");
     } finally {
       setLoading(false);

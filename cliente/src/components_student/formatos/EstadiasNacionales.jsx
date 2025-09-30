@@ -41,8 +41,7 @@ const EstadiasNacionales = () => {
       const { data } = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/procesos/validar/${user.id}/${periodoId}`
       );
-      console.log("🔐 Validación proceso (Estadia Nacional):", data);
-
+      
       if (data.registrado) {
         if (data.proceso.tipo_proceso === "Estadía Nacional") {
           setIsRegistered(true);

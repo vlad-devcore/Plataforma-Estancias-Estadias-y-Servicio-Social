@@ -118,7 +118,6 @@ const UserForm = ({
       } else {
         // Excluir confirmPassword del objeto enviado
         const { confirmPassword, ...submitData } = formData;
-        console.log('Datos enviados desde UserForm:', submitData);
         onSubmit(submitData);
       }
     }

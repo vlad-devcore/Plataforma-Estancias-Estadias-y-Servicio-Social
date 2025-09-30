@@ -31,10 +31,7 @@ const ServicioSocial = () => {
     try {
       if (!user?.id) throw new Error("Usuario no autenticado");
 
-      console.log("🔍 Depuración: Iniciando fetchProcesoActivo, user.id:", user.id);
-
       const { data: periodos } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/periodos`);
-      console.log("🔍 Depuración: Periodos recibidos:", periodos);
       const periodoActivo = periodos.find((p) => p.EstadoActivo === "Activo");
       setPeriodoExpirado(!periodoActivo);
 
@@ -50,66 +47,51 @@ const ServicioSocial = () => {
       const { data } = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/procesos/validar/${user.id}/${periodoId}`
       );
-      console.log("🔐 Validación proceso (Servicio Social):", data);
 
       if (data.registrado) {
         if (data.proceso.tipo_proceso === "Servicio Social") {
           setIsRegistered(true);
           setProcesoActivo(data.proceso);
-          console.log("🔍 Depuración: Proceso registrado como Servicio Social, procesoActivo:", data.proceso);
         } else if (data.proceso.tipo_proceso) {
           setError(`Ya estás registrado en ${data.proceso.tipo_proceso} para este periodo.`);
           setIsRegistered(false);
           setProcesoActivo(null);
-          console.log("🔍 Depuración: Registrado en otro proceso:", data.proceso.tipo_proceso);
         } else {
           setIsRegistered(false);
           setProcesoActivo(data.proceso);
           setShowModal(true);
-          console.log("🔍 Depuración: Proceso incompleto, mostrando modal");
         }
       } else {
         setIsRegistered(false);
         setProcesoActivo(null);
         setShowModal(true);
-        console.log("🔍 Depuración: No hay proceso, mostrando modal para registrar");
       }
     } catch (err) {
       setError(err.response?.data?.error || "Error al verificar el proceso.");
       setIsRegistered(false);
       setProcesoActivo(null);
-      console.error("🚨 Error al verificar registro (Servicio Social):", err);
     } finally {
       setLoading(false);
-      console.log("🔍 Depuración: fetchProcesoActivo finalizado, isRegistered:", isRegistered, "procesoActivo:", procesoActivo);
     }
   };
 
   useEffect(() => {
-    console.log("🔍 Depuración: Ejecutando useEffect para fetchProcesoActivo");
     fetchProcesoActivo();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    console.log("🔍 Depuración: reportesMensuales:", reportesMensuales);
-  }, [reportesMensuales]);
-
   const handleOpenModal = () => {
     setShowModal(true);
-    console.log("🔍 Depuración: Abriendo modal");
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
-    console.log("🔍 Depuración: Cerrando modal");
   };
 
   const handleSuccess = async () => {
     setIsRegistered(true);
     await fetchProcesoActivo();
     handleCloseModal();
-    console.log("🔍 Depuración: Registro exitoso, actualizando proceso");
   };
 
   return (

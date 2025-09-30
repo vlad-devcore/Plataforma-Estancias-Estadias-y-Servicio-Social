@@ -29,7 +29,12 @@ const useEmpresas = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+<<<<<<< Updated upstream
       console.log("API response:", data);
+=======
+      
+      // Verificar que data sea un arreglo
+>>>>>>> Stashed changes
       if (!Array.isArray(data)) {
         throw new Error(
           "Formato de respuesta inválido: se esperaba un arreglo de empresas"

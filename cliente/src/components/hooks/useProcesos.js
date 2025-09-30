@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
- 
 
 const useProcesos = () => {
   const [procesos, setProcesos] = useState([]);
@@ -17,15 +16,12 @@ const useProcesos = () => {
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
-    console.log('Usuario cargado desde localStorage:', storedUser);
     setUser(storedUser);
   }, []);
 
   const fetchProcesos = async () => {
     try {
-      console.log('Haciendo solicitud para obtener todos los procesos');
       const { data } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos`);
-      console.log('Respuesta del backend:', JSON.stringify(data, null, 2));
       setProcesos(data);
       setTotalProcesos(data.length);
       setTotalPages(Math.ceil(data.length / processesPerPage));
@@ -34,7 +30,6 @@ const useProcesos = () => {
     } catch (err) {
       const errorMessage = err.response?.data?.details || err.response?.data?.message || err.message;
       setError(`Error al cargar procesos: ${errorMessage}`);
-      console.error("Error en fetchProcesos:", err);
     } finally {
       setLoading(false);
     }
@@ -77,7 +72,6 @@ const useProcesos = () => {
 
   const createProceso = async (formData, tipoProceso) => {
     if (!user?.id) {
-      console.error('No se encontró user.id en createProceso');
       throw new Error("Usuario no encontrado");
     }
 
@@ -91,20 +85,17 @@ const useProcesos = () => {
     };
 
     try {
-      console.log('Creando proceso con payload:', payload);
       const { data } = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos`, payload);
       await fetchProcesos();
       setSuccess("Proceso creado con éxito");
       return data;
     } catch (err) {
-      console.error('Error en createProceso:', err);
       throw err.response?.data || err.message;
     }
   };
 
   const updateProceso = async (id_proceso, formData) => {
     if (!user?.id) {
-      console.error('No se encontró user.id en updateProceso');
       throw new Error("Usuario no encontrado");
     }
 
@@ -115,12 +106,10 @@ const useProcesos = () => {
     };
 
     try {
-      console.log(`Actualizando proceso ${id_proceso} con payload:`, payload);
       await axios.put(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos/${id_proceso}`, payload);
       setSuccess("Proceso actualizado con éxito");
       await fetchProcesos();
     } catch (err) {
-      console.error('Error en updateProceso:', err);
       setError(err.response?.data?.message || "Error al actualizar el proceso");
       throw err;
     }
@@ -128,12 +117,10 @@ const useProcesos = () => {
 
   const deleteProceso = async (id_proceso) => {
     try {
-      console.log(`Eliminando proceso ${id_proceso}`);
       await axios.delete(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos/${id_proceso}`);
       setSuccess("Proceso eliminado con éxito");
       await fetchProcesos();
     } catch (err) {
-      console.error('Error en deleteProceso:', err);
       setError(err.response?.data?.message || "Error al eliminar el proceso");
       throw err;
     }
@@ -141,17 +128,13 @@ const useProcesos = () => {
 
   const validarRegistroEnPeriodo = async (idPeriodo) => {
     if (!user?.id) {
-      console.error('No se encontró user.id en validarRegistroEnPeriodo');
       throw new Error("Usuario no encontrado");
     }
 
     try {
-      console.log(`Validando registro para id_user: ${user.id}, id_periodo: ${idPeriodo}`);
       const { data } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos/validar/${user.id}/${idPeriodo}`);
-      console.log('Respuesta de validarRegistroEnPeriodo:', data);
       return data;
     } catch (err) {
-      console.error('Error en validarRegistroEnPeriodo:', err);
       throw err.response?.data || err.message;
     }
   };
@@ -163,12 +146,12 @@ const useProcesos = () => {
 
   useEffect(() => {
     fetchProcesos();
-     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {
     procesos,
-    filteredProcesos, // Devolvemos los procesos filtrados y paginados
+    filteredProcesos,
     loading,
     error,
     success,

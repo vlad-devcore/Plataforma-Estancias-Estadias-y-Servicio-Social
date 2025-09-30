@@ -28,7 +28,7 @@ const useUsers = () => {
           search: searchTerm || undefined,
           role: rolFilter !== 'Todos' ? rolFilter : undefined
         };
-        console.log('Fetching users with params:', params);
+        
         const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/users`, {
           headers: { Authorization: `Bearer ${token}` },
           params

@@ -34,7 +34,6 @@ const useEstadisticas = () => {
 
         // Obtener procesos
         const { data: procesos } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos`);
-        console.log('Datos crudos de procesos:', procesos); // Nuevo log
 
         // Obtener total de usuarios
         const { data: estudiantes } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/estudiantes`);
@@ -79,28 +78,17 @@ const useEstadisticas = () => {
 
             globales[clave] += 1;
 
-            // Depuración detallada con conversión a número
-            const idPeriodoProc = Number(proceso.id_periodo); // Intenta otros nombres si falla
+            const idPeriodoProc = Number(proceso.id_periodo);
             const idPeriodoActivo = Number(periodoActivo.IdPeriodo);
-            console.log('Procesando:', proceso, 'Clave:', clave, 'id_periodo:', idPeriodoProc, 'Periodo Activo:', idPeriodoActivo);
             if (idPeriodoProc === idPeriodoActivo) {
-              console.log('Coincidencia encontrada para:', clave);
               periodoActual[clave] += 1;
             }
           }
         });
 
-        console.log('Periodos:', periodos);
-        console.log('Periodo Activo:', periodoActivo);
-        console.log('Procesos:', procesos);
-        console.log('Estudiantes:', estudiantes);
-        console.log('Periodo Actual Contadores:', periodoActual);
-        console.log('Globales Contadores:', globales);
-
         setEstadisticas({ periodoActual, globales });
       } catch (err) {
         setError(err.response?.data?.error || 'Error al obtener estadísticas');
-        console.error('Error en useEstadisticas:', err);
       } finally {
         setLoading(false);
       }

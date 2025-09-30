@@ -41,7 +41,6 @@ const Estancia2 = () => {
       const { data } = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/procesos/validar/${user.id}/${periodoId}`
       );
-      console.log("🔐 Validación proceso (Estancia II):", data);
 
       if (data.registrado) {
         if (data.proceso.tipo_proceso === "Estancia II") {
@@ -58,7 +57,6 @@ const Estancia2 = () => {
       }
     } catch (err) {
       setError(err.response?.data?.error || "Error al verificar el proceso.");
-      console.error("Error al verificar registro (Estancia II):", err);
     } finally {
       setLoading(false);
     }
@@ -73,19 +71,15 @@ const Estancia2 = () => {
     const checkRegistro = async () => {
       try {
         const user = JSON.parse(localStorage.getItem("user"));
-        console.log("🔐 Usuario guardado en localStorage (Estancia 2):", user);
         const { data } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos/por-usuario/${user.id}`);
-        console.log("🔐 Procesos encontrados (Estancia 2):", data);
         const yaRegistrado = data.some(p => p.tipo_proceso === "Estancia II");
-        console.log("🔐 Registro encontrado (Estancia 2):", yaRegistrado);
         setIsRegistered(yaRegistrado);
       } catch (err) {
-        console.error("Error al verificar registros (Estancia 2):", err);
       }
     };
 
     checkRegistro();
-  }, []); // Solo se ejecuta una vez cuando el componente se monta
+  }, []);
 
   const handleOpenModal = () => {
     setShowModal(true);

@@ -25,14 +25,12 @@ const upload = multer({
 const authMiddleware = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
   if (!token) {
-    console.error('Token no proporcionado');
     return res.status(401).json({ error: 'Acceso denegado, token requerido' });
   }
   try {
     // Asume que verificas el token con jwt.verify
     next();
   } catch (error) {
-    console.error('Token inválido:', error.message);
     res.status(401).json({ error: 'Token inválido' });
   }
 };
@@ -76,8 +74,6 @@ router.get('/', authMiddleware, async (req, res) => {
     const search = req.query.search ? `%${req.query.search}%` : '%';
     const role = req.query.role || null;
 
-    console.log(`GET /api/users - Página: ${page}, Límite: ${limit}, Búsqueda: ${search}, Rol: ${role || 'todos'}`);
-
     let query = `
       SELECT id_user, email, nombre, apellido_paterno, apellido_materno, genero, role
       FROM users
@@ -114,16 +110,13 @@ router.get('/', authMiddleware, async (req, res) => {
       totalPages: Math.ceil(total / limit)
     });
   } catch (error) {
-    console.error('Error al obtener usuarios:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 // Inserción masiva desde CSV
 router.post('/upload', authMiddleware, upload.single('file'), async (req, res) => {
-  console.log('POST /api/users/upload - Iniciar carga de CSV:', req.file?.originalname);
   if (!req.file) {
-    console.error('No se proporcionó un archivo CSV');
     return res.status(400).json({ error: 'No se ha proporcionado un archivo CSV' });
   }
 
@@ -142,27 +135,14 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
 
     // Leer el CSV
     const results = [];
-    let headersLogged = false;
     const stream = Readable.from(utf8Buffer);
     await new Promise((resolve, reject) => {
       stream
-        .pipe(csv({ separator: ',', mapHeaders: ({ header }) => {
-          const normalizedHeader = header.trim().toLowerCase();
-          if (!headersLogged) {
-            console.log('Encabezados del CSV:', normalizedHeader);
-            headersLogged = true;
-          }
-          return normalizedHeader;
-        }, encoding: 'utf-8' }))
-        .on('data', (data) => {
-          console.log('Fila cruda del CSV:', data);
-          results.push(data);
-        })
+        .pipe(csv({ separator: ',', mapHeaders: ({ header }) => header.trim().toLowerCase(), encoding: 'utf-8' }))
+        .on('data', (data) => results.push(data))
         .on('end', resolve)
         .on('error', reject);
     });
-
-    console.log(`Procesando ${results.length} filas del CSV`);
 
     // Procesar cada usuario individualmente
     for (const [index, row] of results.entries()) {
@@ -175,8 +155,6 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
         role: row.role?.trim(),
         password: row.password?.trim() || getEmailPrefix(row.email),
       };
-
-      console.log(`Validando fila ${index + 2}:`, userData);
 
       // Validar datos del usuario
       const validationError = validateUserData(userData, false); // No requerir password
@@ -207,7 +185,6 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
         }
 
         // Generar contraseña
-        console.log(`Generando contraseña para ${userData.email}: ${userData.password}`);
         const hashedPassword = await bcrypt.hash(userData.password, 10);
 
         // Insertar usuario en `users`
@@ -249,15 +226,11 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
 
         await connection.commit();
         insertedCount++;
-        console.log(`Usuario insertado: ${userData.email}, id_user: ${userId}`);
       } catch (userError) {
         await connection.rollback();
-        console.error(`Error al insertar usuario en fila ${index + 2} (${userData.email}):`, userError.message);
         errors.push(`Fila ${index + 2}: Error al insertar usuario: ${userError.message}`);
       }
     }
-
-    console.log(`Usuarios insertados: ${insertedCount}, Existentes: ${existingEmails.length}, Duplicados: ${duplicateEmails.length}, Errores: ${errors.length}`);
 
     // Preparar respuesta
     const response = {
@@ -271,7 +244,6 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
 
     res.status(201).json(response);
   } catch (error) {
-    console.error('Error general al procesar el archivo CSV:', error.message);
     res.status(400).json({ error: error.message || 'Error al procesar el archivo CSV', details: errors });
   } finally {
     connection.release();
@@ -282,12 +254,10 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
 router.get('/:id_user', authMiddleware, async (req, res) => {
   const { id_user } = req.params;
   try {
-    console.log(`GET /api/users/${id_user} - Obtener usuario por ID`);
     const [results] = await pool.query('SELECT * FROM users WHERE id_user = ?', [id_user]);
     if (results.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
     res.status(200).json(results[0]);
   } catch (error) {
-    console.error('Error al obtener el usuario:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
@@ -295,11 +265,9 @@ router.get('/:id_user', authMiddleware, async (req, res) => {
 // Crear un usuario manualmente
 router.post('/', authMiddleware, async (req, res) => {
   const { email, password, nombre, apellido_paterno, apellido_materno, genero, role } = req.body;
-  console.log('POST /api/users - Datos recibidos:', { email, password, nombre, apellido_paterno, apellido_materno, genero, role });
 
   const validationError = validateUserData(req.body, true); // Requerir password
   if (validationError) {
-    console.error('Error de validación:', validationError);
     return res.status(400).json({ error: validationError });
   }
 
@@ -312,7 +280,6 @@ router.post('/', authMiddleware, async (req, res) => {
       throw new Error('El email ya está registrado');
     }
 
-    console.log('Hasheando contraseña:', password);
     const hashedPassword = await bcrypt.hash(password, 10);
     const [result] = await connection.query(
       'INSERT INTO users (email, password, nombre, apellido_paterno, apellido_materno, genero, role) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -341,11 +308,9 @@ router.post('/', authMiddleware, async (req, res) => {
     }
 
     await connection.commit();
-    console.log(`Usuario creado con id_user: ${userId}`);
     res.status(201).json({ message: 'Usuario añadido correctamente', id_user: userId });
   } catch (error) {
     await connection.rollback();
-    console.error('Error al agregar usuario:', error);
     res.status(500).json({ error: error.message || 'Error interno del servidor' });
   } finally {
     connection.release();
@@ -357,11 +322,8 @@ router.put('/:id_user', authMiddleware, async (req, res) => {
   const { id_user } = req.params;
   const { email, nombre, apellido_paterno, apellido_materno, genero, role } = req.body;
 
-  console.log(`PUT /api/users/${id_user} - Datos recibidos:`, req.body);
-
   const validationError = validateUserData({ email, nombre, apellido_paterno, role }, false); // No requerir password
   if (validationError) {
-    console.error('Error de validación:', validationError);
     return res.status(400).json({ error: validationError });
   }
 
@@ -387,11 +349,9 @@ router.put('/:id_user', authMiddleware, async (req, res) => {
     }
 
     await connection.commit();
-    console.log(`Usuario actualizado con id_user: ${id_user}`);
     res.status(200).json({ message: 'Usuario actualizado correctamente' });
   } catch (error) {
     await connection.rollback();
-    console.error('Error al actualizar usuario:', error);
     res.status(error.message === 'Usuario no encontrado' ? 404 : 500).json({
       error: error.message || 'Error interno del servidor',
     });
@@ -403,7 +363,6 @@ router.put('/:id_user', authMiddleware, async (req, res) => {
 // Eliminar un usuario
 router.delete('/:id_user', authMiddleware, async (req, res) => {
   const { id_user } = req.params;
-  console.log(`DELETE /api/users/${id_user} - Eliminar usuario`);
 
   const connection = await pool.getConnection();
   try {
@@ -415,11 +374,9 @@ router.delete('/:id_user', authMiddleware, async (req, res) => {
     }
 
     await connection.commit();
-    console.log(`Usuario eliminado con id_user: ${id_user}`);
     res.status(200).json({ message: 'Usuario eliminado correctamente' });
   } catch (error) {
     await connection.rollback();
-    console.error('Error al eliminar usuario:', error);
     res.status(error.message === 'Usuario no encontrado' ? 404 : 500).json({
       error: error.message || 'Error interno del servidor',
     });
