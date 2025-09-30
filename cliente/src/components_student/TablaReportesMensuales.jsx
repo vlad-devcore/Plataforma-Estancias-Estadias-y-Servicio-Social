@@ -2,7 +2,6 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Upload, Trash2, FileText, MessageSquare } from 'lucide-react';
 import useDocumentosEstudiante from '../components/hooks/useDocumentosEstudiante';
 import { motion, AnimatePresence } from 'framer-motion';
- 
 
 const TablaReportesMensuales = ({ tipoProceso, procesoId: procesoIdProp, documentosRequeridos }) => {
   const fileInputRefs = useRef({});
@@ -21,17 +20,9 @@ const TablaReportesMensuales = ({ tipoProceso, procesoId: procesoIdProp, documen
     resetMessages,
   } = useDocumentosEstudiante(tipoProceso, procesoIdProp);
 
-  useEffect(() => {
-    console.log("🔍 Depuración: documentosRequeridos:", documentosRequeridos);
-    console.log("🔍 Depuración: documentos:", documentos);
-    console.log("🔍 Depuración: procesoIdProp:", procesoIdProp, "procesoId:", procesoId);
-    console.log("🔍 Depuración: loading:", loading, "error:", error, "success:", success);
-  }, [documentosRequeridos, documentos, procesoIdProp, procesoId, loading, error, success]);
-
   const handleConfirmSubir = (idTipoDoc, numeroReporte) => {
     setModalSubirConfirm({ open: false, idTipoDoc: null, numeroReporte: null });
     setModalSubir({ open: true, idTipoDoc, numeroReporte });
-    console.log("🔍 Depuración: Confirmando subida, idTipoDoc:", idTipoDoc, "numeroReporte:", numeroReporte);
   };
 
   const handleUpload = async (idTipoDoc, numeroReporte, file) => {
@@ -41,7 +32,6 @@ const TablaReportesMensuales = ({ tipoProceso, procesoId: procesoIdProp, documen
       if (fileInputRefs.current[`${idTipoDoc}-${numeroReporte}`]) {
         fileInputRefs.current[`${idTipoDoc}-${numeroReporte}`].value = '';
       }
-      console.log("🔍 Depuración: Documento subido, idTipoDoc:", idTipoDoc);
     }
   };
 
@@ -49,17 +39,14 @@ const TablaReportesMensuales = ({ tipoProceso, procesoId: procesoIdProp, documen
     if (modalEliminar.idDocumento) {
       await deleteDocumento(modalEliminar.idDocumento);
       setModalEliminar({ open: false, idDocumento: null });
-      console.log("🔍 Depuración: Documento eliminado, idDocumento:", modalEliminar.idDocumento);
     }
   };
 
-  // Mapear documentos subidos por IdTipoDoc
   const getDocumentoSubido = (idTipoDoc) => {
     return documentos.find((doc) => doc.IdTipoDoc === idTipoDoc) || null;
   };
 
   if (!procesoIdProp && !loading) {
-    console.log("🔍 Depuración: No hay proceso activo, mostrando mensaje");
     return (
       <div className="p-4">
         <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg">
@@ -71,7 +58,6 @@ const TablaReportesMensuales = ({ tipoProceso, procesoId: procesoIdProp, documen
 
   return (
     <div className="p-4">
-      {/* Mensajes de error y éxito */}
       <AnimatePresence>
         {error && (
           <motion.div
@@ -101,17 +87,14 @@ const TablaReportesMensuales = ({ tipoProceso, procesoId: procesoIdProp, documen
         )}
       </AnimatePresence>
 
-      {/* Indicador de carga */}
       {loading && <div className="text-center text-gray-500 animate-pulse">Cargando reportes...</div>}
 
-      {/* Mensaje si no hay documentos requeridos */}
       {!loading && documentosRequeridos.length === 0 && (
         <div className="text-center text-gray-600 bg-gray-50 p-4 rounded-lg">
           No hay reportes mensuales configurados para este proceso.
         </div>
       )}
 
-      {/* Tabla de reportes */}
       {!loading && documentosRequeridos.length > 0 && (
         <div className="overflow-x-auto bg-white rounded-xl shadow-lg border border-gray-100">
           <table className="min-w-full divide-y divide-gray-200">
@@ -127,7 +110,6 @@ const TablaReportesMensuales = ({ tipoProceso, procesoId: procesoIdProp, documen
             <tbody className="divide-y divide-gray-200">
               {documentosRequeridos.map((req) => {
                 const doc = getDocumentoSubido(req.idTipoDoc);
-                console.log("🔍 Depuración: Renderizando fila, req:", req, "doc:", doc);
                 return (
                   <tr key={`${req.idTipoDoc}-${req.numeroReporte}`} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 text-gray-800 font-medium">{req.nombre}</td>
@@ -216,7 +198,6 @@ const TablaReportesMensuales = ({ tipoProceso, procesoId: procesoIdProp, documen
         </div>
       )}
 
-      {/* Modal de confirmación para subir reporte */}
       <AnimatePresence>
         {modalSubirConfirm.open && (
           <motion.div
@@ -260,7 +241,6 @@ const TablaReportesMensuales = ({ tipoProceso, procesoId: procesoIdProp, documen
         )}
       </AnimatePresence>
 
-      {/* Modal para subir reporte */}
       <AnimatePresence>
         {modalSubir.open && (
           <motion.div
@@ -310,7 +290,6 @@ const TablaReportesMensuales = ({ tipoProceso, procesoId: procesoIdProp, documen
         )}
       </AnimatePresence>
 
-      {/* Modal para eliminar reporte */}
       <AnimatePresence>
         {modalEliminar.open && (
           <motion.div
@@ -350,7 +329,6 @@ const TablaReportesMensuales = ({ tipoProceso, procesoId: procesoIdProp, documen
         )}
       </AnimatePresence>
 
-      {/* Modal para mostrar feedback */}
       <AnimatePresence>
         {modalFeedback.open && (
           <motion.div

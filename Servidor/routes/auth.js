@@ -12,7 +12,6 @@ const JWT_SECRET = process.env.JWT_SECRET || "tu_secreto_super_seguro_123!";
 const authMiddleware = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
   if (!token) {
-    console.error('Token no proporcionado');
     return res.status(401).json({ error: 'Acceso denegado, token requerido' });
   }
   try {
@@ -20,7 +19,6 @@ const authMiddleware = (req, res, next) => {
     req.user = decoded; // { id, email, role, nombre, id_entidad }
     next();
   } catch (error) {
-    console.error('Token inválido:', error.message);
     res.status(401).json({ error: 'Token inválido' });
   }
 };
@@ -29,16 +27,11 @@ const authMiddleware = (req, res, next) => {
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
-  console.log(`POST /api/auth/login - Intento de login con email: ${email}`);
-
   try {
-    // Validar entrada
     if (!email || !password) {
-      console.error('Faltan correo electrónico o contraseña');
       return res.status(400).json({ error: "Correo electrónico y contraseña son obligatorios" });
     }
 
-    // Buscar usuario por email
     const [users] = await pool.query(
       `SELECT id_user, email, nombre, apellido_paterno, apellido_materno, role, password, genero
        FROM users
@@ -47,20 +40,16 @@ router.post("/login", async (req, res) => {
     );
 
     if (users.length === 0) {
-      console.error(`Usuario no encontrado: ${email}`);
       return res.status(401).json({ error: "Correo electrónico no registrado" });
     }
 
     const user = users[0];
 
-    // Comparar contraseña
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
-      console.error(`Contraseña incorrecta para: ${email}`);
       return res.status(401).json({ error: "Contraseña incorrecta" });
     }
 
-    // Generar token JWT
     const token = jwt.sign(
       {
         id: user.id_user,
@@ -73,7 +62,6 @@ router.post("/login", async (req, res) => {
       { expiresIn: "8h" }
     );
 
-    console.log(`Login exitoso para: ${email}`);
     res.json({
       token,
       user: {
@@ -87,7 +75,6 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error en login:", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });
@@ -95,7 +82,6 @@ router.post("/login", async (req, res) => {
 // Verify
 router.get("/verify", authMiddleware, async (req, res) => {
   try {
-    console.log(`GET /api/auth/verify - Verificando usuario: ${req.user.email}`);
     const [users] = await pool.query(
       `SELECT id_user, email, nombre, apellido_paterno, apellido_materno, role, genero
        FROM users
@@ -104,7 +90,6 @@ router.get("/verify", authMiddleware, async (req, res) => {
     );
 
     if (users.length === 0) {
-      console.error(`Usuario no encontrado: id_user ${req.user.id}`);
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
@@ -121,7 +106,6 @@ router.get("/verify", authMiddleware, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error en verify:", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });
@@ -131,51 +115,38 @@ router.post("/change-password", authMiddleware, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   const id_user = req.user.id;
 
-  console.log(`POST /api/auth/change-password - Intento de cambio de contraseña para id_user: ${id_user}`);
-
   try {
-    // Validar entrada
     if (!oldPassword || !newPassword) {
-      console.error('Faltan contraseña actual o nueva contraseña');
       return res.status(400).json({ error: "Se requieren ambas contraseñas" });
     }
 
     if (newPassword.length < 8) {
-      console.error('Nueva contraseña demasiado corta');
       return res.status(400).json({ error: "La nueva contraseña debe tener al menos 8 caracteres" });
     }
 
-    // Verificar contraseña actual
     const [users] = await pool.query('SELECT password FROM users WHERE id_user = ?', [id_user]);
     if (users.length === 0) {
-      console.error(`Usuario no encontrado: id_user ${id_user}`);
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
     const passwordMatch = await bcrypt.compare(oldPassword, users[0].password);
     if (!passwordMatch) {
-      console.error('Contraseña actual incorrecta');
       return res.status(401).json({ error: "Contraseña actual incorrecta" });
     }
 
-    // Hashear nueva contraseña
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Actualizar contraseña
     const [result] = await pool.query(
       'UPDATE users SET password = ? WHERE id_user = ?',
       [hashedPassword, id_user]
     );
 
     if (result.affectedRows === 0) {
-      console.error(`Error al actualizar contraseña para id_user: ${id_user}`);
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    console.log(`Contraseña cambiada para id_user: ${id_user}`);
     res.json({ message: "Contraseña cambiada correctamente" });
   } catch (error) {
-    console.error("Error en change-password:", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });
@@ -184,19 +155,14 @@ router.post("/change-password", authMiddleware, async (req, res) => {
 router.post("/request-password-reset", async (req, res) => {
   const { email } = req.body;
 
-  console.log(`POST /api/auth/request-password-reset - Solicitud de recuperación para: ${email}`);
-
-  // Validar email
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!email || !emailRegex.test(email)) {
-    console.error(`Correo electrónico inválido: ${email}`);
     return res.status(400).json({ error: 'Correo electrónico inválido' });
   }
 
   try {
     const [users] = await pool.query('SELECT id_user FROM users WHERE email = ?', [email]);
     if (users.length === 0) {
-      console.error(`Usuario no encontrado para recuperación: ${email}`);
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 
@@ -218,17 +184,8 @@ router.post("/request-password-reset", async (req, res) => {
         pass: process.env.EMAIL_PASS,
       },
       tls: {
-        rejectUnauthorized: false, // Opcional, para evitar problemas con certificados no confiables (usa con precaución)
+        rejectUnauthorized: false,
       },
-    });
-
-    // Verifica la conexión antes de enviar
-    transporter.verify((error, success) => {
-      if (error) {
-        console.error('Error al conectar con el servidor de correo:', error);
-      } else {
-        console.log('Conexión exitosa al servidor de correo');
-      }
     });
 
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
@@ -264,10 +221,8 @@ router.post("/request-password-reset", async (req, res) => {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log(`Enlace de recuperación enviado a: ${email}`);
     res.status(200).json({ message: 'Enlace de recuperación enviado al correo' });
   } catch (error) {
-    console.error('Error en solicitud de recuperación:', error);
     if (error.code === 'EAUTH') {
       return res.status(500).json({ error: 'Error de autenticación en el servidor de correo' });
     }
@@ -279,43 +234,31 @@ router.post("/request-password-reset", async (req, res) => {
 router.post("/reset-password", async (req, res) => {
   const { token, newPassword } = req.body;
 
-  console.log(`POST /api/auth/reset-password - Intento de restablecimiento con token`);
-
   try {
-    // Validar entrada
     if (!token || !newPassword) {
-      console.error('Faltan token o nueva contraseña');
       return res.status(400).json({ error: 'Token y nueva contraseña son obligatorios' });
     }
 
     if (newPassword.length < 8) {
-      console.error('Nueva contraseña demasiado corta');
       return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 8 caracteres' });
     }
 
-    // Verificar token
     const [tokens] = await pool.query(
       'SELECT user_id, expires_at, used FROM password_reset_tokens WHERE token = ?',
       [token]
     );
     if (tokens.length === 0 || tokens[0].used || new Date() > new Date(tokens[0].expires_at)) {
-      console.error('Token inválido o expirado:', token);
       return res.status(400).json({ error: 'Token inválido o expirado' });
     }
 
-    // Hashear nueva contraseña
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Actualizar contraseña
     await pool.query('UPDATE users SET password = ? WHERE id_user = ?', [hashedPassword, tokens[0].user_id]);
 
-    // Marcar token como usado
     await pool.query('UPDATE password_reset_tokens SET used = TRUE WHERE token = ?', [token]);
 
-    console.log(`Contraseña restablecida para user_id: ${tokens[0].user_id}`);
     res.status(200).json({ message: 'Contraseña restablecida correctamente' });
   } catch (error) {
-    console.error('Error en restablecimiento:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });

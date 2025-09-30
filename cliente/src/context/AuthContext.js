@@ -46,9 +46,6 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       setUser(response.data.user);
-
-      console.log("🔐 Usuario guardado en localStorage:", response.data.user);
-
       return { success: true, user: response.data.user };
     } catch (error) {
       console.error('Error en login:', error);

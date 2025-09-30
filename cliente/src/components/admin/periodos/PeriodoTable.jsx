@@ -15,8 +15,6 @@ const formatDate = (dateString) => {
 };
 
 const PeriodosTable = ({ periodos, loading, error, onEdit, onDelete }) => {
-  // Depuración: inspeccionar los datos recibidos
-  console.log("Datos de periodos:", periodos);
 
   if (loading) return <div className="text-center py-8 text-gray-500">Cargando periodos...</div>;
   if (error) return <div className="text-center py-8 text-red-500">Error: {error}</div>;

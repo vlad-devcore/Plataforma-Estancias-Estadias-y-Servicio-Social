@@ -20,7 +20,6 @@ const tareaActualizarPeriodos = () => {
           await pool.query(`
             UPDATE periodos SET EstadoActivo = 'Inactivo' WHERE IdPeriodo = ?
           `, [periodo.IdPeriodo]);
-          console.log(`✅ Periodo ${periodo.IdPeriodo} desactivado automáticamente`);
         }
       }
 
@@ -50,10 +49,7 @@ const tareaActualizarPeriodos = () => {
                 "UPDATE formatos_admin SET estado = ? WHERE nombre_documento = ?",
                 [nuevoEstado, formato.nombre_documento]
               );
-              console.log(`✅ Estado de ${formato.nombre_documento} actualizado a '${nuevoEstado}'`);
             }
-          } else {
-            console.log(`⏳ ${formato.nombre_documento} ignorado por modificación manual reciente`);
           }
         }
       }
@@ -61,8 +57,6 @@ const tareaActualizarPeriodos = () => {
       console.error("❌ Error al actualizar periodos automáticamente:", error);
     }
   });
-
-  console.log("🕐 Cron de actualización de periodos iniciado");
 };
 
 export default tareaActualizarPeriodos;

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
- 
 
 const API_URL = `${process.env.REACT_APP_API_ENDPOINT}/api/periodos`;
 
@@ -16,11 +15,9 @@ const usePeriodos = () => {
     setError(null);
     setSuccess(null);
     try {
-      console.log('Fetching periodos from', API_URL);
       const response = await axios.get(API_URL);
       setPeriodos(response.data);
     } catch (err) {
-      console.error("Error al obtener los periodos:", err);
       setError("Error al obtener los periodos");
     } finally {
       setLoading(false);
@@ -33,13 +30,11 @@ const usePeriodos = () => {
     setError(null);
     setSuccess(null);
     try {
-      console.log('Creando periodo con datos:', nuevoPeriodo);
       const response = await axios.post(API_URL, nuevoPeriodo);
       setSuccess("Periodo creado con éxito.");
       await fetchPeriodos();
       return response.data;
     } catch (err) {
-      console.error("Error al crear periodo:", err);
       setError(err.response?.data?.error || "Error al crear el periodo.");
       throw err;
     } finally {
@@ -53,12 +48,10 @@ const usePeriodos = () => {
     setError(null);
     setSuccess(null);
     try {
-      console.log(`Actualizando periodo ${id} con datos:`, datosActualizados);
       await axios.put(`${API_URL}/${id}`, datosActualizados);
       setSuccess("Periodo actualizado con éxito.");
       await fetchPeriodos();
     } catch (err) {
-      console.error("Error al actualizar periodo:", err);
       setError(err.response?.data?.error || "Error al actualizar el periodo.");
       throw err;
     } finally {
@@ -72,12 +65,10 @@ const usePeriodos = () => {
     setError(null);
     setSuccess(null);
     try {
-      console.log(`Eliminando periodo ${id}`);
       await axios.delete(`${API_URL}/${id}`);
       setSuccess("Periodo eliminado con éxito.");
       await fetchPeriodos();
     } catch (err) {
-      console.error("Error al eliminar periodo:", err);
       setError(err.response?.data?.error || "Error al eliminar el periodo.");
       throw err;
     } finally {
@@ -91,11 +82,9 @@ const usePeriodos = () => {
     setError(null);
     setSuccess(null);
     try {
-      console.log(`Obteniendo periodo ${id}`);
       const response = await axios.get(`${API_URL}/${id}`);
       return response.data;
     } catch (err) {
-      console.error("Error al obtener periodo por ID:", err);
       setError(err.response?.data?.error || "Error al obtener el periodo.");
       throw err;
     } finally {
@@ -109,11 +98,9 @@ const usePeriodos = () => {
     setError(null);
     setSuccess(null);
     try {
-      console.log('Obteniendo periodo activo');
       const response = await axios.get(`${API_URL}/activo`);
       return response.data;
     } catch (err) {
-      console.error("Error al obtener el periodo activo:", err);
       setError(err.response?.data?.error || "Error al obtener el periodo activo.");
       throw err;
     } finally {
@@ -123,7 +110,6 @@ const usePeriodos = () => {
 
   // Limpiar mensajes de error y éxito
   const resetMessages = () => {
-    console.log('Reseteando mensajes de error y éxito');
     setError(null);
     setSuccess(null);
   };

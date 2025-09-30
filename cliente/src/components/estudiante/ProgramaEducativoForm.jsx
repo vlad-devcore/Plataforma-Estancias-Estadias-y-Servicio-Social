@@ -23,14 +23,12 @@ const ProgramaEducativoForm = () => {
           axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/programas`),
           axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/periodos`),
         ]);
-        console.log('Datos API:', { programas: programasRes.data, periodos: periodosRes.data });
         setProgramas(programasRes.data);
         const periodosActivos = periodosRes.data.filter((p) => p.EstadoActivo === 'Activo');
         setPeriodos(periodosActivos);
         setIdPeriodo(periodosActivos[0]?.IdPeriodo || '');
       } catch (err) {
         setError('Error al cargar programas o periodos.');
-        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -47,7 +45,6 @@ const ProgramaEducativoForm = () => {
     }
   }, [showConfirmModal, confirmCooldown]);
 
-
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!idPrograma) {
@@ -55,7 +52,6 @@ const ProgramaEducativoForm = () => {
       return;
     }
     setError(null);
-    console.log('Antes del modal:', { idPrograma, programas, selectedPrograma: getProgramaNombre() });
     setShowConfirmModal(true);
   };
 
@@ -87,7 +83,6 @@ const ProgramaEducativoForm = () => {
   };
 
   const getProgramaNombre = () => {
-    console.log('getProgramaNombre:', { idPrograma, programas }); // Debug
     const programa = programas.find((p) => String(p.id_programa) === String(idPrograma)); // Forzar string
     return programa ? programa.nombre : 'No seleccionado';
   };
@@ -320,7 +315,6 @@ const ProgramaEducativoForm = () => {
       </AnimatePresence>
     </motion.div>
   );
-
 };
 
 export default ProgramaEducativoForm;
