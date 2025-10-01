@@ -529,11 +529,12 @@ const CedulaRegistroForm = () => {
     'Ingeniería en Software',
     'Ingeniería Financiera',
     'Ingeniería Biomédica',
-    'Licenciatura en Administración y Gestión de PyMEs',
-    'Licenciatura en Terapia Física'
+    'Licenciatura en Administración y Gestión Empresarial',
+    'Licenciatura en Terapia Física',
+    'Ingenier+ia en Biotecnología'
   ];
 
-  const tamañosEmpresa = ['Micro', 'Pequeña', 'Mediana', 'Grande'];
+  const tamañosEmpresa = ['Pequeña', 'Mediana', 'Grande'];
 
   const girosComerciales = [
     'Tecnología y Software',
