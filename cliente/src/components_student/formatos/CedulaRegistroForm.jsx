@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, FileText, Save, User, Building, Briefcase, BookOpen, HelpCircle } from 'lucide-react';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import './CedulaRegistroForm.css';
+import useProgramas from '../../components/hooks/useProgramasEducativos'; // Ajusta la ruta según tu estructura
 
 // Define PDF styles
 const styles = StyleSheet.create({
@@ -438,6 +439,8 @@ const CedulaRegistroPDF = ({ formData }) => (
 );
 
 const CedulaRegistroForm = () => {
+  const { programas, idPrograma, loading, error } = useProgramas();
+
   const [cedulaData, setCedulaData] = useState({
     alumno: {
       apellidoPaterno: '',
@@ -489,6 +492,15 @@ const CedulaRegistroForm = () => {
   const [expandedSections, setExpandedSections] = useState({});
   const [isPdfReady, setIsPdfReady] = useState(false);
 
+  useEffect(() => {
+    if (idPrograma && programas.length > 0) {
+      const programa = programas.find(p => p.id === idPrograma);
+      if (programa) {
+        handleCedulaChange('alumno', 'carrera', programa.nombre);
+      }
+    }
+  }, [idPrograma, programas]);
+
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
       ...prev,
@@ -524,15 +536,6 @@ const CedulaRegistroForm = () => {
     e.preventDefault();
     setIsPdfReady(true);
   };
-
-  const carreras = [
-    'Ingeniería en Software',
-    'Ingeniería Financiera',
-    'Ingeniería Biomédica',
-    'Licenciatura en Administración y Gestión Empresarial',
-    'Licenciatura en Terapia Física',
-    'Ingeniería en Biotecnología'
-  ];
 
   const tamañosEmpresa = ['Pequeña', 'Mediana', 'Grande'];
 
@@ -639,15 +642,23 @@ const CedulaRegistroForm = () => {
                   </div>
                   <div className="cedula-field">
                     <label>Programa Educativo</label>
-                    <select
-                      value={cedulaData.alumno.carrera}
-                      onChange={(e) => handleCedulaChange('alumno', 'carrera', e.target.value)}
-                    >
-                      <option value="">Seleccionar...</option>
-                      {carreras.map((carrera) => (
-                        <option key={carrera} value={carrera}>{carrera}</option>
-                      ))}
-                    </select>
+                    {loading ? (
+                      <p>Cargando programas...</p>
+                    ) : error ? (
+                      <p>{error}</p>
+                    ) : (
+                      <select
+                        value={cedulaData.alumno.carrera}
+                        onChange={(e) => handleCedulaChange('alumno', 'carrera', e.target.value)}
+                      >
+                        <option value="">Seleccionar...</option>
+                        {programas.map((programa) => (
+                          <option key={programa.id} value={programa.nombre}>
+                            {programa.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                   <div className="cedula-field">
                     <label>Correo Personal</label>
