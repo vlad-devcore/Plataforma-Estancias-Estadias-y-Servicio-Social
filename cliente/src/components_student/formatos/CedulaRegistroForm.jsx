@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, FileText, Save, User, Building, Briefcase, BookOpen, HelpCircle } from 'lucide-react';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import './CedulaRegistroForm.css';
-import useProgramas from '../../components/hooks/useProgramasEducativos'; // Ajusta la ruta según tu estructura
+import useProgramas from '../../components/hooks/useProgramasEducativos'; 
 
 // Define PDF styles
 const styles = StyleSheet.create({
