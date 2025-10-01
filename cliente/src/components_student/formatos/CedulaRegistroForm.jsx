@@ -531,7 +531,7 @@ const CedulaRegistroForm = () => {
     'Ingeniería Biomédica',
     'Licenciatura en Administración y Gestión Empresarial',
     'Licenciatura en Terapia Física',
-    'Ingenier+ia en Biotecnología'
+    'Ingeniería en Biotecnología'
   ];
 
   const tamañosEmpresa = ['Pequeña', 'Mediana', 'Grande'];
