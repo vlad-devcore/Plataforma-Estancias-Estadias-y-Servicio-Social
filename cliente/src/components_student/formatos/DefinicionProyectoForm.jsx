@@ -473,8 +473,8 @@ const DefinicionProyectoForm = () => {
     },
     { 
       key: 'evidencias', 
-      label: 'Pruebas de tu trabajo', 
-      placeholder: 'Ejemplo: Fotos de los proyectos terminados, capturas de pantalla de sistemas que usé, documentos que creé...',
+      label: 'Pruebas de tu trabajo (Entregables)', 
+      placeholder: 'Ejemplo: Evidencias o productos del estudiante entregados a la empresa como prueba del logro de los resultados de aprendizaje.',
       showTip: false
     },
     { 
