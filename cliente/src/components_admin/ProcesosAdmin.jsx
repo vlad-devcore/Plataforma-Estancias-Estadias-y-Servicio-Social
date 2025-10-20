@@ -20,7 +20,8 @@ const ProcesosAdmin = () => {
     totalPages,
     totalProcesos,
     searchTerm,
-    setSearchTerm
+    setSearchTerm,
+    exportAllProcesos, // 🆕 AGREGADO
   } = useProcesos();
 
   const [formMode, setFormMode] = useState(null);
@@ -111,8 +112,10 @@ const ProcesosAdmin = () => {
             </h2>
           </motion.div>
 
-          <div className="mb-6">
-            <div className="relative max-w-md">
+          {/* 🆕 HEADER CON BÚSQUEDA + BOTÓN EXPORTAR */}
+          <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            {/* Input de búsqueda */}
+            <div className="relative flex-1 max-w-md">
               <motion.input
                 initial={{ width: '80%', opacity: 0 }}
                 animate={{ width: '100%', opacity: 1 }}
@@ -124,6 +127,21 @@ const ProcesosAdmin = () => {
               />
               <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
             </div>
+
+            {/* 🆕 BOTÓN EXPORTAR EXCEL */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={exportAllProcesos}
+              disabled={loading}
+              className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-50 transition-all duration-200 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 whitespace-nowrap"
+              title="Exportar todos los procesos a Excel"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Exportar Excel
+            </motion.button>
           </div>
 
           {error && (
