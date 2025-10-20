@@ -139,6 +139,41 @@ const useProcesos = () => {
     }
   };
 
+  // 🆕 FUNCIÓN PARA EXPORTAR EXCEL
+  const exportAllProcesos = async () => {
+    try {
+      console.log('📥 Iniciando exportación de Excel...');
+      
+      const { data: blobData } = await axios.get(
+        `${process.env.REACT_APP_API_ENDPOINT}/api/procesos/export`,
+        { 
+          responseType: 'blob' 
+        }
+      );
+
+      // Crear descarga automática
+      const url = window.URL.createObjectURL(blobData);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `procesos_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      console.log('✅ Excel descargado exitosamente');
+      setSuccess('✅ Excel exportado correctamente');
+      
+    } catch (error) {
+      console.error('❌ Error exportando Excel:', error);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          'Error al exportar Excel. Intenta nuevamente.';
+      setError(errorMessage);
+      throw error;
+    }
+  };
+
   const resetMessages = () => {
     setError(null);
     setSuccess(null);
@@ -160,6 +195,7 @@ const useProcesos = () => {
     updateProceso,
     deleteProceso,
     validarRegistroEnPeriodo,
+    exportAllProcesos, 
     resetMessages,
     user,
     currentPage,
