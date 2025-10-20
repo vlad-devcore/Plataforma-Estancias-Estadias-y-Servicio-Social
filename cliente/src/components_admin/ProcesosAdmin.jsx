@@ -160,7 +160,7 @@ const ProcesosAdmin = () => {
               title={`Exportar ${filteredProcesos.length} procesos del periodo ${selectedPeriodo}`}
             >
               <Download className="w-4 h-4" />
-              Exportar {filteredProcesos.length}
+              Exportar Procesos
             </motion.button>
           </div>
 

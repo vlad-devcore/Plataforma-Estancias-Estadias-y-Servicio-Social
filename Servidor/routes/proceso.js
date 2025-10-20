@@ -330,6 +330,18 @@ router.get('/export', async (req, res) => {
     totalRow.getCell(6).font = { bold: true, color: { argb: 'FF059669' } };
     totalRow.getCell(6).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F5E8' } };
 
+      // 📄 Líneas vacías y metadatos
+    worksheet.addRow([]);
+    const infoRow1 = worksheet.addRow(['📅 Exportado el:', new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })]);
+    const infoRow2 = worksheet.addRow(['⚙️ Sistema de Gestión de Procesos']);
+    const infoRow3 = worksheet.addRow(['📊 Total registros exportados:', allProcesos.length.toString()]);
+    
+    // Estilo para metadatos
+    [infoRow1, infoRow2, infoRow3].forEach(row => {
+      row.getCell(1).font = { italic: true, color: { argb: 'FF6B7280' }, size: 10 };
+      row.getCell(2).font = { italic: true, color: { argb: 'FF374151' }, size: 10 };
+    });
+
     const buffer = await workbook.xlsx.writeBuffer();
     const filename = `procesos_periodo_${periodo}_${search || 'todos'}_${new Date().toISOString().split('T')[0]}.xlsx`;
 
