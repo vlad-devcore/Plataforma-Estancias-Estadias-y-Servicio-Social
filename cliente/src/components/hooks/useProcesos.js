@@ -9,23 +9,37 @@ const useProcesos = () => {
   const [success, setSuccess] = useState(null);
   const [user, setUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPeriodo, setSelectedPeriodo] = useState(''); // 🆕 VACÍO POR DEFECTO
+  const [availablePeriodos, setAvailablePeriodos] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProcesos, setTotalProcesos] = useState(0);
-  const processesPerPage = 50; // Número de procesos por página
+  const processesPerPage = 50;
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
     setUser(storedUser);
   }, []);
 
+  const fetchAvailablePeriodos = async () => {
+    try {
+      const { data } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos/periodos`);
+      setAvailablePeriodos(data);
+      // 🆕 SELECCIONAR EL PRIMERO POR DEFECTO
+      if (data.length > 0) {
+        setSelectedPeriodo(data[0].IdPeriodo.toString());
+      }
+    } catch (error) {
+      console.error('Error cargando periodos:', error);
+    }
+  };
+
   const fetchProcesos = async () => {
     try {
+      setLoading(true);
       const { data } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos`);
       setProcesos(data);
-      setTotalProcesos(data.length);
-      setTotalPages(Math.ceil(data.length / processesPerPage));
-      applyFilterAndPagination(data, searchTerm, currentPage);
+      applyFilterAndPagination(data, searchTerm, currentPage, selectedPeriodo);
       setError(null);
     } catch (err) {
       const errorMessage = err.response?.data?.details || err.response?.data?.message || err.message;
@@ -35,11 +49,15 @@ const useProcesos = () => {
     }
   };
 
-  const applyFilterAndPagination = (data, search, page) => {
+  const applyFilterAndPagination = (data, search, page, periodoId) => {
     let filtered = Array.isArray(data) ? data.filter(proceso => {
       if (!proceso) return false;
+      
       const searchLower = search.toLowerCase();
-      return (proceso.matricula || '').toLowerCase().includes(searchLower);
+      const matchesSearch = (proceso.matricula || '').toLowerCase().includes(searchLower);
+      const matchesPeriodo = !periodoId || proceso.id_periodo == periodoId;
+      
+      return matchesSearch && matchesPeriodo;
     }) : [];
 
     const startIndex = (page - 1) * processesPerPage;
@@ -51,8 +69,8 @@ const useProcesos = () => {
   };
 
   useEffect(() => {
-    applyFilterAndPagination(procesos, searchTerm, currentPage);
-  }, [searchTerm, currentPage, procesos]);
+    applyFilterAndPagination(procesos, searchTerm, currentPage, selectedPeriodo);
+  }, [searchTerm, currentPage, procesos, selectedPeriodo]);
 
   const mapTipoProceso = (tipo) => {
     switch (tipo) {
@@ -139,36 +157,40 @@ const useProcesos = () => {
     }
   };
 
-  // 🆕 FUNCIÓN PARA EXPORTAR EXCEL
-  const exportAllProcesos = async () => {
+  const exportFilteredProcesos = async () => {
     try {
-      console.log('📥 Iniciando exportación de Excel...');
+      console.log(`📥 Exportando procesos del periodo ${selectedPeriodo}...`);
       
       const { data: blobData } = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/procesos/export`,
         { 
-          responseType: 'blob' 
+          params: {
+            periodo: selectedPeriodo,
+            search: searchTerm
+          },
+          responseType: 'blob'
         }
       );
 
-      // Crear descarga automática
       const url = window.URL.createObjectURL(blobData);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `procesos_${new Date().toISOString().split('T')[0]}.xlsx`;
+      
+      const periodoName = selectedPeriodo;
+      link.download = `procesos_${periodoName}_${searchTerm || 'todos'}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      console.log('✅ Excel descargado exitosamente');
-      setSuccess('✅ Excel exportado correctamente');
+      setSuccess(`✅ ${filteredProcesos.length} procesos exportados correctamente`);
       
     } catch (error) {
-      console.error('❌ Error exportando Excel:', error);
+      console.error('❌ Error exportando:', error);
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.error || 
-                          'Error al exportar Excel. Intenta nuevamente.';
+                          'Error al exportar procesos filtrados';
       setError(errorMessage);
       throw error;
     }
@@ -180,8 +202,8 @@ const useProcesos = () => {
   };
 
   useEffect(() => {
+    fetchAvailablePeriodos();
     fetchProcesos();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {
@@ -195,7 +217,7 @@ const useProcesos = () => {
     updateProceso,
     deleteProceso,
     validarRegistroEnPeriodo,
-    exportAllProcesos, 
+    exportFilteredProcesos,
     resetMessages,
     user,
     currentPage,
@@ -203,7 +225,10 @@ const useProcesos = () => {
     totalPages,
     totalProcesos,
     searchTerm,
-    setSearchTerm
+    setSearchTerm,
+    availablePeriodos,
+    selectedPeriodo,
+    setSelectedPeriodo
   };
 };
 
