@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Search, Briefcase, Edit2, X } from 'lucide-react';
+import { Search, Briefcase, Edit2, X, ChevronDown, Download } from 'lucide-react';
 import { useState } from 'react';
 import useProcesos from '../components/hooks/useProcesos';
 import ProcesoTable from '../components/admin/procesos/ProcesoTable';
@@ -21,7 +21,10 @@ const ProcesosAdmin = () => {
     totalProcesos,
     searchTerm,
     setSearchTerm,
-    exportAllProcesos, // 🆕 AGREGADO
+    availablePeriodos,
+    selectedPeriodo,
+    setSelectedPeriodo,
+    exportFilteredProcesos,
   } = useProcesos();
 
   const [formMode, setFormMode] = useState(null);
@@ -92,7 +95,6 @@ const ProcesosAdmin = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      {/* Contenedor principal con scroll horizontal */}
       <div className="flex-1 p-4 md:p-8 overflow-x-auto">
         <div className="max-w-7xl mx-auto w-full">
           <motion.div
@@ -112,9 +114,9 @@ const ProcesosAdmin = () => {
             </h2>
           </motion.div>
 
-          {/* 🆕 HEADER CON BÚSQUEDA + BOTÓN EXPORTAR */}
-          <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-            {/* Input de búsqueda */}
+          {/* 🆕 HEADER SIMPLIFICADO: BÚSQUEDA + PERIODO + EXPORT VERDE */}
+          <div className="mb-6 flex flex-col lg:flex-row gap-4 items-start lg:items-center">
+            {/* 🔍 BÚSQUEDA */}
             <div className="relative flex-1 max-w-md">
               <motion.input
                 initial={{ width: '80%', opacity: 0 }}
@@ -128,22 +130,41 @@ const ProcesosAdmin = () => {
               <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
             </div>
 
-            {/* 🆕 BOTÓN EXPORTAR EXCEL */}
+            {/* 🆕 SOLO FILTRO DE PERIODOS (SIN "ACTIVO") */}
+            <div className="relative w-full max-w-xs lg:max-w-sm">
+              <motion.select
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                value={selectedPeriodo}
+                onChange={(e) => setSelectedPeriodo(e.target.value)}
+                disabled={loading || availablePeriodos.length === 0}
+                className="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white appearance-none cursor-pointer"
+              >
+                <option value="">Todos los periodos</option>
+                {availablePeriodos.map((periodo) => (
+                  <option key={periodo.IdPeriodo} value={periodo.IdPeriodo}>
+                    {periodo.Año} {periodo.Fase}
+                  </option>
+                ))}
+              </motion.select>
+              <ChevronDown className="absolute right-3 top-3 text-gray-400 pointer-events-none" size={18} />
+            </div>
+
+            {/* 🆕 BOTÓN EXPORT VERDE COMO ANTES */}
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={exportAllProcesos}
-              disabled={loading}
-              className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-50 transition-all duration-200 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 whitespace-nowrap"
-              title="Exportar todos los procesos a Excel"
+              onClick={exportFilteredProcesos}
+              disabled={loading || filteredProcesos.length === 0 || !selectedPeriodo}
+              className="flex items-center gap-2 px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition-all duration-200 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 whitespace-nowrap"
+              title={`Exportar ${filteredProcesos.length} procesos del periodo ${selectedPeriodo}`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Exportar Excel
+              <Download className="w-4 h-4" />
+              Exportar {filteredProcesos.length}
             </motion.button>
           </div>
 
+          {/* Mensajes */}
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
               <span>{error}</span>
@@ -161,7 +182,7 @@ const ProcesosAdmin = () => {
             </div>
           )}
 
-          {/* Contenedor de la tabla con scroll horizontal */}
+          {/* Tabla */}
           <div className="w-full overflow-x-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -179,7 +200,12 @@ const ProcesosAdmin = () => {
               </div>
               <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
                 <p className="text-sm text-gray-500">
-                  Mostrando {filteredProcesos.length} de {totalProcesos} registros
+                  Mostrando {filteredProcesos.length} de {totalProcesos} registros 
+                  {selectedPeriodo && (
+                    <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                      Periodo {selectedPeriodo}
+                    </span>
+                  )}
                 </p>
               </div>
               {totalPages > 1 && (
@@ -232,6 +258,7 @@ const ProcesosAdmin = () => {
             </motion.div>
           </div>
 
+          {/* Modal editar */}
           {formMode === 'edit' && (
             <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
               <motion.div
