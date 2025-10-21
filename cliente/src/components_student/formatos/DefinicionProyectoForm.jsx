@@ -272,7 +272,7 @@ const DefinicionProyectoPDF = ({ formData }) => (
         <View style={styles.table}>
           <View style={styles.tableRow}>
             <View style={styles.tableCol}>
-              <Text style={styles.tableCellHeader}>Nombre de competencia</Text>
+              <Text style={styles.tableCellHeader}>Fases</Text>
             </View>
             <View style={styles.tableCol}>
               <Text style={styles.tableCellHeader}>Duración</Text>
