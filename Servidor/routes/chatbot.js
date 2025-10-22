@@ -7,9 +7,7 @@ dotenv.config();
 
 const router = express.Router();
 
-
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
 
 const db = new sqlite3.Database("./chatbot_data.db", (err) => {
     if (err) console.error("Error al conectar con la DB:", err);
@@ -23,7 +21,6 @@ const db = new sqlite3.Database("./chatbot_data.db", (err) => {
         )`);
     }
 });
-
 
 const systemPrompt = `
 Eres un asistente virtual formal y amable, diseñado exclusivamente para orientar a los estudiantes dentro de la Plataforma Educativa UPQROO, un sistema académico de la Universidad Politécnica de Quintana Roo que gestiona los procesos de Estancias y Estadías.
@@ -97,7 +94,6 @@ async function findSimilarAnswer(question) {
     });
 }
 
-
 router.post("/", async (req, res) => {
     const { message } = req.body;
 
@@ -113,15 +109,36 @@ router.post("/", async (req, res) => {
         if (cachedAnswer) {
             responseText = cachedAnswer; // Respuesta sin la pregunta de retroalimentación
         } else {
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-            const result = await model.generateContent([systemPrompt, `Pregunta del alumno: ${message}`]);
-            const response = await result.response;
-            responseText = response.text().trim();
-            // Eliminar la pregunta de retroalimentación si está incluida en la respuesta de Gemini
-            responseText = responseText.replace(/¿Te fue útil esta respuesta\? Por favor, responde 'Sí' o 'No'\./g, '').trim();
+            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+            let attempts = 0;
+            const maxAttempts = 3;
+            const delayMs = 2000; // 2 segundos de espera entre intentos
+
+            while (attempts < maxAttempts) {
+                try {
+                    const result = await model.generateContent([systemPrompt, `Pregunta del alumno: ${message}`]);
+                    const response = await result.response;
+                    responseText = response.text().trim();
+                    // Limpiar la pregunta de retroalimentación si Gemini la incluye
+                    responseText = responseText.replace(/¿Te fue útil esta respuesta\? Por favor, responde 'Sí' o 'No'\./gi, '').trim();
+                    break; // Si tiene éxito, sal del bucle
+                } catch (error) {
+                    if (error.status === 503 && attempts < maxAttempts - 1) {
+                        attempts++;
+                        console.warn(`Intento ${attempts} fallido (503). Reintentando en ${delayMs}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, delayMs));
+                    } else {
+                        throw error; // Si no es 503 o se acaban los intentos, lanza el error
+                    }
+                }
+            }
+
+            if (!responseText) {
+                throw new Error("No se pudo generar respuesta tras varios intentos.");
+            }
         }
 
-       
+        // Guardar interacción en la base de datos
         db.run(
             `INSERT INTO interactions (question, answer, feedback) VALUES (?, ?, ?)`,
             [message, responseText, null],
@@ -130,13 +147,19 @@ router.post("/", async (req, res) => {
             }
         );
 
+        // Enviar respuesta con la pregunta de retroalimentación una sola vez
         res.status(200).json({ respuesta: `${responseText} ¿Te fue útil esta respuesta? Por favor, responde 'Sí' o 'No'.` });
     } catch (error) {
         console.error("Error con Gemini:", error);
-        res.status(500).json({ error: "Error al generar respuesta del chatbot" });
+        let errorMessage = "Error al generar respuesta del chatbot. Por favor, contacta al administrador si el problema persiste.";
+        if (error.status === 503) {
+            errorMessage = "El sistema está temporalmente sobrecargado. Por favor, intenta de nuevo más tarde.";
+        } else if (error.status === 401 || error.status === 403) {
+            errorMessage = "Error de autenticación. Verifica tu configuración con el administrador.";
+        }
+        res.status(500).json({ error: errorMessage });
     }
 });
-
 
 router.post("/feedback", async (req, res) => {
     const { question, feedback } = req.body;
