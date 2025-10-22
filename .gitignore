@@ -7,3 +7,6 @@ Servidor/.env
 cliente/.env
 
 *.env
+
+
+Servidor/chatbot_data.db
