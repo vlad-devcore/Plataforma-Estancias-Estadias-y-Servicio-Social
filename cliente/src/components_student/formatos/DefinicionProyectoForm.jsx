@@ -12,7 +12,7 @@ const styles = StyleSheet.create({
   },
   header: {
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
   },
   title: {
     fontSize: 14,
@@ -21,15 +21,15 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 12,
-    marginBottom: 10,
+    marginBottom: 5,
   },
   infoHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 15,
+    marginBottom: 10,
   },
   section: {
-    marginBottom: 15,
+    marginBottom: 10,
   },
   sectionTitle: {
     fontSize: 11,
@@ -37,15 +37,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#7A2A05',
     color: 'white',
     padding: 3,
-    marginBottom: 8,
+    marginBottom: 5,
   },
   row: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginBottom: 5,
   },
   field: {
     flex: 1,
-    marginRight: 10,
+    marginRight: 5,
   },
   fieldWide: {
     flex: 2,
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     minHeight: 18,
   },
   tableContainer: {
-    marginTop: 10,
+    marginTop: 5,
   },
   table: {
     display: 'table',
@@ -78,7 +78,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   tableCol: {
-    width: '25%',
+    width: '33.33%', // 3 columnas
+    borderStyle: 'solid',
+    borderWidth: 1,
+    borderColor: '#000',
+  },
+  tableColWide: {
+    width: '100%',
     borderStyle: 'solid',
     borderWidth: 1,
     borderColor: '#000',
@@ -99,24 +105,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#DDD',
     minHeight: 40,
-    marginBottom: 10,
+    marginBottom: 5,
   },
   signatureSection: {
-    marginTop: 30,
-    paddingTop: 20,
+    marginTop: 10,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: '#000',
+    flexShrink: 0, // Evita que se desplace a otra página
   },
   signatureTitle: {
     fontSize: 12,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 25,
+    marginBottom: 10,
   },
   signatureRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 40,
+    marginBottom: 10,
   },
   signatureBox: {
     width: '30%',
@@ -126,7 +133,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 25,
+    marginBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#000',
     paddingBottom: 2,
@@ -135,7 +142,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#000',
     width: '100%',
-    height: 20,
+    height: 15,
     marginBottom: 5,
   },
   signatureLabel: {
@@ -204,8 +211,8 @@ const DefinicionProyectoPDF = ({ formData }) => (
       </View>
 
       <View style={styles.infoHeader}>
-        <Text style={{fontSize: 10}}>Proceso: {formData.proceso}</Text>
-        <Text style={{fontSize: 10}}>Fecha y lugar: {formData.lugar} a {formData.fecha}</Text>
+        <Text style={{ fontSize: 10 }}>Proceso: {formData.proceso}</Text>
+        <Text style={{ fontSize: 10 }}>Fecha y lugar: {formData.lugar} a {formData.fecha}</Text>
       </View>
 
       {/* Datos del Alumno */}
@@ -254,13 +261,11 @@ const DefinicionProyectoPDF = ({ formData }) => (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Datos Proyecto:</Text>
         <View style={styles.row}>
-          <View style={styles.fieldWide}>
+          <View style={styles.field}>
             <Text style={styles.label}>Nombre</Text>
             <Text style={styles.value}>{formData.proyecto.nombre || ' '}</Text>
           </View>
-        </View>
-        <View style={styles.row}>
-          <View style={styles.fieldWide}>
+          <View style={styles.field}>
             <Text style={styles.label}>Objetivo</Text>
             <Text style={styles.value}>{formData.proyecto.objetivo || ' '}</Text>
           </View>
@@ -291,8 +296,8 @@ const DefinicionProyectoPDF = ({ formData }) => (
               </View>
               <View style={styles.tableCol}>
                 <Text style={styles.tableCell}>
-                  {etapa.fechaInicio && etapa.fechaFin 
-                    ? `${etapa.fechaInicio} - ${etapa.fechaFin}` 
+                  {etapa.fechaInicio && etapa.fechaFin
+                    ? `${etapa.fechaInicio} - ${etapa.fechaFin}`
                     : ' '}
                 </Text>
               </View>
@@ -307,40 +312,85 @@ const DefinicionProyectoPDF = ({ formData }) => (
         </View>
       </View>
 
-      {/* Información Adicional */}
-      <View style={{marginTop: 20}}>
-        {formData.actividades && (
-          <View style={styles.section}>
-            <Text style={{fontSize: 10, fontWeight: 'bold', marginBottom: 5}}>Actividades de Aprendizaje:</Text>
-            <Text style={styles.textArea}>{formData.actividades}</Text>
+      {/* Tabla de Información Adicional */}
+      <View style={styles.tableContainer}>
+        <View style={styles.table}>
+          <View style={styles.tableRow}>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCellHeader}>Actividades de Aprendizaje</Text>
+            </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCellHeader}>Resultados de Aprendizaje</Text>
+            </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCellHeader}>Evidencias</Text>
+            </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCellHeader}>Instrumentos de Evaluación</Text>
+            </View>
           </View>
-        )}
-        
-        {formData.resultados && (
-          <View style={styles.section}>
-            <Text style={{fontSize: 10, fontWeight: 'bold', marginBottom: 5}}>Resultados de Aprendizaje:</Text>
-            <Text style={styles.textArea}>{formData.resultados}</Text>
+          <View style={styles.tableRow}>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCell}>{formData.actividades || ' '}</Text>
+            </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCell}>{formData.resultados || ' '}</Text>
+            </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCell}>{formData.evidencias || ' '}</Text>
+            </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCell}>{formData.instrumentos || ' '}</Text>
+            </View>
           </View>
-        )}
+        </View>
+      </View>
+
+      {/* Tabla de 3 columnas para Asignaturas, Tópicos y Estrategias */}
+      <View style={styles.tableContainer}>
+        <View style={styles.table}>
+          <View style={styles.tableRow}>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCellHeader}>Asignaturas</Text>
+            </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCellHeader}>Tópicos Recomendados</Text>
+            </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCellHeader}>Estrategias Didácticas</Text>
+            </View>
+          </View>
+          <View style={styles.tableRow}>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCell}>{formData.asignaturas || ' '}</Text>
+            </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCell}>{formData.topicos || ' '}</Text>
+            </View>
+            <View style={styles.tableCol}>
+              <Text style={styles.tableCell}>{formData.estrategias || ' '}</Text>
+            </View>
+          </View>
+        </View>
       </View>
 
       {/* Sección de Firmas */}
       <View style={styles.signatureSection}>
         <Text style={styles.signatureTitle}>FIRMAS DE AUTORIZACIÓN</Text>
-        
+
         <View style={styles.signatureRow}>
           <View style={styles.signatureBox}>
             <Text style={styles.signatureName}>{formData.alumno.nombre || '_________________________'}</Text>
             <View style={styles.signatureLine}></View>
             <Text style={styles.signatureLabel}>NOMBRE Y FIRMA DEL ESTUDIANTE</Text>
           </View>
-          
+
           <View style={styles.signatureBox}>
             <Text style={styles.signatureName}>{formData.alumno.asesorAcademico || '_________________________'}</Text>
             <View style={styles.signatureLine}></View>
             <Text style={styles.signatureLabel}>NOMBRE Y FIRMA DEL ASESOR ACADÉMICO</Text>
           </View>
-          
+
           <View style={styles.signatureBox}>
             <Text style={styles.signatureName}>{formData.empresa.asesorEmpresarial || '_________________________'}</Text>
             <View style={styles.signatureLine}></View>
@@ -445,7 +495,7 @@ const DefinicionProyectoForm = () => {
   const updateEtapa = (id, field, value) => {
     setProyectoData(prev => ({
       ...prev,
-      etapas: prev.etapas.map(etapa => 
+      etapas: prev.etapas.map(etapa =>
         etapa.id === id ? { ...etapa, [field]: value } : etapa
       )
     }));
@@ -458,59 +508,12 @@ const DefinicionProyectoForm = () => {
 
   const procesos = ['Estancia I', 'Estancia II', 'Estadía'];
 
-  const camposAdicionales = [
-    { 
-      key: 'actividades', 
-      label: 'Cosas que vas a aprender', 
-      placeholder: 'Ejemplo: Aprender a usar Excel para hacer reportes de ventas, participar en reuniones con clientes, ayudar en el diseño de páginas web...',
-      showTip: false
-    },
-    { 
-      key: 'resultados', 
-      label: 'Lo que vas a lograr', 
-      placeholder: 'Ejemplo: Al final sabré crear reportes financieros, podré atender clientes por teléfono, habré terminado el diseño de 3 páginas web...',
-      showTip: false
-    },
-    { 
-      key: 'evidencias', 
-      label: 'Pruebas de tu trabajo (Entregables)', 
-      placeholder: 'Ejemplo: Evidencias o productos del estudiante entregados a la empresa como prueba del logro de los resultados de aprendizaje.',
-      showTip: false
-    },
-    { 
-      key: 'instrumentos', 
-      label: 'Cómo te van a evaluar', 
-      placeholder: 'Ejemplo: Lista de verificación, rúbrica de evaluación, examen práctico, presentación final...',
-      showTip: false
-    },
-    { 
-      key: 'asignaturas', 
-      label: 'Materias relacionadas', 
-      placeholder: 'Ejemplo: Contabilidad, Marketing Digital, Programación Web, Administración...',
-      showTip: false
-    },
-    { 
-      key: 'topicos', 
-      label: 'Temas importantes', 
-      placeholder: 'Ejemplo: Servicio al cliente, manejo de redes sociales, uso de software contable...',
-      showTip: false
-    },
-    { 
-      key: 'estrategias', 
-      label: 'Cómo vas a aprender', 
-      placeholder: 'Ejemplo: Observando a mi supervisor, practicando con casos reales, recibiendo capacitación...',
-      showTip: false
-    }
-  ];
-
   return (
     <div className="proyecto-container">
       <div className="proyecto-header">
-        
-         {/* Botón de regresar */}
         <div className="cedula-back-button-wrapper">
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="cedula-back-btn"
             onClick={() => window.history.back()}
           >
@@ -518,8 +521,6 @@ const DefinicionProyectoForm = () => {
             Regresar
           </button>
         </div>
-
-        {/* Títulos */}
         <h1 className="proyecto-title">Universidad Politécnica de Quintana Roo</h1>
         <h2 className="proyecto-subtitle">Dirección de Vinculación, Difusión y Extensión Universitaria</h2>
         <h3 className="proyecto-form-title">Definición de Proyecto</h3>
@@ -527,7 +528,6 @@ const DefinicionProyectoForm = () => {
 
       <div className="proyecto-form-wrapper">
         <form onSubmit={handleSubmit} className="proyecto-form">
-          {/* Información General */}
           <div className="proyecto-info-general">
             <div className="proyecto-info-grid">
               <div className="proyecto-field">
@@ -550,9 +550,7 @@ const DefinicionProyectoForm = () => {
                 />
               </div>
               <div className="proyecto-field proyecto-field-span-2">
-
                 <label>Lugar donde se realizo el proceso</label>
-
                 <input
                   type="text"
                   value={proyectoData.lugar}
@@ -563,9 +561,8 @@ const DefinicionProyectoForm = () => {
             </div>
           </div>
 
-          {/* Datos del Alumno */}
           <div className="proyecto-section">
-            <div 
+            <div
               className="proyecto-section-header"
               onClick={() => toggleSection('alumnoProyecto')}
             >
@@ -588,7 +585,7 @@ const DefinicionProyectoForm = () => {
                     />
                   </div>
                   <div className="proyecto-field">
-                    <Tooltip text="Tu grupo actual, ejemplo: 9A, 7B, etc.">
+                    <Tooltip text="Tu grupo actual, ejemplo: 29AV, etc.">
                       <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                         Tu grupo <HelpCircle size={16} color="#666" />
                       </label>
@@ -597,13 +594,13 @@ const DefinicionProyectoForm = () => {
                       type="text"
                       value={proyectoData.alumno.grupo}
                       onChange={(e) => handleProyectoChange('alumno', 'grupo', e.target.value)}
-                      placeholder="Ejemplo: 9A"
+                      placeholder="Ejemplo: 21AM"
                     />
                   </div>
                   <div className="proyecto-field proyecto-field-span-2">
                     <Tooltip text="Es el maestro de la universidad que te va a supervisar durante tu estancia">
                       <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        Profesor que te supervisa <HelpCircle size={16} color="#666" />
+                        Asesor académico <HelpCircle size={16} color="#666" />
                       </label>
                     </Tooltip>
                     <input
@@ -618,9 +615,8 @@ const DefinicionProyectoForm = () => {
             )}
           </div>
 
-          {/* Datos de la Empresa */}
           <div className="proyecto-section">
-            <div 
+            <div
               className="proyecto-section-header"
               onClick={() => toggleSection('empresaProyecto')}
             >
@@ -649,7 +645,7 @@ const DefinicionProyectoForm = () => {
                   <div className="proyecto-field">
                     <Tooltip text="La persona de la empresa que te va a supervisar y enseñar">
                       <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        Tu supervisor en la empresa <HelpCircle size={16} color="#666" />
+                        Asesor empresarial <HelpCircle size={16} color="#666" />
                       </label>
                     </Tooltip>
                     <input
@@ -677,9 +673,8 @@ const DefinicionProyectoForm = () => {
             )}
           </div>
 
-          {/* Datos del Proyecto */}
           <div className="proyecto-section">
-            <div 
+            <div
               className="proyecto-section-header"
               onClick={() => toggleSection('proyectoInfo')}
             >
@@ -691,37 +686,39 @@ const DefinicionProyectoForm = () => {
             </div>
             {expandedSections.proyectoInfo !== false && (
               <div className="proyecto-section-content">
-                <div className="proyecto-field">
-                  <Tooltip text="Un nombre corto que describa lo que vas a hacer">
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      Nombre de tu proyecto <HelpCircle size={16} color="#666" />
-                    </label>
-                  </Tooltip>
-                  <input
-                    type="text"
-                    value={proyectoData.proyecto.nombre}
-                    onChange={(e) => handleProyectoChange('proyecto', 'nombre', e.target.value)}
-                    placeholder="Ejemplo: Sistema de ventas para tienda, Campaña de redes sociales"
-                  />
-                </div>
-                <div className="proyecto-field">
-                  <Tooltip text="Explica para qué sirve tu proyecto, qué problema resuelve">
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      Para qué sirve tu proyecto <HelpCircle size={16} color="#666" />
-                    </label>
-                  </Tooltip>
-                  <textarea
-                    value={proyectoData.proyecto.objetivo}
-                    onChange={(e) => handleProyectoChange('proyecto', 'objetivo', e.target.value)}
-                    rows={3}
-                    placeholder="Ejemplo: Crear una página web para que los clientes puedan ver los productos y hacer pedidos más fácil, lo que ayudará a la empresa a vender más..."
-                  />
+                <div className="proyecto-grid">
+                  <div className="proyecto-field">
+                    <Tooltip text="Un nombre corto que describa lo que vas a hacer">
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        Nombre de tu proyecto <HelpCircle size={16} color="#666" />
+                      </label>
+                    </Tooltip>
+                    <input
+                      type="text"
+                      value={proyectoData.proyecto.nombre}
+                      onChange={(e) => handleProyectoChange('proyecto', 'nombre', e.target.value)}
+                      placeholder="Ejemplo: Sistema de ventas para tienda, Campaña de redes sociales"
+                    />
+                  </div>
+                  <div className="proyecto-field">
+                    <Tooltip text="Explica para qué sirve tu proyecto, qué problema resuelve">
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        Para qué sirve tu proyecto <HelpCircle size={16} color="#666" />
+                      </label>
+                    </Tooltip>
+                    <textarea
+                      value={proyectoData.proyecto.objetivo}
+                      onChange={(e) => handleProyectoChange('proyecto', 'objetivo', e.target.value)}
+                      rows={3}
+                      style={{ resize: 'none', overflowY: 'auto', height: '100px', width: '100%', wordWrap: 'break-word' }}
+                      placeholder="Ejemplo: Crear una página web para que los clientes puedan ver los productos y hacer pedidos más fácil, lo que ayudará a la empresa a vender más..."
+                    />
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Etapas del Proyecto */}
           <div className="proyecto-section">
             <div className="proyecto-section-header proyecto-header-with-action">
               <h3 className="proyecto-section-title">
@@ -797,17 +794,16 @@ const DefinicionProyectoForm = () => {
                         />
                       </div>
                       <div className="proyecto-field proyecto-field-span-4">
-
                         <Tooltip text="Describe qué actividades específicas vas a hacer en esta fase">
                           <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                             Actividades de esta fase <HelpCircle size={16} color="#666" />
                           </label>
                         </Tooltip>
-
                         <textarea
                           value={etapa.competencia}
                           onChange={(e) => updateEtapa(etapa.id, 'competencia', e.target.value)}
                           rows={2}
+                          style={{ resize: 'none', overflowY: 'auto', height: '80px', width: '100%', wordWrap: 'break-word' }}
                           placeholder="Ejemplo: Investigar qué necesita la empresa, entrevistar clientes, revisar procesos actuales..."
                         />
                       </div>
@@ -818,39 +814,98 @@ const DefinicionProyectoForm = () => {
             </div>
           </div>
 
-          {/* Información Adicional */}
-          {camposAdicionales.map((campo) => (
-            <div key={campo.key} className="proyecto-section">
-              <div 
-                className="proyecto-section-header"
-                onClick={() => toggleSection(campo.key)}
-              >
-                <h3 className="proyecto-section-title">
-                  {campo.label}
-                </h3>
-                {expandedSections[campo.key] ? <ChevronUp /> : <ChevronDown />}
-              </div>
-              {expandedSections[campo.key] !== false && (
-                <div className="proyecto-section-content">
-                  <textarea
-                    value={proyectoData[campo.key]}
-                    onChange={(e) => handleSimpleProyectoChange(campo.key, e.target.value)}
-                    rows={4}
-                    className="proyecto-textarea"
-                    placeholder={campo.placeholder}
-                  />
-                </div>
-              )}
+          <div className="proyecto-section">
+            <div
+              className="proyecto-section-header"
+              onClick={() => toggleSection('infoAdicional')}
+            >
+              <h3 className="proyecto-section-title">Información Adicional</h3>
+              {expandedSections.infoAdicional ? <ChevronUp /> : <ChevronDown />}
             </div>
-          ))}
+            {expandedSections.infoAdicional !== false && (
+              <div className="proyecto-section-content">
+                <div className="proyecto-grid">
+                  <div className="proyecto-field">
+                    <label>Actividades de Aprendizaje</label>
+                    <textarea
+                      value={proyectoData.actividades}
+                      onChange={(e) => handleSimpleProyectoChange('actividades', e.target.value)}
+                      rows={4}
+                      style={{ resize: 'none', overflowY: 'auto', height: '100px', width: '100%', wordWrap: 'break-word' }}
+                      placeholder=""
+                    />
+                  </div>
+                  <div className="proyecto-field">
+                    <label>Resultados de Aprendizaje</label>
+                    <textarea
+                      value={proyectoData.resultados}
+                      onChange={(e) => handleSimpleProyectoChange('resultados', e.target.value)}
+                      rows={4}
+                      style={{ resize: 'none', overflowY: 'auto', height: '100px', width: '100%', wordWrap: 'break-word' }}
+                      placeholder=""
+                    />
+                  </div>
+                  <div className="proyecto-field">
+                    <label>Evidencias</label>
+                    <textarea
+                      value={proyectoData.evidencias}
+                      onChange={(e) => handleSimpleProyectoChange('evidencias', e.target.value)}
+                      rows={4}
+                      style={{ resize: 'none', overflowY: 'auto', height: '100px', width: '100%', wordWrap: 'break-word' }}
+                      placeholder=""
+                    />
+                  </div>
+                  <div className="proyecto-field">
+                    <label>Instrumentos de Evaluación</label>
+                    <textarea
+                      value={proyectoData.instrumentos}
+                      onChange={(e) => handleSimpleProyectoChange('instrumentos', e.target.value)}
+                      rows={4}
+                      style={{ resize: 'none', overflowY: 'auto', height: '100px', width: '100%', wordWrap: 'break-word' }}
+                      placeholder=""
+                    />
+                  </div>
+                  <div className="proyecto-field">
+                    <label>Asignaturas</label>
+                    <textarea
+                      value={proyectoData.asignaturas}
+                      onChange={(e) => handleSimpleProyectoChange('asignaturas', e.target.value)}
+                      rows={4}
+                      style={{ resize: 'none', overflowY: 'auto', height: '150px', width: '100%', wordWrap: 'break-word' }}
+                      placeholder=""
+                    />
+                  </div>
+                  <div className="proyecto-field">
+                    <label>Tópicos Recomendados</label>
+                    <textarea
+                      value={proyectoData.topicos}
+                      onChange={(e) => handleSimpleProyectoChange('topicos', e.target.value)}
+                      rows={4}
+                      style={{ resize: 'none', overflowY: 'auto', height: '150px', width: '100%', wordWrap: 'break-word' }}
+                      placeholder=""
+                    />
+                  </div>
+                  <div className="proyecto-field">
+                    <label>Estrategias Didácticas</label>
+                    <textarea
+                      value={proyectoData.estrategias}
+                      onChange={(e) => handleSimpleProyectoChange('estrategias', e.target.value)}
+                      rows={4}
+                      style={{ resize: 'none', overflowY: 'auto', height: '150px', width: '100%', wordWrap: 'break-word' }}
+                      placeholder=""
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
-          {/* Submit Button */}
           <div className="proyecto-submit-wrapper">
             <button type="submit" className="proyecto-submit-btn">
               <Send className="btn-icon" />
               Preparar PDF
             </button>
-            
+
             {isPdfReady && (
               <PDFDownloadLink
                 document={<DefinicionProyectoPDF formData={proyectoData} />}
