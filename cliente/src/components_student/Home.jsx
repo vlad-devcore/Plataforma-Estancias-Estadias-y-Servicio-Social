@@ -9,6 +9,7 @@ import {
 import Header from './HeaderEstudiante';
 import useProgramas from '../components/hooks/useProgramasEducativos';
 import Chatbot from "../components/estudiante/Chatbot"; 
+import useFormatos from '../components/hooks/useFormatos'; // Ajusta la ruta si es diferente
 
 // Page transition variants
 const pageVariants = {
@@ -75,6 +76,7 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [showAutoScroll, setShowAutoScroll] = useState(true);
   const { procesosPermitidos, loading, error } = useProgramas();
+  const { downloadFormato, loading: formatosLoading, error: formatosError } = useFormatos(); // Usamos el hook aquí
   const mainContentRef = useRef(null);
 
   const procesoRoutes = {
@@ -108,10 +110,18 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
-  }, [services]);
+  }, [services]); 
 
   const handleVideoGuideClick = () => {
     window.open('https://drive.google.com/file/d/1ZWmNRTIQObrXt03jzEeUDZBhpeUSq1MN/view?usp=drive_link', '_blank');
+  };
+
+  const handlePdfGuideClick = async () => {
+    try {
+      await downloadFormato('Guía de uso'); // Llama a la función del hook para descargar
+    } catch (err) {
+      alert('Error al descargar la guía: ' + (formatosError || 'Intenta de nuevo o contacta al administrador.')); // Manejo básico de errores
+    }
   };
 
   return (
@@ -179,6 +189,7 @@ export default function Home() {
                 icon={<DocumentTextIcon className="w-5 h-5" />}
                 text="Descargar Guía PDF"
                 gradient="bg-gradient-to-r from-red-500 to-red-600"
+                onClick={handlePdfGuideClick} // ¡Aquí está la corrección principal!
               />
             </div>
           </motion.section>
