@@ -71,6 +71,12 @@ app.get("/", (req, res) => {
   res.send("¡Servidor funcionando! CH");
 });
 
+
+// Ruta para la raíz de la API (Responde a GET /api/)
+app.get("/api/", (req, res) => {
+  res.status(200).send("API funcionando y rutas disponibles.");
+});
+
 // Middleware para rutas no encontradas
 app.use((req, res, next) => {
   const error = new Error("Ruta no encontrada");
