@@ -180,7 +180,7 @@ export default function Chatbot() {
           <div className="flex-1 relative">
             <input
               type="text"
-              placeholder="Escribe tu mensaje aquí... ✨"
+              placeholder="Escribe tu mensaje aquí... "
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}

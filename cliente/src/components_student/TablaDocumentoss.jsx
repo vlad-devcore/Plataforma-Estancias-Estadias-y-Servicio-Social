@@ -16,7 +16,6 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
   const navigate = useNavigate();
   const fileInputRefs = useRef({});
 
-  // Estados de modales
   const [modalSubirConfirm, setModalSubirConfirm] = useState({ open: false, idTipoDoc: null });
   const [modalSubir, setModalSubir] = useState({ open: false, idTipoDoc: null });
   const [modalEliminar, setModalEliminar] = useState({ open: false, idDocumento: null });
@@ -86,7 +85,6 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
 
   return (
     <div className="p-4">
-      {/* Mensajes de error y éxito */}
       <AnimatePresence>
         {error && (
           <motion.div
@@ -124,7 +122,6 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
         </div>
       )}
 
-      {/* Tabla principal */}
       {!loading && plantillas.length > 0 && (
         <div className="overflow-x-auto bg-white rounded-xl shadow-lg border border-gray-100">
           <table className="min-w-full divide-y divide-gray-200">
@@ -153,7 +150,6 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
                   <tr key={p.id_plantilla} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 text-gray-800 font-medium">{p.nombre_documento}</td>
 
-                    {/* Plantilla */}
                     <td className="px-6 py-4">
                       {p.nombre_archivo || esEnlaceExterno ? (
                         <motion.button
@@ -167,13 +163,6 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
                           } text-white rounded-full transition-colors`}
                           whileHover={{ rotate: esVistaEspecial || esEnlaceExterno ? 0 : 360, scale: 1.1 }}
                           transition={{ duration: 0.3 }}
-                          title={
-                            esVistaEspecial
-                              ? 'Abrir formulario'
-                              : esEnlaceExterno
-                              ? 'Abrir sitio externo'
-                              : 'Descargar plantilla'
-                          }
                         >
                           {esVistaEspecial ? <Eye size={20} /> : esEnlaceExterno ? <ExternalLink size={20} /> : <Download size={20} />}
                         </motion.button>
@@ -182,7 +171,6 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
                       )}
                     </td>
 
-                    {/* MI DOCUMENTO - PDF: visor | Otros: descarga */}
                     <td className="px-6 py-4">
                       {doc?.RutaArchivo ? (
                         (() => {
@@ -220,7 +208,6 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
                       )}
                     </td>
 
-                    {/* Estatus */}
                     <td className="px-6 py-4">
                       {doc?.Estatus ? (
                         <span
@@ -239,7 +226,6 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
                       )}
                     </td>
 
-                    {/* Feedback */}
                     <td className="px-6 py-4">
                       {doc?.Comentarios ? (
                         <motion.button
@@ -255,7 +241,6 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
                       )}
                     </td>
 
-                    {/* Acciones */}
                     <td className="px-6 py-4 flex gap-3">
                       <motion.button
                         onClick={() => setModalSubirConfirm({ open: true, idTipoDoc: p.IdTipoDoc })}
@@ -289,45 +274,51 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
         </div>
       )}
 
-      {/* ==================== VISOR PDF RESPONSIVE ==================== */}
       <AnimatePresence>
         {visorPdf.open && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-2"
+            className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center p-4"
             onClick={() => setVisorPdf({ open: false, url: null, nombre: '' })}
           >
             <motion.div
-              initial={{ scale: 0.95 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.95 }}
-              className="relative bg-white rounded-lg shadow-2xl w-full h-full max-w-5xl flex flex-col overflow-hidden"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative bg-white rounded-lg shadow-2xl w-full h-full max-w-6xl flex flex-col overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex justify-between items-center p-4 bg-gray-800 text-white">
-                <h3 className="text-lg font-semibold truncate pr-4">{visorPdf.nombre}</h3>
+              <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-[#f97316] to-[#fb923c] text-white border-b border-orange-400">
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                  <svg className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  <h3 className="text-lg font-semibold truncate">{visorPdf.nombre}</h3>
+                </div>
                 <button
                   onClick={() => setVisorPdf({ open: false, url: null, nombre: '' })}
-                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition"
+                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition-colors ml-4 flex-shrink-0"
                 >
-                  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
-              <div className="flex-1 bg-gray-900">
-                <iframe src={visorPdf.url} className="w-full h-full" title="PDF Viewer" allowFullScreen />
+              <div className="flex-1 bg-gray-100 p-4">
+                <div className="w-full h-full bg-white rounded shadow-inner overflow-hidden">
+                  <iframe src={visorPdf.url} className="w-full h-full border-0" title="PDF Viewer" allowFullScreen />
+                </div>
+              </div>
+              <div className="px-6 py-3 bg-white border-t border-gray-200 flex items-center justify-between">
+                <span className="text-sm text-gray-600">UPQROO</span>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ==================== TODOS LOS MODALES COMPLETOS ==================== */}
-
-      {/* Modal Confirmar Subida */}
       <AnimatePresence>
         {modalSubirConfirm.open && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
@@ -351,7 +342,6 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
         )}
       </AnimatePresence>
 
-      {/* Modal Subir Archivo */}
       <AnimatePresence>
         {modalSubir.open && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
@@ -377,7 +367,6 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
         )}
       </AnimatePresence>
 
-      {/* Modal Eliminar */}
       <AnimatePresence>
         {modalEliminar.open && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
@@ -397,7 +386,6 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
         )}
       </AnimatePresence>
 
-      {/* Modal Feedback */}
       <AnimatePresence>
         {modalFeedback.open && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
