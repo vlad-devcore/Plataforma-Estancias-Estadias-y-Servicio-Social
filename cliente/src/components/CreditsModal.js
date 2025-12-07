@@ -45,12 +45,12 @@ const CreditsModal = () => {
       linkedin: 'https://linkedin.com/in/juanoch'
     },
     {
-      name: 'Vladimir Poot',
-      role: 'Desarrollador Frontend',
-      emoji: '🎨',
+      name: 'Marcos Vladimir Poot',
+      role: 'Desarrollador FullStack, Lider de Proyecto',
+      emoji: '🧑‍💻',
       image: '/team/vladimir.jpg',
-      github: 'https://github.com/vladimirpoot',
-      linkedin: 'https://linkedin.com/in/vladimirpoot'
+      github: 'https://github.com/Marcos24Vlad',
+      linkedin: 'https://www.linkedin.com/in/marcos-vladimir-poot-cohuo-1a215a25b/'
     },
     {
       name: 'Zurisaday Guerrero',
