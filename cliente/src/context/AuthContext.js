@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import axios from "axios";
 
 const AuthContext = createContext(null);
 
@@ -12,7 +12,7 @@ export const AuthProvider = ({ children }) => {
   // 🔐 Verificar token SOLO una vez al iniciar
   useEffect(() => {
     const verifyToken = async () => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
 
       if (!token) {
         setLoading(false);
@@ -25,11 +25,11 @@ export const AuthProvider = ({ children }) => {
         });
 
         setUser(data.user);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem("user", JSON.stringify(data.user));
       } catch (error) {
-        console.error('Token inválido o expirado');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        console.error("Token inválido o expirado");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
         setUser(null);
       } finally {
         setLoading(false);
@@ -47,30 +47,41 @@ export const AuthProvider = ({ children }) => {
         password,
       });
 
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // Validación defensiva
+      if (!data?.token || !data?.user) {
+        return {
+          success: false,
+          error: "Respuesta inválida del servidor",
+        };
+      }
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
       setUser(data.user);
 
-      return { success: true };
+      return {
+        success: true,
+        user: data.user,
+      };
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Error al iniciar sesión',
+        error: error.response?.data?.error || "Error al iniciar sesión",
       };
     }
   };
 
   // 🚪 Logout (SIN navegar)
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setUser(null);
   };
 
   // 👤 Actualizar perfil
   const updateUser = async (userData) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
 
       const { data } = await axios.put(
         `${API}/api/users/${userData.id}`,
@@ -81,13 +92,13 @@ export const AuthProvider = ({ children }) => {
       );
 
       setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem("user", JSON.stringify(userData));
 
       return { success: true, message: data.message };
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Error al actualizar perfil',
+        error: error.response?.data?.error || "Error al actualizar perfil",
       };
     }
   };
@@ -95,7 +106,7 @@ export const AuthProvider = ({ children }) => {
   // 🔐 Cambiar contraseña
   const changePassword = async (oldPassword, newPassword) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
 
       const { data } = await axios.post(
         `${API}/api/auth/change-password`,
@@ -107,7 +118,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Error al cambiar contraseña',
+        error: error.response?.data?.error || "Error al cambiar contraseña",
       };
     }
   };
@@ -131,7 +142,7 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth debe usarse dentro de AuthProvider');
+    throw new Error("useAuth debe usarse dentro de AuthProvider");
   }
   return context;
 };
