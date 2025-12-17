@@ -11,6 +11,33 @@ import {
 const router = express.Router();
 
 /* =========================
+   OBTENER PERIODOS (NUEVA RUTA)
+========================= */
+router.get(
+  "/periodos",
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const [periodos] = await pool.query(
+        `SELECT 
+          IdPeriodo,
+          Año,
+          Fase,
+          CONCAT(Año, ' ', Fase) AS periodo_completo,
+          Activo
+         FROM periodos
+         ORDER BY Año DESC, Fase DESC`
+      );
+
+      res.json(periodos);
+    } catch (error) {
+      console.error("Error al obtener periodos:", error);
+      res.status(500).json({ error: "Error al obtener periodos" });
+    }
+  }
+);
+
+/* =========================
    CREAR PROCESO COMPLETO
 ========================= */
 router.post(
