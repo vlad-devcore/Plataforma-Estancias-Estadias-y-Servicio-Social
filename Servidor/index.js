@@ -7,7 +7,7 @@ import morgan from "morgan";
 import { fileURLToPath } from "url";
 import userRouter from "./routes/users.js";
 import estudianteRouter from "./routes/estudiantes.js";
-import empresaRouter, { errorHandler } from "./routes/empresas.js"; 
+import empresaRouter from "./routes/empresas.js"; // ❌ QUITA { errorHandler }
 import documentoRouter from "./routes/documentos.js";
 import authRouter from "./routes/auth.js";
 import documentosAdminRouter from "./routes/documentosAdmin.js";
@@ -71,10 +71,9 @@ app.get("/", (req, res) => {
   res.send("¡Servidor funcionando! CH");
 });
 
-
 // Ruta para la raíz de la API (Responde a GET /api/)
 app.get("/api/", (req, res) => {
-  res.status(200).send("API funcionando y rutas disponibles.");
+  res.status(200).send("API funcionando y rutas disponibles.");
 });
 
 // Middleware para rutas no encontradas
@@ -84,8 +83,20 @@ app.use((req, res, next) => {
   next(error);
 });
 
-// Middleware de manejo de errores
-app.use(errorHandler);
+// ✅ Middleware de manejo de errores global
+app.use((err, req, res, next) => {
+  const status = err.status || 500;
+  const message = err.message || "Error interno del servidor";
+  
+  console.error(`[ERROR] ${status}: ${message}`);
+  console.error(err.stack);
+  
+  res.status(status).json({
+    error: true,
+    message: message,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+});
 
 // Iniciar servidor
 app.listen(PORT, () => {
