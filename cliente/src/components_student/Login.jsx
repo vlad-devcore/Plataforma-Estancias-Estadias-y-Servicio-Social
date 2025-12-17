@@ -25,48 +25,70 @@ const Login = () => {
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
+  try {
     const response = await login(email, password);
 
-    if (response.success) {
-      if (response.user.role === 'estudiante') {
-        try {
-          const { data: estudiante } = await axios.get(
-            `${process.env.REACT_APP_API_ENDPOINT}/api/estudiantes/by-user/${response.user.id}`
-          );
-          if (estudiante.id_programa) {
-            localStorage.setItem(
-              'user',
-              JSON.stringify({ ...response.user, id_programa: estudiante.id_programa })
-            );
-            navigate('/home');
-          } else {
-            navigate('/estudiante/programa');
-          }
-        } catch (err) {
-          setErrorMessage('Error al verificar el programa educativo.');
-          setShowErrorModal(true);
-        }
-      } else {
-        switch (response.user.role) {
-          case 'administrador':
-            navigate('/inicioadmin');
-            break;
-          case 'asesor_academico':
-          case 'asesor_empresarial':
-            navigate('/perfil');
-            break;
-          default:
-            setErrorMessage('Rol no reconocido');
-            setShowErrorModal(true);
-        }
-      }
-    } else {
-      setErrorMessage(response.error);
+    if (!response || !response.success || !response.user) {
+      setErrorMessage(response?.error || 'Error al iniciar sesión');
       setShowErrorModal(true);
+      return;
     }
-  };
+
+    const { id, role } = response.user;
+
+    if (!role) {
+      setErrorMessage('No se pudo determinar el rol del usuario');
+      setShowErrorModal(true);
+      return;
+    }
+
+    // ===== ESTUDIANTE =====
+    if (role === 'estudiante') {
+      try {
+        const { data: estudiante } = await axios.get(
+          `${process.env.REACT_APP_API_ENDPOINT}/api/estudiantes/by-user/${id}`
+        );
+
+        if (estudiante?.id_programa) {
+          localStorage.setItem(
+            'user',
+            JSON.stringify({ ...response.user, id_programa: estudiante.id_programa })
+          );
+          navigate('/home');
+        } else {
+          navigate('/estudiante/programa');
+        }
+      } catch (err) {
+        setErrorMessage('Error al verificar el programa educativo');
+        setShowErrorModal(true);
+      }
+      return;
+    }
+
+    // ===== OTROS ROLES =====
+    switch (role) {
+      case 'administrador':
+        navigate('/inicioadmin');
+        break;
+
+      case 'asesor_academico':
+      case 'asesor_empresarial':
+        navigate('/perfil');
+        break;
+
+      default:
+        setErrorMessage('Rol no reconocido');
+        setShowErrorModal(true);
+    }
+
+  } catch (error) {
+    setErrorMessage('Error inesperado al iniciar sesión');
+    setShowErrorModal(true);
+  }
+};
+
 
   const handleRequestReset = async (e) => {
     e.preventDefault();
