@@ -14,27 +14,60 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Clonar repositorio
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
+      # 2️⃣ Detectar cambios
       - name: Detect changes
         run: |
           git diff --quiet HEAD^ HEAD -- cliente/ && echo "cliente_changed=false" >> $GITHUB_ENV || echo "cliente_changed=true" >> $GITHUB_ENV
           git diff --quiet HEAD^ HEAD -- Servidor/ && echo "servidor_changed=false" >> $GITHUB_ENV || echo "servidor_changed=true" >> $GITHUB_ENV
 
+      # 3️⃣ Configurar SSH con llave privada
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh-private-key: |
+            ${{ secrets.SSH_PRIVATE_KEY }}
 
+      # 4️⃣ Registrar el servidor en known_hosts
+      - name: Add SSH known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan academico.upqroo.edu.mx >> ~/.ssh/known_hosts
+
+      # 5️⃣ Deploy del cliente (frontend)
       - name: Deploy cliente
         if: env.cliente_changed == 'true'
         run: |
-          rsync -av --exclude='node_modules' --exclude='.env' cliente/ gestionvinculacion@academico.upqroo.edu.mx:/var/www/PEE/cliente
-          ssh gestionvinculacion@academico.upqroo.edu.mx "cd /var/www/PEE/cliente && npm ci && npm run build && pm2 restart front-PEE"
+          rsync -av --delete \
+            --exclude='node_modules' \
+            --exclude='.env' \
+            cliente/ \
+            gestionvinculacion@academico.upqroo.edu.mx:/var/www/PEE/cliente
 
+          ssh gestionvinculacion@academico.upqroo.edu.mx "
+            cd /var/www/PEE/cliente &&
+            npm ci &&
+            npm run build &&
+            pm2 restart front-PEE
+          "
+
+      # 6️⃣ Deploy del servidor (backend)
       - name: Deploy Servidor
         if: env.servidor_changed == 'true'
         run: |
-          rsync -av --exclude='node_modules' --exclude='.env' Servidor/ gestionvinculacion@academico.upqroo.edu.mx:/var/www/PEE/Servidor
-          ssh gestionvinculacion@academico.upqroo.edu.mx "cd /var/www/PEE/Servidor && npm ci && pm2 restart Back-PEE"
+          rsync -av --delete \
+            --exclude='node_modules' \
+            --exclude='.env' \
+            Servidor/ \
+            gestionvinculacion@academico.upqroo.edu.mx:/var/www/PEE/Servidor
+
+          ssh gestionvinculacion@academico.upqroo.edu.mx "
+            cd /var/www/PEE/Servidor &&
+            npm ci &&
+            pm2 restart Back-PEE
+          "
