@@ -18,10 +18,9 @@ export const authenticateToken = async (req, res, next) => {
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, JWT_SECRET);
 
-    // Verificar que el usuario exista
     const [users] = await pool.query(
-      `SELECT id_user, email, role 
-       FROM users 
+      `SELECT id_user, email, role
+       FROM users
        WHERE id_user = ?`,
       [decoded.id]
     );
@@ -44,12 +43,12 @@ export const authenticateToken = async (req, res, next) => {
 };
 
 /* =====================================================
-   VERIFICACIÓN DE ROLES
+   CONTROL DE ROLES
 ===================================================== */
 export const checkRole = (roles = []) => {
   return (req, res, next) => {
     if (!req.user || !req.user.role) {
-      return res.status(403).json({ error: "Información de usuario no disponible" });
+      return res.status(403).json({ error: "Rol de usuario no disponible" });
     }
 
     if (!roles.includes(req.user.role)) {
@@ -65,59 +64,27 @@ export const checkRole = (roles = []) => {
 };
 
 /* =====================================================
-   VERIFICACIÓN DE PROPIEDAD (OWNERSHIP)
+   PREVENCIÓN DE ESCALAMIENTO DE PRIVILEGIOS
 ===================================================== */
-export const checkOwnership = (resourceType) => {
-  return async (req, res, next) => {
-    try {
-      const userId = req.user.id;
-      const resourceId = parseInt(req.params.id_Documento || req.params.id, 10);
+export const preventPrivilegeEscalation = (req, res, next) => {
+  const forbiddenFields = ["role", "id_user", "password"];
 
-      if (!resourceId || isNaN(resourceId)) {
-        return res.status(400).json({ error: "ID de recurso inválido" });
-      }
-
-      // Admin y coordinador pueden acceder a todo
-      if (["admin", "coordinador"].includes(req.user.role)) {
-        return next();
-      }
-
-      let query;
-      let params;
-
-      switch (resourceType) {
-        case "documento":
-          query = `SELECT id_usuario FROM documentos WHERE id_Documento = ?`;
-          params = [resourceId];
-          break;
-
-        default:
-          return res.status(500).json({ error: "Tipo de recurso no soportado" });
-      }
-
-      const [results] = await pool.query(query, params);
-
-      if (results.length === 0) {
-        return res.status(404).json({ error: "Recurso no encontrado" });
-      }
-
-      if (results[0].id_usuario !== userId) {
-        return res.status(403).json({ error: "No tienes permiso para este recurso" });
-      }
-
-      next();
-    } catch (error) {
-      console.error("Error en checkOwnership:", error.message);
-      res.status(500).json({ error: "Error verificando permisos" });
+  for (const field of forbiddenFields) {
+    if (req.body && Object.prototype.hasOwnProperty.call(req.body, field)) {
+      return res.status(403).json({
+        error: `No está permitido modificar el campo: ${field}`
+      });
     }
-  };
+  }
+
+  next();
 };
 
 /* =====================================================
    VALIDACIÓN DE IDS NUMÉRICOS
 ===================================================== */
 export const validateNumericId = (req, res, next) => {
-  const id = req.params.id || req.params.id_Documento;
+  const id = req.params.id || req.params.id_user;
 
   if (!id || isNaN(parseInt(id, 10))) {
     return res.status(400).json({ error: "ID inválido" });
