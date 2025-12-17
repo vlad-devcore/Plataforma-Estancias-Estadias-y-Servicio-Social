@@ -1,18 +1,22 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import { useAuth } from "../../context/AuthContext";
 
 const useFormatos = () => {
+  const { user, token } = useAuth();
+
   const [formatos, setFormatos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  // Base URL completa para las peticiones
   const API_BASE = `${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin`;
 
-  // Tipos de documentos predefinidos
+  /* =========================
+     TIPOS DE DOCUMENTOS
+     ========================= */
   const tiposDocumentos = [
-    "Número NSS", 
+    "Número NSS",
     "Carta de presentación",
     "Carta de aceptación",
     "Cédula de registro",
@@ -22,134 +26,150 @@ const useFormatos = () => {
     "Reporte Mensual",
   ];
 
-  // Obtener todos los formatos
-  const fetchFormatos = async () => {
+  /* =========================
+     AXIOS CON AUTH
+     ========================= */
+  const axiosAuth = axios.create({
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  /* =========================
+     OBTENER FORMATOS
+     ========================= */
+  const fetchFormatos = useCallback(async () => {
+    if (!user || !token) return;
+
     setLoading(true);
     setError(null);
-    try {
-      const response = await axios.get(API_BASE);
-      const data = response.data;
 
-      // Combinar con documentos predefinidos
+    try {
+      const { data } = await axiosAuth.get(API_BASE);
+
       const combined = tiposDocumentos.map((tipo) => {
-        const formatoExistente = data.find((f) => f.nombre_documento === tipo);
+        const formato = data.find((f) => f.nombre_documento === tipo);
         return {
+          id: formato?.id || null,
           nombre_documento: tipo,
-          nombre_archivo: formatoExistente?.nombre_archivo || null,
-          id: formatoExistente?.id || null,
-          estado: formatoExistente?.estado || 'Activo',
-          ultima_modificacion_manual: formatoExistente?.ultima_modificacion_manual || null,
+          nombre_archivo: formato?.nombre_archivo || null,
+          estado: formato?.estado || "Activo",
+          ultima_modificacion_manual:
+            formato?.ultima_modificacion_manual || null,
         };
       });
 
       setFormatos(combined);
-      return combined;
     } catch (err) {
       setError(err.response?.data?.error || "Error al cargar formatos");
-      throw err;
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, token]);
 
-  // Subir o actualizar un formato
+  /* =========================
+     SUBIR / ACTUALIZAR FORMATO
+     ========================= */
   const uploadFormato = async (nombreDocumento, archivo) => {
+    if (!archivo || !token) return;
+
     setLoading(true);
     setError(null);
     setSuccess(null);
+
     try {
       const formData = new FormData();
       formData.append("archivo", archivo);
       formData.append("nombre_documento", nombreDocumento);
 
-      const response = await axios.post(`${API_BASE}/upload`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+      await axiosAuth.post(`${API_BASE}/upload`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       setSuccess("Formato subido correctamente");
-      await fetchFormatos(); // Refrescar la lista
-      return response.data;
+      fetchFormatos();
     } catch (err) {
       setError(err.response?.data?.error || "Error al subir formato");
-      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Actualizar el estado de un formato
+  /* =========================
+     CAMBIAR ESTADO
+     ========================= */
   const updateEstadoFormato = async (nombreDocumento, nuevoEstado) => {
+    if (!token) return;
+
     setLoading(true);
     setError(null);
     setSuccess(null);
+
     try {
-      const response = await axios.put(`${API_BASE}/estado`, {
+      await axiosAuth.put(`${API_BASE}/estado`, {
         nombre_documento: nombreDocumento,
         estado: nuevoEstado,
       });
 
-      setSuccess(`Estado actualizado a "${nuevoEstado}" correctamente`);
-      await fetchFormatos(); // Refrescar la lista
-      return response.data;
+      setSuccess(`Estado actualizado a "${nuevoEstado}"`);
+      fetchFormatos();
     } catch (err) {
-      setError(err.response?.data?.error || "Error al actualizar el estado");
-      throw err;
+      setError(err.response?.data?.error || "Error al actualizar estado");
     } finally {
       setLoading(false);
     }
   };
 
-  // Descargar un formato
-  const downloadFormato = async (nombreDocumento) => {
-    setLoading(true);
-    setError(null);
-    try {
-      window.open(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin/download/${encodeURIComponent(
-          nombreDocumento
-        )}`,
-        "_blank"
-      );
+  /* =========================
+     DESCARGAR
+     ========================= */
+  const downloadFormato = (nombreDocumento) => {
+    if (!nombreDocumento) return;
 
-      return true;
-    } catch (err) {
-      setError(err.response?.data?.error || "Error al descargar formato");
-      throw err;
-    } finally {
-      setLoading(false);
-    }
+    window.open(
+      `${API_BASE}/download/${encodeURIComponent(nombreDocumento)}`,
+      "_blank"
+    );
   };
 
-  // Eliminar un formato
+  /* =========================
+     ELIMINAR
+     ========================= */
   const deleteFormato = async (nombreDocumento) => {
+    if (!token) return;
+
     setLoading(true);
     setError(null);
     setSuccess(null);
+
     try {
-      await axios.delete(`${API_BASE}/${encodeURIComponent(nombreDocumento)}`);
+      await axiosAuth.delete(
+        `${API_BASE}/${encodeURIComponent(nombreDocumento)}`
+      );
+
       setSuccess("Formato eliminado correctamente");
-      await fetchFormatos(); // Refrescar la lista
-      return true;
+      fetchFormatos();
     } catch (err) {
       setError(err.response?.data?.error || "Error al eliminar formato");
-      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Obtener la extensión del archivo
+  /* =========================
+     HELPERS
+     ========================= */
   const getFileExtension = (filename) => {
     if (!filename) return null;
     return filename.split(".").pop().toLowerCase();
   };
 
-  // Cargar formatos al inicializar
+  /* =========================
+     EFFECT
+     ========================= */
   useEffect(() => {
     fetchFormatos();
-  }, []);
+  }, [fetchFormatos]);
 
   return {
     formatos,
