@@ -75,12 +75,33 @@ jobs:
           ssh gestionvinculacion@academico.upqroo.edu.mx << 'EOF'
             set -e
             cd /var/www/PEE/cliente
+            
+            # Detener PM2 primero para liberar archivos
+            echo "⏸️  Stopping PM2 process..."
+            pm2 stop front-PEE 2>/dev/null || echo "Process not running"
+            
+            # Limpiar cachés y node_modules problemáticos
+            echo "🧹 Cleaning caches..."
+            rm -rf node_modules/.cache
+            rm -rf .cache
+            rm -rf build
+            
+            # Instalar dependencias
             echo "📦 Installing dependencies..."
-            npm ci --prefer-offline --no-audit
+            npm install --prefer-offline --no-audit
+            
+            # Build
             echo "🔨 Building..."
             npm run build
+            
+            # Reiniciar PM2
             echo "♻️  Restarting PM2..."
-            pm2 restart front-PEE || pm2 start npm --name front-PEE -- start
+            if pm2 id front-PEE > /dev/null 2>&1; then
+              pm2 restart front-PEE
+            else
+              pm2 start npm --name front-PEE -- start
+            fi
+            
             pm2 save
             echo "✅ Cliente deployed successfully"
           EOF
@@ -100,10 +121,27 @@ jobs:
           ssh gestionvinculacion@academico.upqroo.edu.mx << 'EOF'
             set -e
             cd /var/www/PEE/Servidor
+            
+            # Detener PM2 primero
+            echo "⏸️  Stopping PM2 process..."
+            pm2 stop Back-PEE 2>/dev/null || echo "Process not running"
+            
+            # Limpiar cachés
+            echo "🧹 Cleaning caches..."
+            rm -rf node_modules/.cache
+            
+            # Instalar dependencias
             echo "📦 Installing dependencies..."
-            npm ci --prefer-offline --no-audit
+            npm install --prefer-offline --no-audit
+            
+            # Reiniciar PM2
             echo "♻️  Restarting PM2..."
-            pm2 restart Back-PEE || pm2 start index.js --name Back-PEE
+            if pm2 id Back-PEE > /dev/null 2>&1; then
+              pm2 restart Back-PEE
+            else
+              pm2 start index.js --name Back-PEE
+            fi
+            
             pm2 save
             echo "✅ Servidor deployed successfully"
           EOF
