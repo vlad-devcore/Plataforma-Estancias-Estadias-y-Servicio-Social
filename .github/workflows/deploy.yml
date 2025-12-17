@@ -14,58 +14,104 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout
+      # 1️⃣ Checkout con fetch-depth para tener historial
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Necesario para comparar con commit anterior
 
-      # 2️⃣ Detectar cambios
+      # 2️⃣ Detectar cambios (CORREGIDO)
       - name: Detect changes
         run: |
-          git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^cliente/' && echo "cliente_changed=true" >> $GITHUB_ENV || echo "cliente_changed=false" >> $GITHUB_ENV
-          git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^Servidor/' && echo "servidor_changed=true" >> $GITHUB_ENV || echo "servidor_changed=false" >> $GITHUB_ENV
+          # Si es el primer push, comparar con HEAD
+          if [ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]; then
+            echo "cliente_changed=true" >> $GITHUB_ENV
+            echo "servidor_changed=true" >> $GITHUB_ENV
+          else
+            # Verificar si el commit anterior existe
+            if git cat-file -e ${{ github.event.before }} 2>/dev/null; then
+              CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+            else
+              # Si no existe, usar HEAD~1
+              CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+            fi
+            
+            echo "$CHANGED_FILES" | grep -q '^cliente/' && echo "cliente_changed=true" >> $GITHUB_ENV || echo "cliente_changed=false" >> $GITHUB_ENV
+            echo "$CHANGED_FILES" | grep -q '^Servidor/' && echo "servidor_changed=true" >> $GITHUB_ENV || echo "servidor_changed=false" >> $GITHUB_ENV
+          fi
 
-      # 3️⃣ SSH Agent
+      # 3️⃣ Mostrar qué cambió (para debugging)
+      - name: Show detected changes
+        run: |
+          echo "Cliente changed: ${{ env.cliente_changed }}"
+          echo "Servidor changed: ${{ env.servidor_changed }}"
+
+      # 4️⃣ SSH Agent
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # 4️⃣ Known hosts
+      # 5️⃣ Known hosts
       - name: Add SSH known hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan academico.upqroo.edu.mx >> ~/.ssh/known_hosts
+          ssh-keyscan -H academico.upqroo.edu.mx >> ~/.ssh/known_hosts
 
-      # 5️⃣ Deploy CLIENTE (Frontend)
+      # 6️⃣ Deploy CLIENTE (Frontend)
       - name: Deploy cliente
         if: env.cliente_changed == 'true'
         run: |
-          rsync -av \
+          echo "🚀 Deploying CLIENTE..."
+          rsync -avz --progress \
             --exclude='node_modules' \
             --exclude='.env' \
             --exclude='build' \
+            --exclude='.git' \
+            --exclude='.next' \
             cliente/ \
             gestionvinculacion@academico.upqroo.edu.mx:/var/www/PEE/cliente
 
           ssh gestionvinculacion@academico.upqroo.edu.mx << 'EOF'
+            set -e
             cd /var/www/PEE/cliente
-            npm ci
+            echo "📦 Installing dependencies..."
+            npm ci --prefer-offline --no-audit
+            echo "🔨 Building..."
             npm run build
+            echo "♻️  Restarting PM2..."
             pm2 restart front-PEE || pm2 start npm --name front-PEE -- start
+            pm2 save
+            echo "✅ Cliente deployed successfully"
           EOF
 
-      # 6️⃣ Deploy SERVIDOR (Backend)
+      # 7️⃣ Deploy SERVIDOR (Backend)
       - name: Deploy Servidor
         if: env.servidor_changed == 'true'
         run: |
-          rsync -av --delete \
+          echo "🚀 Deploying SERVIDOR..."
+          rsync -avz --progress \
             --exclude='node_modules' \
             --exclude='.env' \
+            --exclude='.git' \
             Servidor/ \
             gestionvinculacion@academico.upqroo.edu.mx:/var/www/PEE/Servidor
 
           ssh gestionvinculacion@academico.upqroo.edu.mx << 'EOF'
+            set -e
             cd /var/www/PEE/Servidor
-            npm ci
+            echo "📦 Installing dependencies..."
+            npm ci --prefer-offline --no-audit
+            echo "♻️  Restarting PM2..."
             pm2 restart Back-PEE || pm2 start index.js --name Back-PEE
+            pm2 save
+            echo "✅ Servidor deployed successfully"
           EOF
+
+      # 8️⃣ Resumen final
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "📊 Deployment Summary:"
+          echo "- Cliente deployed: ${{ env.cliente_changed }}"
+          echo "- Servidor deployed: ${{ env.servidor_changed }}"
