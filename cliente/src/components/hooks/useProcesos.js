@@ -1,6 +1,29 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
+/* ======================================================
+   Axios instance con token automático
+   ====================================================== */
+const API = process.env.REACT_APP_API_ENDPOINT;
+
+const api = axios.create({
+  baseURL: API,
+});
+
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+/* ======================================================
+   Hook
+   ====================================================== */
 const useProcesos = () => {
   const [procesos, setProcesos] = useState([]);
   const [filteredProcesos, setFilteredProcesos] = useState([]);
@@ -16,23 +39,25 @@ const useProcesos = () => {
   const [totalProcesos, setTotalProcesos] = useState(0);
 
   const processesPerPage = 50;
-  const API = process.env.REACT_APP_API_ENDPOINT;
 
-  // 🔐 Cargar usuario desde localStorage
+  /* ======================================================
+     Usuario desde localStorage
+     ====================================================== */
   useEffect(() => {
     try {
       const storedUser = JSON.parse(localStorage.getItem("user"));
-      if (storedUser?.id) {
-        setUser(storedUser);
-      }
+      if (storedUser?.id) setUser(storedUser);
     } catch {
       setUser(null);
     }
   }, []);
 
+  /* ======================================================
+     Periodos
+     ====================================================== */
   const fetchAvailablePeriodos = async () => {
     try {
-      const { data } = await axios.get(`${API}/api/procesos/periodos`);
+      const { data } = await api.get("/api/procesos/periodos");
       setAvailablePeriodos(data || []);
       if (data?.length > 0) {
         setSelectedPeriodo(String(data[0].IdPeriodo));
@@ -42,6 +67,9 @@ const useProcesos = () => {
     }
   };
 
+  /* ======================================================
+     Filtros + paginación
+     ====================================================== */
   const applyFilterAndPagination = (data, search, page, periodoId) => {
     const safeData = Array.isArray(data) ? data : [];
 
@@ -71,10 +99,13 @@ const useProcesos = () => {
     setTotalPages(Math.ceil(filtered.length / processesPerPage) || 1);
   };
 
+  /* ======================================================
+     Procesos
+     ====================================================== */
   const fetchProcesos = async () => {
     try {
       setLoading(true);
-      const { data } = await axios.get(`${API}/api/procesos`);
+      const { data } = await api.get("/api/procesos");
       setProcesos(data || []);
       applyFilterAndPagination(data, searchTerm, currentPage, selectedPeriodo);
       setError(null);
@@ -98,6 +129,9 @@ const useProcesos = () => {
     );
   }, [procesos, searchTerm, currentPage, selectedPeriodo]);
 
+  /* ======================================================
+     Helpers
+     ====================================================== */
   const mapTipoProceso = (tipo) => {
     switch (tipo) {
       case "Estancia I":
@@ -114,6 +148,9 @@ const useProcesos = () => {
     }
   };
 
+  /* ======================================================
+     CRUD
+     ====================================================== */
   const createProceso = async (formData, tipoProceso) => {
     if (!user?.id) throw new Error("Usuario no encontrado");
 
@@ -126,42 +163,40 @@ const useProcesos = () => {
       tipo_proceso: mapTipoProceso(tipoProceso),
     };
 
-    const { data } = await axios.post(`${API}/api/procesos`, payload);
+    const { data } = await api.post("/api/procesos", payload);
     setSuccess("Proceso creado con éxito");
     await fetchProcesos();
     return data;
   };
 
   const updateProceso = async (id_proceso, formData) => {
-    if (!user?.id) throw new Error("Usuario no encontrado");
-
     const payload = {
       id_empresa: formData.id_empresa,
       id_asesor_academico: formData.id_asesor_academico,
       tipo_proceso: formData.tipo_proceso,
     };
 
-    await axios.put(`${API}/api/procesos/${id_proceso}`, payload);
+    await api.put(`/api/procesos/${id_proceso}`, payload);
     setSuccess("Proceso actualizado con éxito");
     await fetchProcesos();
   };
 
   const deleteProceso = async (id_proceso) => {
-    await axios.delete(`${API}/api/procesos/${id_proceso}`);
+    await api.delete(`/api/procesos/${id_proceso}`);
     setSuccess("Proceso eliminado con éxito");
     await fetchProcesos();
   };
 
   const validarRegistroEnPeriodo = async (idPeriodo) => {
     if (!user?.id) throw new Error("Usuario no encontrado");
-    const { data } = await axios.get(
-      `${API}/api/procesos/validar/${user.id}/${idPeriodo}`
+    const { data } = await api.get(
+      `/api/procesos/validar/${user.id}/${idPeriodo}`
     );
     return data;
   };
 
   const exportFilteredProcesos = async () => {
-    const { data } = await axios.get(`${API}/api/procesos/export`, {
+    const { data } = await api.get("/api/procesos/export", {
       params: { periodo: selectedPeriodo, search: searchTerm },
       responseType: "blob",
     });
@@ -181,6 +216,9 @@ const useProcesos = () => {
     setSuccess(null);
   };
 
+  /* ======================================================
+     Init
+     ====================================================== */
   useEffect(() => {
     fetchAvailablePeriodos();
     fetchProcesos();
