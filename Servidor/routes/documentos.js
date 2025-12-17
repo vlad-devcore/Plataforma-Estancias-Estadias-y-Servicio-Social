@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 import {
   authenticateToken,
   checkRole,
-  checkOwnership,
+  checkDocumentOwnership,
   validateNumericId
 } from "./authMiddleware.js";
 
@@ -83,7 +83,7 @@ router.post(
     try {
       const { IdTipoDoc, Comentarios = "", id_proceso } = req.body;
       const file = req.file;
-      const id_usuario = req.user.id; // 🔐 FORZADO
+      const id_usuario = req.user.id; // 🔐 FORZADO del token
 
       if (!IdTipoDoc || !id_proceso || !file) {
         return res.status(400).json({ error: "Faltan campos obligatorios o archivo" });
@@ -192,12 +192,13 @@ router.put(
 
 /* =========================
    DESCARGAR DOCUMENTO
+   🔒 Ahora con verificación de propiedad
 ========================= */
 router.get(
   "/download/:id_Documento",
   authenticateToken,
   validateNumericId,
-  checkOwnership("documento"),
+  checkDocumentOwnership,
   async (req, res) => {
     const { id_Documento } = req.params;
 
@@ -225,12 +226,13 @@ router.get(
 
 /* =========================
    ELIMINAR DOCUMENTO
+   🔒 Ahora con verificación de propiedad
 ========================= */
 router.delete(
   "/:id_Documento",
   authenticateToken,
   validateNumericId,
-  checkOwnership("documento"),
+  checkDocumentOwnership,
   async (req, res) => {
     const { id_Documento } = req.params;
 

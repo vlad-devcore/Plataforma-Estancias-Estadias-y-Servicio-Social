@@ -107,6 +107,46 @@ export const checkOwnership = (param = "id_user") => {
 };
 
 /* =====================================================
+   VERIFICAR PROPIEDAD DE DOCUMENTO
+   🆕 Nueva función para proteger documentos
+===================================================== */
+export const checkDocumentOwnership = async (req, res, next) => {
+  try {
+    const { id_Documento } = req.params;
+
+    if (!id_Documento || isNaN(parseInt(id_Documento, 10))) {
+      return res.status(400).json({ error: "ID de documento inválido" });
+    }
+
+    // Admin/Coordinador pueden acceder a todo
+    if (["admin", "coordinador"].includes(req.user.role)) {
+      return next();
+    }
+
+    // Verificar propiedad del documento
+    const [documento] = await pool.query(
+      `SELECT id_usuario FROM documentos WHERE id_Documento = ?`,
+      [id_Documento]
+    );
+
+    if (documento.length === 0) {
+      return res.status(404).json({ error: "Documento no encontrado" });
+    }
+
+    if (documento[0].id_usuario !== req.user.id) {
+      return res.status(403).json({ 
+        error: "No tienes permiso para acceder a este documento" 
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error("Error en checkDocumentOwnership:", error);
+    return res.status(500).json({ error: "Error al verificar propiedad" });
+  }
+};
+
+/* =====================================================
    VALIDAR ID NUMÉRICO
 ===================================================== */
 export const validateNumericId = (req, res, next) => {
@@ -114,7 +154,10 @@ export const validateNumericId = (req, res, next) => {
     req.params.id ||
     req.params.id_user ||
     req.params.id_estudiante ||
-    req.params.id_empresa;
+    req.params.id_empresa ||
+    req.params.id_Documento ||
+    req.params.IdPeriodo ||
+    req.params.id_proceso;
 
   if (!id || isNaN(parseInt(id, 10))) {
     return res.status(400).json({ error: "ID inválido" });
