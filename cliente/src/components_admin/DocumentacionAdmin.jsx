@@ -1,8 +1,16 @@
-import { motion } from 'framer-motion';
-import { Search, Eye, CheckCircle, XCircle, File, MessageSquare, RotateCcw } from 'lucide-react';
-import { useState } from 'react';
-import Sidebar from './Sidebar';
-import useDocumentosAdmin from '../components/hooks/useDocumentosAdmin';
+import { motion } from "framer-motion";
+import {
+  Search,
+  Eye,
+  CheckCircle,
+  XCircle,
+  File,
+  MessageSquare,
+  RotateCcw,
+} from "lucide-react";
+import { useState } from "react";
+import Sidebar from "./Sidebar";
+import useDocumentosAdmin from "../components/hooks/useDocumentosAdmin";
 
 const DocumentManagement = () => {
   const {
@@ -29,74 +37,97 @@ const DocumentManagement = () => {
 
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState('');
-  const [rejectionNote, setRejectionNote] = useState('');
+  const [modalType, setModalType] = useState("");
+  const [rejectionNote, setRejectionNote] = useState("");
+  f;
+  const [actionInProgress, setActionInProgress] = useState(false);
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setModalType("");
+    setSelectedDocument(null);
+    setRejectionNote("");
+  };
 
   const handleViewDocument = (document) => {
-    window.open(`${process.env.REACT_APP_API_ENDPOINT}/api/documentos/download/${document.id_Documento}`, '_blank');
+    if (!document?.id_Documento || loading || actionInProgress) return;
+
+    window.open(
+      `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/download/${document.id_Documento}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
   };
 
   const openConfirmApproveModal = (document) => {
     setSelectedDocument(document);
-    setModalType('confirmApprove');
+    setModalType("confirmApprove");
     setModalOpen(true);
   };
 
   const openConfirmRejectModal = (document) => {
     setSelectedDocument(document);
-    setModalType('confirmReject');
+    setRejectionNote("");
+    setModalType("confirmReject");
     setModalOpen(true);
   };
 
   const openConfirmRevertModal = (document) => {
     setSelectedDocument(document);
-    setModalType('confirmRevert');
+    setModalType("confirmRevert");
     setModalOpen(true);
   };
 
   const handleApproveDocument = async () => {
-    if (selectedDocument) {
-      try {
-        await approveDocument(selectedDocument.id_Documento);
-        setModalOpen(false);
-      } catch (err) {
-        console.error('Error al aprobar documento:', err);
-      }
+    if (!selectedDocument || actionInProgress) return;
+
+    setActionInProgress(true);
+    try {
+      await approveDocument(selectedDocument.id_Documento);
+      closeModal();
+    } finally {
+      setActionInProgress(false);
     }
   };
 
   const openRejectionModal = () => {
-    setModalType('rejection');
+    setModalType("rejection");
   };
 
   const handleRejectDocument = async () => {
-    if (selectedDocument && rejectionNote.trim()) {
-      try {
-        await rejectDocument(selectedDocument.id_Documento, rejectionNote);
-        setModalOpen(false);
-        setRejectionNote('');
-      } catch (err) {
-        console.error('Error al rechazar documento:', err);
-      }
+    if (!selectedDocument || !rejectionNote.trim() || actionInProgress) return;
+
+    setActionInProgress(true);
+    try {
+      await rejectDocument(selectedDocument.id_Documento, rejectionNote.trim());
+      closeModal();
+    } finally {
+      setActionInProgress(false);
     }
   };
 
   const handleRevertDocument = async () => {
-    if (selectedDocument) {
-      try {
-        await revertDocument(selectedDocument.id_Documento);
-        setModalOpen(false);
-      } catch (err) {
-        console.error('Error al revertir documento:', err);
-      }
+    if (!selectedDocument || actionInProgress) return;
+
+    setActionInProgress(true);
+    try {
+      await revertDocument(selectedDocument.id_Documento);
+      closeModal();
+    } finally {
+      setActionInProgress(false);
     }
   };
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    const newValue = value === 'Todos' ? '' : value;
+    const newValue = value === "Todos" ? "" : value;
     updateFilters({
-      [name]: name === 'idTipoDoc' || name === 'idPeriodo' ? (newValue ? Number(newValue) : '') : newValue
+      [name]:
+        name === "idTipoDoc" || name === "idPeriodo"
+          ? newValue
+            ? Number(newValue)
+            : ""
+          : newValue,
     });
   };
 
@@ -116,13 +147,13 @@ const DocumentManagement = () => {
       <Sidebar />
       <div className="flex-1 p-4 md:p-8 overflow-x-auto">
         <div className="max-w-7xl mx-auto w-full">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-6"
           >
             <h2 className="text-2xl font-semibold flex items-center text-gray-800">
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 className="w-6 h-6 text-blue-600 mr-2"
@@ -139,8 +170,15 @@ const DocumentManagement = () => {
               animate={{ opacity: 1 }}
               className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex justify-between items-center"
             >
-              <span>{error}. Por favor, verifica la configuración del servidor.</span>
-              <button onClick={resetMessages} className="text-red-900 hover:underline">Cerrar</button>
+              <span>
+                {error}. Por favor, verifica la configuración del servidor.
+              </span>
+              <button
+                onClick={resetMessages}
+                className="text-red-900 hover:underline"
+              >
+                Cerrar
+              </button>
             </motion.div>
           )}
           {success && (
@@ -150,19 +188,27 @@ const DocumentManagement = () => {
               className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 flex justify-between items-center"
             >
               {success}
-              <button onClick={resetMessages} className="text-green-900 hover:underline">Cerrar</button>
+              <button
+                onClick={resetMessages}
+                className="text-green-900 hover:underline"
+              >
+                Cerrar
+              </button>
             </motion.div>
           )}
 
           <div className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="estatus" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="estatus"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Filtrar por Estatus
               </label>
               <select
                 id="estatus"
                 name="estatus"
-                value={filters.estatus || 'Todos'}
+                value={filters.estatus || "Todos"}
                 onChange={handleFilterChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
@@ -173,13 +219,16 @@ const DocumentManagement = () => {
               </select>
             </div>
             <div>
-              <label htmlFor="idPeriodo" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="idPeriodo"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Filtrar por Periodo
               </label>
               <select
                 id="idPeriodo"
                 name="idPeriodo"
-                value={filters.idPeriodo || 'Todos'}
+                value={filters.idPeriodo || "Todos"}
                 onChange={handleFilterChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
@@ -192,13 +241,16 @@ const DocumentManagement = () => {
               </select>
             </div>
             <div>
-              <label htmlFor="idTipoDoc" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="idTipoDoc"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Filtrar por Tipo de Documento
               </label>
               <select
                 id="idTipoDoc"
                 name="idTipoDoc"
-                value={filters.idTipoDoc || 'Todos'}
+                value={filters.idTipoDoc || "Todos"}
                 onChange={handleFilterChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
@@ -211,13 +263,16 @@ const DocumentManagement = () => {
               </select>
             </div>
             <div>
-              <label htmlFor="programaEducativo" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="programaEducativo"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Filtrar por Programa Educativo
               </label>
               <select
                 id="programaEducativo"
                 name="programaEducativo"
-                value={filters.programaEducativo || 'Todos'}
+                value={filters.programaEducativo || "Todos"}
                 onChange={handleFilterChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
@@ -230,13 +285,16 @@ const DocumentManagement = () => {
               </select>
             </div>
             <div className="col-span-1 md:col-span-2 lg:col-span-1">
-              <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="search"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Buscar
               </label>
               <div className="relative">
                 <motion.input
-                  initial={{ width: '80%', opacity: 0 }}
-                  animate={{ width: '100%', opacity: 1 }}
+                  initial={{ width: "80%", opacity: 0 }}
+                  animate={{ width: "100%", opacity: 1 }}
                   id="search"
                   type="text"
                   placeholder="Buscar por matrícula, documento o programa..."
@@ -252,7 +310,7 @@ const DocumentManagement = () => {
           </div>
 
           <div className="w-full overflow-x-auto">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 min-w-max"
@@ -261,19 +319,34 @@ const DocumentManagement = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Matrícula
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Documento
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Programa Educativo
                       </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Estatus
                       </th>
-                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
                         Acciones
                       </th>
                     </tr>
@@ -281,7 +354,10 @@ const DocumentManagement = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {loading ? (
                       <tr>
-                        <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                        <td
+                          colSpan="5"
+                          className="px-6 py-4 text-center text-sm text-gray-500"
+                        >
                           Cargando...
                         </td>
                       </tr>
@@ -295,21 +371,31 @@ const DocumentManagement = () => {
                             {doc.Nombre_TipoDoc}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {doc.ProgramaEducativo || 'N/A'}
+                            {doc.ProgramaEducativo || "N/A"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            {doc.Estatus === 'Pendiente' && <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pendiente</span>}
-                            {doc.Estatus === 'Aprobado' && <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Aprobado</span>}
-                            {doc.Estatus === 'Rechazado' && (
+                            {doc.Estatus === "Pendiente" && (
+                              <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                Pendiente
+                              </span>
+                            )}
+                            {doc.Estatus === "Aprobado" && (
+                              <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                Aprobado
+                              </span>
+                            )}
+                            {doc.Estatus === "Rechazado" && (
                               <div className="flex items-center">
-                                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Rechazado</span>
+                                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                  Rechazado
+                                </span>
                                 {doc.Comentarios && (
-                                  <motion.div 
+                                  <motion.div
                                     whileHover={{ scale: 1.1 }}
                                     className="ml-2 cursor-pointer text-gray-500 hover:text-gray-700"
                                     onClick={() => {
                                       setSelectedDocument(doc);
-                                      setModalType('viewNote');
+                                      setModalType("viewNote");
                                       setModalOpen(true);
                                     }}
                                   >
@@ -326,18 +412,19 @@ const DocumentManagement = () => {
                                 whileTap={{ scale: 0.9 }}
                                 className="text-blue-600 hover:text-blue-800"
                                 onClick={() => handleViewDocument(doc)}
-                                disabled={loading}
+                                disabled={loading || actionInProgress}
+
                               >
                                 <Eye size={18} />
                               </motion.button>
-                              {doc.Estatus === 'Pendiente' && (
+                              {doc.Estatus === "Pendiente" && (
                                 <>
                                   <motion.button
                                     whileHover={{ scale: 1.1 }}
                                     whileTap={{ scale: 0.9 }}
                                     className="text-green-600 hover:text-green-800"
                                     onClick={() => openConfirmApproveModal(doc)}
-                                    disabled={loading}
+                                    disabled={loading || actionInProgress}
                                   >
                                     <CheckCircle size={18} />
                                   </motion.button>
@@ -346,19 +433,20 @@ const DocumentManagement = () => {
                                     whileTap={{ scale: 0.9 }}
                                     className="text-red-600 hover:text-red-800"
                                     onClick={() => openConfirmRejectModal(doc)}
-                                    disabled={loading}
+                                    disabled={loading || actionInProgress}
                                   >
                                     <XCircle size={18} />
                                   </motion.button>
                                 </>
                               )}
-                              {(doc.Estatus === 'Aprobado' || doc.Estatus === 'Rechazado') && (
+                              {(doc.Estatus === "Aprobado" ||
+                                doc.Estatus === "Rechazado") && (
                                 <motion.button
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.9 }}
                                   className="text-purple-600 hover:text-purple-800"
                                   onClick={() => openConfirmRevertModal(doc)}
-                                  disabled={loading}
+                                  disabled={loading || actionInProgress}
                                 >
                                   <RotateCcw size={18} />
                                 </motion.button>
@@ -369,7 +457,10 @@ const DocumentManagement = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                        <td
+                          colSpan="5"
+                          className="px-6 py-4 text-center text-sm text-gray-500"
+                        >
                           No se encontraron documentos
                         </td>
                       </tr>
@@ -391,14 +482,14 @@ const DocumentManagement = () => {
                     disabled={currentPage === 1}
                     className={`px-4 py-2 rounded-lg text-sm font-medium ${
                       currentPage === 1
-                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                        ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                        : "bg-blue-500 text-white hover:bg-blue-600"
                     }`}
                   >
                     Anterior
                   </motion.button>
                   <div className="flex flex-wrap justify-center gap-2">
-                    {getPageNumbers().map(page => (
+                    {getPageNumbers().map((page) => (
                       <motion.button
                         key={page}
                         whileHover={{ scale: 1.05 }}
@@ -406,8 +497,8 @@ const DocumentManagement = () => {
                         onClick={() => setCurrentPage(page)}
                         className={`px-4 py-2 rounded-lg text-sm font-medium ${
                           currentPage === page
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}
                       >
                         {page}
@@ -421,8 +512,8 @@ const DocumentManagement = () => {
                     disabled={currentPage === totalPages}
                     className={`px-4 py-2 rounded-lg text-sm font-medium ${
                       currentPage === totalPages
-                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                        ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                        : "bg-blue-500 text-white hover:bg-blue-600"
                     }`}
                   >
                     Siguiente
@@ -434,52 +525,60 @@ const DocumentManagement = () => {
 
           {modalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="bg-white rounded-lg shadow-lg p-6 border border-gray-200 w-full max-w-md"
               >
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-medium flex items-center">
-                    {modalType === 'confirmApprove' ? (
+                    {modalType === "confirmApprove" ? (
                       <>
-                        <CheckCircle className="text-green-500 mr-2" size={20} />
+                        <CheckCircle
+                          className="text-green-500 mr-2"
+                          size={20}
+                        />
                         Confirmar Aprobación
                       </>
-                    ) : modalType === 'confirmReject' ? (
+                    ) : modalType === "confirmReject" ? (
                       <>
                         <XCircle className="text-red-500 mr-2" size={20} />
                         Confirmar Rechazo
                       </>
-                    ) : modalType === 'rejection' ? (
+                    ) : modalType === "rejection" ? (
                       <>
                         <XCircle className="text-red-500 mr-2" size={20} />
                         Rechazar Documento
                       </>
-                    ) : modalType === 'confirmRevert' ? (
+                    ) : modalType === "confirmRevert" ? (
                       <>
                         <RotateCcw className="text-purple-500 mr-2" size={20} />
                         Confirmar Revertir a Pendiente
                       </>
                     ) : (
                       <>
-                        <MessageSquare className="text-blue-500 mr-2" size={20} />
+                        <MessageSquare
+                          className="text-blue-500 mr-2"
+                          size={20}
+                        />
                         Nota de Rechazo
                       </>
                     )}
                   </h3>
-                  <button 
+                  <button
                     onClick={() => setModalOpen(false)}
                     className="text-gray-500 hover:text-gray-700"
                   >
                     <XCircle size={20} />
                   </button>
                 </div>
-                
-                {modalType === 'confirmApprove' ? (
+
+                {modalType === "confirmApprove" ? (
                   <>
                     <p className="text-gray-700 mb-4">
-                      ¿Estás seguro de que deseas aprobar el documento "{selectedDocument?.Nombre_TipoDoc}" de la matrícula {selectedDocument?.Matricula}?
+                      ¿Estás seguro de que deseas aprobar el documento "
+                      {selectedDocument?.Nombre_TipoDoc}" de la matrícula{" "}
+                      {selectedDocument?.Matricula}?
                     </p>
                     <div className="flex justify-end space-x-2">
                       <motion.button
@@ -495,16 +594,19 @@ const DocumentManagement = () => {
                         whileTap={{ scale: 0.95 }}
                         onClick={handleApproveDocument}
                         className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
-                        disabled={loading}
+                        disabled={loading || actionInProgress}
+
                       >
                         Aprobar
                       </motion.button>
                     </div>
                   </>
-                ) : modalType === 'confirmReject' ? (
+                ) : modalType === "confirmReject" ? (
                   <>
                     <p className="text-gray-700 mb-4">
-                      ¿Estás seguro de que deseas rechazar el documento "{selectedDocument?.Nombre_TipoDoc}" de la matrícula {selectedDocument?.Matricula}?
+                      ¿Estás seguro de que deseas rechazar el documento "
+                      {selectedDocument?.Nombre_TipoDoc}" de la matrícula{" "}
+                      {selectedDocument?.Matricula}?
                     </p>
                     <div className="flex justify-end space-x-2">
                       <motion.button
@@ -520,16 +622,20 @@ const DocumentManagement = () => {
                         whileTap={{ scale: 0.95 }}
                         onClick={openRejectionModal}
                         className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
-                        disabled={loading}
+                        disabled={loading || actionInProgress}
+
                       >
                         Continuar
                       </motion.button>
                     </div>
                   </>
-                ) : modalType === 'rejection' ? (
+                ) : modalType === "rejection" ? (
                   <>
                     <div className="mb-4">
-                      <label htmlFor="rejection-note" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label
+                        htmlFor="rejection-note"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
                         Motivo del rechazo (OBLIGATORIO) :
                       </label>
                       <textarea
@@ -561,10 +667,12 @@ const DocumentManagement = () => {
                       </motion.button>
                     </div>
                   </>
-                ) : modalType === 'confirmRevert' ? (
+                ) : modalType === "confirmRevert" ? (
                   <>
                     <p className="text-gray-700 mb-4">
-                      ¿Estás seguro de que deseas revertir el documento "{selectedDocument?.Nombre_TipoDoc}" de la matrícula {selectedDocument?.Matricula} a Pendiente?
+                      ¿Estás seguro de que deseas revertir el documento "
+                      {selectedDocument?.Nombre_TipoDoc}" de la matrícula{" "}
+                      {selectedDocument?.Matricula} a Pendiente?
                     </p>
                     <div className="flex justify-end space-x-2">
                       <motion.button
@@ -580,7 +688,8 @@ const DocumentManagement = () => {
                         whileTap={{ scale: 0.95 }}
                         onClick={handleRevertDocument}
                         className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors"
-                        disabled={loading}
+                        disabled={loading || actionInProgress}
+
                       >
                         Revertir
                       </motion.button>
@@ -589,7 +698,9 @@ const DocumentManagement = () => {
                 ) : (
                   <>
                     <div className="mb-4 bg-gray-50 p-3 rounded-md border border-gray-200">
-                      <p className="text-gray-700">{selectedDocument?.Comentarios}</p>
+                      <p className="text-gray-700">
+                        {selectedDocument?.Comentarios}
+                      </p>
                     </div>
                     <div className="flex justify-end">
                       <motion.button

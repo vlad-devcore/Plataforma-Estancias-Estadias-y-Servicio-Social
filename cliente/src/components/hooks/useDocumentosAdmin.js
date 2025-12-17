@@ -10,128 +10,135 @@ const useDocumentosAdmin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+
   const [filters, setFilters] = useState({
     estatus: "",
     idPeriodo: "",
     idTipoDoc: "",
     programaEducativo: "",
   });
+
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalDocuments, setTotalDocuments] = useState(0);
-  const documentsPerPage = 50;
 
-  // Obtener todos los periodos
+  const documentsPerPage = 50;
+  const API = process.env.REACT_APP_API_ENDPOINT;
+
+  /* =========================
+     CARGA DE CATÁLOGOS
+     ========================= */
+
   const fetchPeriodos = async () => {
     try {
-      const { data } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/periodos`
-      );
-      setPeriodos(data);
-      if (data.length === 0) {
-        setError("No se encontraron periodos");
-      }
+      const { data } = await axios.get(`${API}/api/documentos/periodos`);
+      setPeriodos(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(
-        err.response?.status === 404
-          ? "Endpoint de periodos no encontrado (verifica documentos.js)"
-          : "Error al obtener periodos"
-      );
+      setError("Error al obtener periodos");
+      setPeriodos([]);
     }
   };
 
-  // Obtener tipos de documentos
   const fetchTiposDocumento = async () => {
     try {
       const { data } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/tipo_documento`
+        `${API}/api/documentos/tipo_documento`
       );
-      setTiposDocumento(data);
-      if (data.length === 0) {
-        setError("No se encontraron tipos de documento");
-      }
+      setTiposDocumento(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(
-        err.response?.status === 404
-          ? "Endpoint de tipos de documento no encontrado (verifica documentos.js)"
-          : "Error al obtener tipos de documento"
-      );
+      setError("Error al obtener tipos de documento");
+      setTiposDocumento([]);
     }
   };
 
-  // Obtener programas educativos
   const fetchProgramasEducativos = async () => {
     try {
       const { data } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/programas_educativos`
+        `${API}/api/documentos/programas_educativos`
       );
-      setProgramasEducativos(data);
-      if (data.length === 0) {
-        setError("No se encontraron programas educativos");
-      }
+      setProgramasEducativos(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(
-        err.response?.status === 404
-          ? "Endpoint de programas educativos no encontrado (verifica documentos.js)"
-          : "Error al obtener programas educativos"
-      );
+      setError("Error al obtener programas educativos");
+      setProgramasEducativos([]);
     }
   };
 
-  // Obtener todos los documentos con filtros
+  /* =========================
+     FILTRO + PAGINACIÓN
+     ========================= */
+
+  const applyFilterAndPagination = (
+    data,
+    search,
+    page,
+    activeFilters
+  ) => {
+    const safeData = Array.isArray(data) ? data : [];
+
+    const searchLower = (search || "").toLowerCase();
+
+    const filtered = safeData.filter((doc) => {
+      if (!doc) return false;
+
+      const matchesSearch =
+        (doc.Matricula || "").toLowerCase().includes(searchLower) ||
+        (doc.Nombre_TipoDoc || "").toLowerCase().includes(searchLower) ||
+        (doc.ProgramaEducativo || "").toLowerCase().includes(searchLower);
+
+      return matchesSearch;
+    });
+
+    const total = filtered.length;
+    const pages = Math.ceil(total / documentsPerPage) || 1;
+
+    const safePage = page > pages ? 1 : page;
+    const startIndex = (safePage - 1) * documentsPerPage;
+
+    const paginated = filtered.slice(
+      startIndex,
+      startIndex + documentsPerPage
+    );
+
+    setDocuments(paginated);
+    setTotalDocuments(total);
+    setTotalPages(pages);
+    setCurrentPage(safePage);
+  };
+
+  /* =========================
+     DOCUMENTOS
+     ========================= */
+
   const fetchDocuments = async () => {
     setLoading(true);
     setError(null);
+
     try {
       const params = {
         estatus: filters.estatus || undefined,
-        idPeriodo: filters.idPeriodo ? Number(filters.idPeriodo) : undefined,
-        idTipoDoc: filters.idTipoDoc ? Number(filters.idTipoDoc) : undefined,
+        idPeriodo: filters.idPeriodo
+          ? String(filters.idPeriodo)
+          : undefined,
+        idTipoDoc: filters.idTipoDoc
+          ? String(filters.idTipoDoc)
+          : undefined,
         programaEducativo: filters.programaEducativo || undefined,
       };
-      const { data } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos`,
-        { params }
+
+      const { data } = await axios.get(`${API}/api/documentos`, { params });
+
+      const safeData = Array.isArray(data) ? data : [];
+
+      setAllDocuments(safeData);
+      applyFilterAndPagination(
+        safeData,
+        searchTerm,
+        currentPage,
+        filters
       );
-      if (!Array.isArray(data)) {
-        throw new Error(
-          "Formato de respuesta inválido: se esperaba un arreglo de documentos"
-        );
-      }
-      // Filtrar localmente por búsqueda y filtros adicionales
-      const filtered = data.filter((doc) => {
-        const matchesSearch =
-          (doc.Matricula &&
-            doc.Matricula.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (doc.Nombre_TipoDoc &&
-            doc.Nombre_TipoDoc.toLowerCase().includes(
-              searchTerm.toLowerCase()
-            )) ||
-          (doc.ProgramaEducativo &&
-            doc.ProgramaEducativo.toLowerCase().includes(
-              searchTerm.toLowerCase()
-            ));
-        return matchesSearch;
-      });
-      // Calcular paginación local
-      const total = filtered.length;
-      const pages = Math.ceil(total / documentsPerPage) || 1;
-      const startIndex = (currentPage - 1) * documentsPerPage;
-      const paginatedDocuments = filtered.slice(
-        startIndex,
-        startIndex + documentsPerPage
-      );
-      setAllDocuments(data);
-      setDocuments(paginatedDocuments);
-      setTotalPages(pages);
-      setTotalDocuments(total);
     } catch (err) {
-      setError(
-        err.response?.status === 404
-          ? "Endpoint de documentos no encontrado (verifica documentos.js)"
-          : err.message || "Error al obtener documentos"
-      );
+      setError("Error al obtener documentos");
       setDocuments([]);
       setAllDocuments([]);
       setTotalPages(1);
@@ -141,83 +148,77 @@ const useDocumentosAdmin = () => {
     }
   };
 
-  // Aprobar documento
+  /* =========================
+     ACCIONES ADMIN
+     ========================= */
+
   const approveDocument = async (idDocumento) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
+
     try {
-      await axios.put(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/approve/${idDocumento}`
-      );
+      await axios.put(`${API}/api/documentos/approve/${idDocumento}`);
       setSuccess("Documento aprobado correctamente");
-      setCurrentPage(1); // Volver a la primera página
+      setCurrentPage(1);
       await fetchDocuments();
-    } catch (err) {
-      setError(
-        err.response?.status === 404
-          ? "Endpoint de aprobación no encontrado (verifica documentos.js)"
-          : "Error al aprobar documento"
-      );
+    } catch {
+      setError("Error al aprobar documento");
     } finally {
       setLoading(false);
     }
   };
 
-  // Rechazar documento
   const rejectDocument = async (idDocumento, comentarios) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
+
     try {
       await axios.put(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/reject/${idDocumento}`,
+        `${API}/api/documentos/reject/${idDocumento}`,
         { comentarios }
       );
       setSuccess("Documento rechazado correctamente");
-      setCurrentPage(1); // Volver a la primera página
+      setCurrentPage(1);
       await fetchDocuments();
-    } catch (err) {
-      setError(
-        err.response?.status === 404
-          ? "Endpoint de rechazo no encontrado (verifica documentos.js)"
-          : "Error al rechazar documento"
-      );
+    } catch {
+      setError("Error al rechazar documento");
     } finally {
       setLoading(false);
     }
   };
 
-  // Revertir documento a Pendiente
   const revertDocument = async (idDocumento) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
+
     try {
-      await axios.put(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/revert/${idDocumento}`
-      );
+      await axios.put(`${API}/api/documentos/revert/${idDocumento}`);
       setSuccess("Documento revertido a Pendiente correctamente");
-      setCurrentPage(1); // Volver a la primera página
+      setCurrentPage(1);
       await fetchDocuments();
-    } catch (err) {
-      setError(
-        err.response?.status === 404
-          ? "Endpoint de revertir no encontrado (verifica documentos.js)"
-          : "Error al revertir documento"
-      );
+    } catch {
+      setError("Error al revertir documento");
     } finally {
       setLoading(false);
     }
   };
 
-  // Actualizar filtros
+  /* =========================
+     FILTROS
+     ========================= */
+
   const updateFilters = (newFilters) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
-    setCurrentPage(1); // Resetear a la primera página
+    setCurrentPage(1);
   };
 
-  // Efecto para cargar periodos, tipos de documento, programas educativos y documentos al montar
+  /* =========================
+     EFECTOS
+     ========================= */
+
   useEffect(() => {
     fetchPeriodos();
     fetchTiposDocumento();
@@ -226,11 +227,15 @@ const useDocumentosAdmin = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Efecto para recargar documentos cuando cambian los filtros, searchTerm o currentPage
   useEffect(() => {
-    fetchDocuments();
+    applyFilterAndPagination(
+      allDocuments,
+      searchTerm,
+      currentPage,
+      filters
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, searchTerm, currentPage]);
+  }, [allDocuments, searchTerm, currentPage, filters]);
 
   return {
     documents,
