@@ -14,49 +14,47 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Clonar repositorio
+      # 1️⃣ Checkout
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       # 2️⃣ Detectar cambios
       - name: Detect changes
         run: |
-          git diff --quiet HEAD^ HEAD -- cliente/ && echo "cliente_changed=false" >> $GITHUB_ENV || echo "cliente_changed=true" >> $GITHUB_ENV
-          git diff --quiet HEAD^ HEAD -- Servidor/ && echo "servidor_changed=false" >> $GITHUB_ENV || echo "servidor_changed=true" >> $GITHUB_ENV
+          git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^cliente/' && echo "cliente_changed=true" >> $GITHUB_ENV || echo "cliente_changed=false" >> $GITHUB_ENV
+          git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^Servidor/' && echo "servidor_changed=true" >> $GITHUB_ENV || echo "servidor_changed=false" >> $GITHUB_ENV
 
-      # 3️⃣ Configurar SSH con llave privada
+      # 3️⃣ SSH Agent
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: |
-            ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # 4️⃣ Registrar el servidor en known_hosts
+      # 4️⃣ Known hosts
       - name: Add SSH known hosts
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan academico.upqroo.edu.mx >> ~/.ssh/known_hosts
 
-      # 5️⃣ Deploy del cliente (frontend)
+      # 5️⃣ Deploy CLIENTE (Frontend)
       - name: Deploy cliente
         if: env.cliente_changed == 'true'
         run: |
-          rsync -av --delete \
+          rsync -av \
             --exclude='node_modules' \
             --exclude='.env' \
+            --exclude='build' \
             cliente/ \
             gestionvinculacion@academico.upqroo.edu.mx:/var/www/PEE/cliente
 
-          ssh gestionvinculacion@academico.upqroo.edu.mx "
-            cd /var/www/PEE/cliente &&
-            npm ci &&
-            npm run build &&
-            pm2 restart front-PEE
-          "
+          ssh gestionvinculacion@academico.upqroo.edu.mx << 'EOF'
+            cd /var/www/PEE/cliente
+            npm ci
+            npm run build
+            pm2 restart front-PEE || pm2 start npm --name front-PEE -- start
+          EOF
 
-      # 6️⃣ Deploy del servidor (backend)
+      # 6️⃣ Deploy SERVIDOR (Backend)
       - name: Deploy Servidor
         if: env.servidor_changed == 'true'
         run: |
@@ -66,8 +64,8 @@ jobs:
             Servidor/ \
             gestionvinculacion@academico.upqroo.edu.mx:/var/www/PEE/Servidor
 
-          ssh gestionvinculacion@academico.upqroo.edu.mx "
-            cd /var/www/PEE/Servidor &&
-            npm ci &&
-            pm2 restart Back-PEE
-          "
+          ssh gestionvinculacion@academico.upqroo.edu.mx << 'EOF'
+            cd /var/www/PEE/Servidor
+            npm ci
+            pm2 restart Back-PEE || pm2 start index.js --name Back-PEE
+          EOF
