@@ -1,13 +1,26 @@
-// documentosAdmin.js
 import express from "express";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
 import pool from "../config/config.db.js";
 
+import {
+  authenticateToken,
+  checkRole
+} from "./authMiddleware.js";
+
 const router = express.Router();
 
-// Configuración de Multer
+/* =========================
+   MIDDLEWARE GLOBAL
+   TODO ESTE MÓDULO ES ADMIN
+========================= */
+router.use(authenticateToken);
+router.use(checkRole(["admin"]));
+
+/* =========================
+   CONFIGURACIÓN MULTER
+========================= */
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = "public/uploads/formatos";
@@ -19,22 +32,29 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
-  },
+  }
 });
 
 const upload = multer({ storage });
 
-// Obtener todos los formatos
+/* =========================
+   LISTAR FORMATOS
+========================= */
 router.get("/", async (req, res) => {
   try {
-    const [results] = await pool.query("SELECT id, nombre_documento, nombre_archivo, estado, ultima_modificacion_manual FROM formatos_admin");
+    const [results] = await pool.query(
+      `SELECT id, nombre_documento, nombre_archivo, estado, ultima_modificacion_manual
+       FROM formatos_admin`
+    );
     res.json(results);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch {
+    res.status(500).json({ error: "Error al obtener formatos" });
   }
 });
 
-// Subir/actualizar formato
+/* =========================
+   SUBIR / ACTUALIZAR FORMATO
+========================= */
 router.post("/upload", upload.single("archivo"), async (req, res) => {
   try {
     const { nombre_documento } = req.body;
@@ -45,159 +65,135 @@ router.post("/upload", upload.single("archivo"), async (req, res) => {
     }
 
     const [existing] = await pool.query(
-      "SELECT * FROM formatos_admin WHERE nombre_documento = ?",
+      "SELECT nombre_archivo FROM formatos_admin WHERE nombre_documento = ?",
       [nombre_documento]
     );
 
-    if (existing.length > 0) {
-      if (existing[0].nombre_archivo) {
-        const oldFilePath = path.join("public/uploads/formatos", existing[0].nombre_archivo);
-        if (fs.existsSync(oldFilePath)) {
-          fs.unlinkSync(oldFilePath);
-        }
-      }
+    if (existing.length > 0 && existing[0].nombre_archivo) {
+      const oldPath = path.join("public/uploads/formatos", existing[0].nombre_archivo);
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+
       await pool.query(
-        "UPDATE formatos_admin SET nombre_archivo = ?, estado = 'Activo' WHERE nombre_documento = ?",
+        `UPDATE formatos_admin
+         SET nombre_archivo = ?, estado = 'Activo', ultima_modificacion_manual = NOW()
+         WHERE nombre_documento = ?`,
         [file.filename, nombre_documento]
       );
     } else {
       await pool.query(
-        "INSERT INTO formatos_admin (nombre_documento, nombre_archivo, estado) VALUES (?, ?, 'Activo')",
+        `INSERT INTO formatos_admin (nombre_documento, nombre_archivo, estado)
+         VALUES (?, ?, 'Activo')`,
         [nombre_documento, file.filename]
       );
     }
 
     res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch {
+    res.status(500).json({ error: "Error al subir formato" });
   }
 });
 
-// Actualizar el estado de un formato
+/* =========================
+   CAMBIAR ESTADO FORMATO
+========================= */
 router.put("/estado", async (req, res) => {
   try {
     const { nombre_documento, estado } = req.body;
 
-    if (!nombre_documento || !estado) {
-      return res.status(400).json({ error: "Faltan campos obligatorios: nombre_documento o estado" });
-    }
-
-    if (!['Activo', 'Bloqueado'].includes(estado)) {
-      return res.status(400).json({ error: "Estado no válido, debe ser 'Activo' o 'Bloqueado'" });
+    if (!nombre_documento || !["Activo", "Bloqueado"].includes(estado)) {
+      return res.status(400).json({ error: "Datos inválidos" });
     }
 
     const [result] = await pool.query(
-      "UPDATE formatos_admin SET estado = ?, ultima_modificacion_manual = NOW() WHERE nombre_documento = ?",
+      `UPDATE formatos_admin
+       SET estado = ?, ultima_modificacion_manual = NOW()
+       WHERE nombre_documento = ?`,
       [estado, nombre_documento]
     );
 
-    if (result.affectedRows === 0) {
+    if (!result.affectedRows) {
       return res.status(404).json({ error: "Formato no encontrado" });
     }
 
     res.json({ success: true });
-  } catch (error) {
-    console.error('Error en el servidor:', error);
-    res.status(500).json({ error: "Error interno del servidor: " + error.message });
+  } catch {
+    res.status(500).json({ error: "Error al actualizar estado" });
   }
 });
 
-// Descargar formato
+/* =========================
+   DESCARGAR FORMATO
+========================= */
 router.get("/download/:nombre_documento", async (req, res) => {
   try {
     const { nombre_documento } = req.params;
+
     const [formato] = await pool.query(
       "SELECT nombre_archivo FROM formatos_admin WHERE nombre_documento = ?",
       [nombre_documento]
     );
 
-    if (formato.length === 0 || !formato[0].nombre_archivo) {
+    if (!formato.length || !formato[0].nombre_archivo) {
       return res.status(404).json({ error: "Formato no encontrado" });
     }
 
     const filePath = path.join("public/uploads/formatos", formato[0].nombre_archivo);
-    const fileExtension = path.extname(formato[0].nombre_archivo).toLowerCase();
-
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: "Archivo no encontrado" });
     }
 
-    let contentType;
-    switch (fileExtension) {
-      case '.pdf':
-        contentType = 'application/pdf';
-        break;
-      case '.doc':
-        contentType = 'application/msword';
-        break;
-      case '.docx':
-        contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-        break;
-      default:
-        contentType = 'application/octet-stream';
-    }
-
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${formato[0].nombre_archivo}"`);
-    res.setHeader('Content-Length', fs.statSync(filePath).size);
-
-    const fileStream = fs.createReadStream(filePath);
-    fileStream.pipe(res);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.download(filePath, formato[0].nombre_archivo);
+  } catch {
+    res.status(500).json({ error: "Error al descargar formato" });
   }
 });
 
-// Ver formato en el navegador
+/* =========================
+   VER FORMATO
+========================= */
 router.get("/view/:nombre_documento", async (req, res) => {
   try {
     const { nombre_documento } = req.params;
+
     const [formato] = await pool.query(
       "SELECT nombre_archivo FROM formatos_admin WHERE nombre_documento = ?",
       [nombre_documento]
     );
 
-    if (formato.length === 0 || !formato[0].nombre_archivo) {
+    if (!formato.length || !formato[0].nombre_archivo) {
       return res.status(404).json({ error: "Formato no encontrado" });
     }
 
     const filePath = path.join("public/uploads/formatos", formato[0].nombre_archivo);
-    const fileExtension = path.extname(formato[0].nombre_archivo).toLowerCase();
-
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: "Archivo no encontrado" });
     }
 
-    if (fileExtension === '.pdf') {
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `inline; filename="${formato[0].nombre_archivo}"`);
-      res.sendFile(path.resolve(filePath));
-    } else {
-      res.redirect(`/api/documentosAdmin/download/${nombre_documento}`);
-    }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.sendFile(path.resolve(filePath));
+  } catch {
+    res.status(500).json({ error: "Error al visualizar formato" });
   }
 });
 
-// Eliminar formato
+/* =========================
+   ELIMINAR FORMATO
+========================= */
 router.delete("/:nombre_documento", async (req, res) => {
   try {
     const { nombre_documento } = req.params;
+
     const [formato] = await pool.query(
       "SELECT nombre_archivo FROM formatos_admin WHERE nombre_documento = ?",
       [nombre_documento]
     );
 
-    if (formato.length === 0) {
+    if (!formato.length) {
       return res.status(404).json({ error: "Formato no encontrado" });
     }
 
     if (formato[0].nombre_archivo) {
       const filePath = path.join("public/uploads/formatos", formato[0].nombre_archivo);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
 
     await pool.query(
@@ -206,8 +202,8 @@ router.delete("/:nombre_documento", async (req, res) => {
     );
 
     res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch {
+    res.status(500).json({ error: "Error al eliminar formato" });
   }
 });
 
