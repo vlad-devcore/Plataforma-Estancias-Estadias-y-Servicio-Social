@@ -39,7 +39,6 @@ const DocumentManagement = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState("");
   const [rejectionNote, setRejectionNote] = useState("");
-  f;
   const [actionInProgress, setActionInProgress] = useState(false);
 
   const closeModal = () => {
