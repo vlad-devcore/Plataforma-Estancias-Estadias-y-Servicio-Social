@@ -45,8 +45,8 @@ const CreditsModal = () => {
       linkedin: 'https://linkedin.com/in/juanoch'
     },
     {
-      name: 'Marcos Vladimir',
-      role: 'Desarrollador Frontend, UX/UI,',
+      name: 'Marcos Vladimir Poot',
+      role: 'Desarrollador Frontend',
       emoji: '🧑‍💻',
       image: '/team/vladimir.jpg',
       github: 'https://github.com/vlad-devcore',
@@ -156,7 +156,7 @@ const CreditsModal = () => {
               <div className="bg-gray-50 p-5 flex justify-center border-b">
                 <img
                   src="/logoUNI.png"
-                  alt="Plataforma Estancias, Estadias y Servicio Social UPQROO"
+                  alt="UPQROO Logo"
                   className="h-16 w-auto"
                 />
               </div>
