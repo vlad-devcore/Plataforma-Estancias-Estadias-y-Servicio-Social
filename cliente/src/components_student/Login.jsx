@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import { Mail, UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import axios from 'axios';
+import api from '../api/axios';
 import CreditsModal from '../components/CreditsModal';
 import './Login.css';
  
@@ -47,9 +47,7 @@ const Login = () => {
     // ===== ESTUDIANTE =====
     if (role === 'estudiante') {
       try {
-        const { data: estudiante } = await axios.get(
-          `${process.env.REACT_APP_API_ENDPOINT}/api/estudiantes/by-user/${id}`
-        );
+        const { data: estudiante } = await api.get(`/estudiantes/by-user/${id}`)
 
         if (estudiante?.id_programa) {
           localStorage.setItem(
@@ -93,7 +91,7 @@ const Login = () => {
   const handleRequestReset = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/auth/request-password-reset`, { email: resetEmail });
+      await api.post('/auth/request-password-reset', { email: resetEmail })
       setShowForgotPassword(false);
       setResetEmail('');
       setShowSuccessModal(true);

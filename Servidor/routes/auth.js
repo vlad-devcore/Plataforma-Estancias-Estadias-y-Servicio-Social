@@ -8,28 +8,56 @@ import pool from "../config/config.db.js";
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "tu_secreto_super_seguro_123!";
 
-// Middleware para verificar JWT
+/* =====================================================
+   UTILIDAD: NORMALIZAR ROLES
+   BD → sistema interno
+===================================================== */
+const normalizeRole = (role) => {
+  if (!role) return null;
+
+  const map = {
+    administrador: "admin",
+    coordinador: "coordinador",
+    asesor_academico: "asesor_academico",
+    asesor_empresarial: "asesor_empresarial",
+    estudiante: "estudiante",
+  };
+
+  return map[role] || role;
+};
+
+/* =====================================================
+   MIDDLEWARE JWT
+===================================================== */
 const authMiddleware = (req, res, next) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
-  if (!token) {
-    return res.status(401).json({ error: 'Acceso denegado, token requerido' });
+  const authHeader = req.header("Authorization");
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Acceso denegado, token requerido" });
   }
+
+  const token = authHeader.replace("Bearer ", "");
+
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded; // { id, email, role, nombre, id_entidad }
     next();
   } catch (error) {
-    res.status(401).json({ error: 'Token inválido' });
+    return res.status(401).json({ error: "Token inválido o expirado" });
   }
 };
 
-// Login
+/* =====================================================
+   LOGIN
+===================================================== */
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
     if (!email || !password) {
-      return res.status(400).json({ error: "Correo electrónico y contraseña son obligatorios" });
+      return res
+        .status(400)
+        .json({ error: "Correo electrónico y contraseña son obligatorios" });
     }
 
     const [users] = await pool.query(
@@ -44,17 +72,19 @@ router.post("/login", async (req, res) => {
     }
 
     const user = users[0];
-
     const passwordMatch = await bcrypt.compare(password, user.password);
+
     if (!passwordMatch) {
       return res.status(401).json({ error: "Contraseña incorrecta" });
     }
+
+    const normalizedRole = normalizeRole(user.role);
 
     const token = jwt.sign(
       {
         id: user.id_user,
         email: user.email,
-        role: user.role,
+        role: normalizedRole,
         nombre: user.nombre,
         id_entidad: user.id_user,
       },
@@ -63,6 +93,7 @@ router.post("/login", async (req, res) => {
     );
 
     res.json({
+      success: true,
       token,
       user: {
         id: user.id_user,
@@ -70,16 +101,19 @@ router.post("/login", async (req, res) => {
         nombre: user.nombre,
         apellido_paterno: user.apellido_paterno,
         apellido_materno: user.apellido_materno,
-        role: user.role,
+        role: normalizedRole,
         genero: user.genero,
       },
     });
   } catch (error) {
+    console.error("Login error:", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
-// Verify
+/* =====================================================
+   VERIFY TOKEN
+===================================================== */
 router.get("/verify", authMiddleware, async (req, res) => {
   try {
     const [users] = await pool.query(
@@ -94,6 +128,7 @@ router.get("/verify", authMiddleware, async (req, res) => {
     }
 
     const user = users[0];
+
     res.json({
       user: {
         id: user.id_user,
@@ -101,7 +136,7 @@ router.get("/verify", authMiddleware, async (req, res) => {
         nombre: user.nombre,
         apellido_paterno: user.apellido_paterno,
         apellido_materno: user.apellido_materno,
-        role: user.role,
+        role: normalizeRole(user.role),
         genero: user.genero,
       },
     });
@@ -110,7 +145,9 @@ router.get("/verify", authMiddleware, async (req, res) => {
   }
 });
 
-// Change Password
+/* =====================================================
+   CHANGE PASSWORD
+===================================================== */
 router.post("/change-password", authMiddleware, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   const id_user = req.user.id;
@@ -121,29 +158,35 @@ router.post("/change-password", authMiddleware, async (req, res) => {
     }
 
     if (newPassword.length < 8) {
-      return res.status(400).json({ error: "La nueva contraseña debe tener al menos 8 caracteres" });
+      return res
+        .status(400)
+        .json({ error: "La nueva contraseña debe tener al menos 8 caracteres" });
     }
 
-    const [users] = await pool.query('SELECT password FROM users WHERE id_user = ?', [id_user]);
+    const [users] = await pool.query(
+      "SELECT password FROM users WHERE id_user = ?",
+      [id_user]
+    );
+
     if (users.length === 0) {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    const passwordMatch = await bcrypt.compare(oldPassword, users[0].password);
+    const passwordMatch = await bcrypt.compare(
+      oldPassword,
+      users[0].password
+    );
+
     if (!passwordMatch) {
       return res.status(401).json({ error: "Contraseña actual incorrecta" });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    const [result] = await pool.query(
-      'UPDATE users SET password = ? WHERE id_user = ?',
+    await pool.query(
+      "UPDATE users SET password = ? WHERE id_user = ?",
       [hashedPassword, id_user]
     );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Usuario no encontrado" });
-    }
 
     res.json({ message: "Contraseña cambiada correctamente" });
   } catch (error) {
@@ -151,115 +194,55 @@ router.post("/change-password", authMiddleware, async (req, res) => {
   }
 });
 
-// Solicitar enlace de recuperación
+/* =====================================================
+   REQUEST PASSWORD RESET
+===================================================== */
 router.post("/request-password-reset", async (req, res) => {
   const { email } = req.body;
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!email || !emailRegex.test(email)) {
-    return res.status(400).json({ error: 'Correo electrónico inválido' });
-  }
-
   try {
-    const [users] = await pool.query('SELECT id_user FROM users WHERE email = ?', [email]);
+    const [users] = await pool.query(
+      "SELECT id_user FROM users WHERE email = ?",
+      [email]
+    );
+
     if (users.length === 0) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
+      return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    const userId = users[0].id_user;
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 900000); // 15 minutos
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
     await pool.query(
-      'INSERT INTO password_reset_tokens (user_id, token, expires_at, used) VALUES (?, ?, ?, ?)',
-      [userId, token, expiresAt, false]
+      `INSERT INTO password_reset_tokens (user_id, token, expires_at, used)
+       VALUES (?, ?, ?, false)`,
+      [users[0].id_user, token, expiresAt]
     );
 
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
       port: process.env.EMAIL_PORT,
-      secure: false, // false para 587, true para 465
+      secure: false,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
-      tls: {
-        rejectUnauthorized: false,
-      },
+      tls: { rejectUnauthorized: false },
     });
 
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-    const mailOptions = {
-      from: `"Universidad Politécnica de Quintana Roo" <${process.env.EMAIL_USER}>`,
+
+    await transporter.sendMail({
+      from: `"UPQROO" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: 'Restablecimiento de Contraseña - UPQROO',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f4f4f4;">
-          <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <img src="https://i.imgur.com/dJtjnin.png" alt="UPQROO Logo" style="display: block; margin: 0 auto; height: 80px;">
-            <h2 style="color: #1a202c; text-align: center; margin-top: 20px;">Restablecimiento de Contraseña</h2>
-            <p style="color: #4a5568; line-height: 1.6; text-align: center;">
-              Estimado usuario, hemos recibido una solicitud para restablecer la contraseña de tu cuenta en el sistema de la Universidad Politécnica de Quintana Roo.
-            </p>
-            <p style="color: #4a5568; line-height: 1.6; text-align: center;">
-              Por favor, haz clic en el siguiente botón para proceder con el restablecimiento:
-            </p>
-            <div style="text-align: center; margin: 20px 0;">
-              <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #f97316; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold;">Restablecer Contraseña</a>
-            </div>
-            <p style="color: #4a5568; line-height: 1.6; text-align: center;">
-              Este enlace es válido por 15 minutos. Si no solicitaste este cambio, por favor ignora este correo o contacta a nuestro equipo de soporte.
-            </p>
-          </div>
-          <div style="margin-top: 20px; text-align: center; color: #718096;">
-            <p>Universidad Politécnica de Quintana Roo</p>
-            <p><a href="mailto:soporte@upqroo.edu.mx" style="color: #f97316; text-decoration: none;">soporte@upqroo.edu.mx</a> | <a href="https://www.upqroo.edu.mx" style="color: #f97316; text-decoration: none;">www.upqroo.edu.mx</a></p>
-            <p style="font-size: 12px; margin-top: 10px;">© 2025 UPQROO. Todos los derechos reservados.</p>
-          </div>
-        </div>
-      `,
-    };
+      subject: "Restablecimiento de contraseña",
+      html: `<p>Haz clic aquí para restablecer tu contraseña:</p>
+             <a href="${resetUrl}">${resetUrl}</a>`,
+    });
 
-    await transporter.sendMail(mailOptions);
-    res.status(200).json({ message: 'Enlace de recuperación enviado al correo' });
+    res.json({ message: "Enlace enviado al correo" });
   } catch (error) {
-    if (error.code === 'EAUTH') {
-      return res.status(500).json({ error: 'Error de autenticación en el servidor de correo' });
-    }
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-});
-
-// Restablecer contraseña
-router.post("/reset-password", async (req, res) => {
-  const { token, newPassword } = req.body;
-
-  try {
-    if (!token || !newPassword) {
-      return res.status(400).json({ error: 'Token y nueva contraseña son obligatorios' });
-    }
-
-    if (newPassword.length < 8) {
-      return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 8 caracteres' });
-    }
-
-    const [tokens] = await pool.query(
-      'SELECT user_id, expires_at, used FROM password_reset_tokens WHERE token = ?',
-      [token]
-    );
-    if (tokens.length === 0 || tokens[0].used || new Date() > new Date(tokens[0].expires_at)) {
-      return res.status(400).json({ error: 'Token inválido o expirado' });
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    await pool.query('UPDATE users SET password = ? WHERE id_user = ?', [hashedPassword, tokens[0].user_id]);
-
-    await pool.query('UPDATE password_reset_tokens SET used = TRUE WHERE token = ?', [token]);
-
-    res.status(200).json({ message: 'Contraseña restablecida correctamente' });
-  } catch (error) {
-    res.status(500).json({ error: 'Error interno del servidor' });
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 

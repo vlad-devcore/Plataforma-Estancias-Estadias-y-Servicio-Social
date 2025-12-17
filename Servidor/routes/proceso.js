@@ -48,7 +48,7 @@ router.get(
           Año,
           Fase,
           CONCAT(Año, ' ', Fase) AS periodo_completo,
-          Activo
+          EstadoActivo
          FROM periodos
          ORDER BY Año DESC, Fase DESC`
       );
