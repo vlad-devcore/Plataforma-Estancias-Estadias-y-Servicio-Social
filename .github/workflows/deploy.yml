@@ -12,29 +12,29 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Check changes
+      - name: Detect changes
         run: |
           git diff --quiet HEAD^ HEAD -- cliente/ && echo "cliente_changed=false" >> $GITHUB_ENV || echo "cliente_changed=true" >> $GITHUB_ENV
           git diff --quiet HEAD^ HEAD -- Servidor/ && echo "servidor_changed=false" >> $GITHUB_ENV || echo "servidor_changed=true" >> $GITHUB_ENV
-          echo "Files changed in cliente/:"
-          git diff --name-only HEAD^ HEAD -- cliente/
-          echo "Files changed in Servidor/:"
-          git diff --name-only HEAD^ HEAD -- Servidor/
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Deploy cliente
         if: env.cliente_changed == 'true'
         run: |
-          rsync -av --exclude='node_modules' --exclude='.env' -e "sshpass -p ${{ secrets.SFTP_PASSWORD }} ssh -o StrictHostKeyChecking=no" cliente/ ${{ secrets.SFTP_USERNAME }}@academico.upqroo.edu.mx:/var/www/PEE/cliente
-          sshpass -p ${{ secrets.SFTP_PASSWORD }} ssh -o StrictHostKeyChecking=no ${{ secrets.SFTP_USERNAME }}@academico.upqroo.edu.mx "cd /var/www/PEE/cliente && find . -name 'node_modules' -type d -exec rm -rf {} + && npm ci && npm run build && pm2 restart front-PEE"
+          rsync -av --exclude='node_modules' --exclude='.env' cliente/ gestionvinculacion@academico.upqroo.edu.mx:/var/www/PEE/cliente
+          ssh gestionvinculacion@academico.upqroo.edu.mx "cd /var/www/PEE/cliente && npm ci && npm run build && pm2 restart front-PEE"
 
       - name: Deploy Servidor
         if: env.servidor_changed == 'true'
         run: |
-          rsync -av --exclude='node_modules' --exclude='.env' -e "sshpass -p ${{ secrets.SFTP_PASSWORD }} ssh -o StrictHostKeyChecking=no" Servidor/ ${{ secrets.SFTP_USERNAME }}@academico.upqroo.edu.mx:/var/www/PEE/Servidor
-          sshpass -p ${{ secrets.SFTP_PASSWORD }} ssh -o StrictHostKeyChecking=no ${{ secrets.SFTP_USERNAME }}@academico.upqroo.edu.mx "cd /var/www/PEE/Servidor && find . -name 'node_modules' -type d -exec rm -rf {} + && npm ci && pm2 restart Back-PEE"
+          rsync -av --exclude='node_modules' --exclude='.env' Servidor/ gestionvinculacion@academico.upqroo.edu.mx:/var/www/PEE/Servidor
+          ssh gestionvinculacion@academico.upqroo.edu.mx "cd /var/www/PEE/Servidor && npm ci && pm2 restart Back-PEE"
