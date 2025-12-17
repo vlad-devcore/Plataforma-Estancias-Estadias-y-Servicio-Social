@@ -1,128 +1,115 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+ 
 
-const AuthContext = createContext(null);
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-  const API = process.env.REACT_APP_API_ENDPOINT;
-
-  // 🔐 Verificar token SOLO una vez al iniciar
   useEffect(() => {
-    const verifyToken = async () => {
+    const checkAuth = async () => {
       const token = localStorage.getItem('token');
+      const userData = localStorage.getItem('user');
 
-      if (!token) {
-        setLoading(false);
-        return;
+      if (token && userData) {
+        try {
+          const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/auth/verify`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const verifiedUser = response.data.user;
+          localStorage.setItem('user', JSON.stringify(verifiedUser));
+          setUser(verifiedUser);
+        } catch (error) {
+          console.error('Error al verificar token:', error);
+          logout();
+        }
       }
-
-      try {
-        const { data } = await axios.get(`${API}/api/auth/verify`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        setUser(data.user);
-        localStorage.setItem('user', JSON.stringify(data.user));
-      } catch (error) {
-        console.error('Token inválido o expirado');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
+      setLoading(false);
     };
 
-    verifyToken();
-  }, [API]);
+    checkAuth();
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // 🔑 Login
+
   const login = async (email, password) => {
     try {
-      const { data } = await axios.post(`${API}/api/auth/login`, {
+      const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/auth/login`, {
         email,
-        password,
+        password
       });
 
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      setUser(data.user);
-
-      return { success: true };
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      setUser(response.data.user);
+      return { success: true, user: response.data.user };
     } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.error || 'Error al iniciar sesión',
+      console.error('Error en login:', error);
+      return { 
+        success: false, 
+        error: error.response?.data?.error || 'Error al iniciar sesión' 
       };
     }
   };
 
-  // 🚪 Logout (SIN navegar)
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+    navigate('/login');
   };
 
-  // 👤 Actualizar perfil
   const updateUser = async (userData) => {
     try {
       const token = localStorage.getItem('token');
-
-      const { data } = await axios.put(
-        `${API}/api/users/${userData.id}`,
-        userData,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-
-      return { success: true, message: data.message };
+      const response = await axios.put(`${process.env.REACT_APP_API_ENDPOINT}/api/users/${userData.id}`, userData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const updatedUser = {
+        id: userData.id,
+        email: userData.email,
+        nombre: userData.nombre,
+        apellido_paterno: userData.apellido_paterno,
+        apellido_materno: userData.apellido_materno,
+        role: userData.role,
+        genero: userData.genero,
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      return { success: true, message: response.data.message };
     } catch (error) {
+      console.error('Error al actualizar usuario:', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Error al actualizar perfil',
+        error: error.response?.data?.error || 'Error al actualizar perfil'
       };
     }
   };
 
-  // 🔐 Cambiar contraseña
   const changePassword = async (oldPassword, newPassword) => {
     try {
       const token = localStorage.getItem('token');
-
-      const { data } = await axios.post(
-        `${API}/api/auth/change-password`,
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_ENDPOINT}/api/auth/change-password`,
         { oldPassword, newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      return { success: true, message: data.message };
+      return { success: true, message: response.data.message };
     } catch (error) {
+      console.error('Error al cambiar contraseña:', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Error al cambiar contraseña',
+        error: error.response?.data?.error || 'Error al cambiar contraseña'
       };
     }
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        login,
-        logout,
-        updateUser,
-        changePassword,
-      }}
-    >
+    <AuthContext.Provider value={{ user, login, logout, loading, updateUser, changePassword }}>
       {!loading && children}
     </AuthContext.Provider>
   );
@@ -131,7 +118,7 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth debe usarse dentro de AuthProvider');
+    throw new Error('useAuth debe usarse dentro de un AuthProvider');
   }
   return context;
 };
