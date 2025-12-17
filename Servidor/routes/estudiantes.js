@@ -1,117 +1,173 @@
 import express from "express";
 import pool from "../config/config.db.js";
 
+import {
+  authenticateToken,
+  checkRole,
+  validateNumericId
+} from "./authMiddleware.js";
+
 const router = express.Router();
 
-// Obtener todos los estudiantes
-const getEstudiantes = async (req, res) => {
+/* =========================
+   LISTAR ESTUDIANTES
+========================= */
+router.get(
+  "/",
+  authenticateToken,
+  checkRole(["admin", "coordinador"]),
+  async (req, res) => {
     try {
-        const [results] = await pool.query("SELECT * FROM estudiantes");
-        res.status(200).json(results);
-    } catch (error) {
-        console.error("Error al obtener estudiantes:", error);
-        res.status(500).json({ error: "Error interno del servidor" });
+      const [results] = await pool.query(
+        "SELECT id_estudiante, id_user, matricula FROM estudiantes"
+      );
+      res.json(results);
+    } catch {
+      res.status(500).json({ error: "Error al obtener estudiantes" });
     }
-};
+  }
+);
 
-// Obtener estudiante por ID
-const getEstudianteById = async (req, res) => {
+/* =========================
+   OBTENER ESTUDIANTE POR ID
+========================= */
+router.get(
+  "/:id_estudiante",
+  authenticateToken,
+  checkRole(["admin", "coordinador"]),
+  validateNumericId,
+  async (req, res) => {
     const { id_estudiante } = req.params;
-    try {
-        const [results] = await pool.query("SELECT * FROM estudiantes WHERE id_estudiante = ?", [id_estudiante]);
-        if (results.length === 0) return res.status(404).json({ error: "Estudiante no encontrado" });
-        res.status(200).json(results[0]);
-    } catch (error) {
-        console.error("Error al obtener el estudiante:", error);
-        res.status(500).json({ error: "Error interno del servidor" });
+
+    const [results] = await pool.query(
+      "SELECT id_estudiante, id_user, matricula FROM estudiantes WHERE id_estudiante = ?",
+      [id_estudiante]
+    );
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: "Estudiante no encontrado" });
     }
-};
 
-// Obtener estudiante por id_user, incluyendo id_programa del último proceso
-const getEstudianteByUserId = async (req, res) => {
-    const { id_user } = req.params;
-    try {
-        const [estudiantes] = await pool.query(
-            "SELECT id_estudiante FROM estudiantes WHERE id_user = ?",
-            [id_user]
-        );
-        if (estudiantes.length === 0) {
-            return res.status(404).json({ error: "Estudiante no encontrado" });
-        }
-        const id_estudiante = estudiantes[0].id_estudiante;
+    res.json(results[0]);
+  }
+);
 
-        const [procesos] = await pool.query(
-            "SELECT id_programa FROM proceso WHERE id_estudiante = ? ORDER BY id_proceso DESC LIMIT 1",
-            [id_estudiante]
-        );
-        const id_programa = procesos.length > 0 ? procesos[0].id_programa : null;
+/* =========================
+   OBTENER ESTUDIANTE PROPIO
+========================= */
+router.get(
+  "/me/profile",
+  authenticateToken,
+  checkRole(["estudiante"]),
+  async (req, res) => {
+    const id_user = req.user.id;
 
-        res.status(200).json({ id_estudiante, id_programa });
-    } catch (error) {
-        console.error("Error al obtener estudiante por id_user:", error);
-        res.status(500).json({ error: "Error interno del servidor" });
+    const [[estudiante]] = await pool.query(
+      "SELECT id_estudiante, matricula FROM estudiantes WHERE id_user = ?",
+      [id_user]
+    );
+
+    if (!estudiante) {
+      return res.status(404).json({ error: "Estudiante no encontrado" });
     }
-};
 
-// Agregar un nuevo estudiante
-const postEstudiante = async (req, res) => {
+    const [[proceso]] = await pool.query(
+      `SELECT id_programa 
+       FROM proceso 
+       WHERE id_estudiante = ?
+       ORDER BY id_proceso DESC
+       LIMIT 1`,
+      [estudiante.id_estudiante]
+    );
+
+    res.json({
+      ...estudiante,
+      id_programa: proceso?.id_programa || null
+    });
+  }
+);
+
+/* =========================
+   CREAR ESTUDIANTE
+========================= */
+router.post(
+  "/",
+  authenticateToken,
+  checkRole(["admin"]),
+  async (req, res) => {
     const { id_user, matricula } = req.body;
+
     if (!id_user || !matricula) {
-        return res.status(400).json({ error: "Faltan campos obligatorios" });
+      return res.status(400).json({ error: "Faltan campos obligatorios" });
     }
 
     try {
-        const [results] = await pool.query(
-            "INSERT INTO estudiantes (id_user, matricula) VALUES (?, ?)",
-            [id_user, matricula]
-        );
-        res.status(201).json({ message: "Estudiante añadido correctamente", id_estudiante: results.insertId });
-    } catch (error) {
-        console.error("Error al agregar estudiante:", error);
-        res.status(500).json({ error: "Error interno del servidor" });
-    }
-};
+      const [result] = await pool.query(
+        "INSERT INTO estudiantes (id_user, matricula) VALUES (?, ?)",
+        [id_user, matricula]
+      );
 
-// Actualizar estudiante
-const updateEstudiante = async (req, res) => {
+      res.status(201).json({
+        success: true,
+        id_estudiante: result.insertId
+      });
+    } catch {
+      res.status(500).json({ error: "Error al crear estudiante" });
+    }
+  }
+);
+
+/* =========================
+   ACTUALIZAR ESTUDIANTE
+========================= */
+router.put(
+  "/:id_estudiante",
+  authenticateToken,
+  checkRole(["admin"]),
+  validateNumericId,
+  async (req, res) => {
     const { id_estudiante } = req.params;
-    const { id_user, matricula } = req.body;
-    if (!id_user || !matricula) {
-        return res.status(400).json({ error: "Faltan campos obligatorios" });
+    const { matricula } = req.body;
+
+    if (!matricula) {
+      return res.status(400).json({ error: "Matrícula requerida" });
     }
 
-    try {
-        const [results] = await pool.query(
-            "UPDATE estudiantes SET id_user = ?, matricula = ? WHERE id_estudiante = ?",
-            [id_user, matricula, id_estudiante]
-        );
-        if (results.affectedRows === 0) return res.status(404).json({ error: "Estudiante no encontrado" });
-        res.status(200).json({ message: "Estudiante actualizado correctamente" });
-    } catch (error) {
-        console.error("Error al actualizar estudiante:", error);
-        res.status(500).json({ error: "Error interno del servidor" });
-    }
-};
+    const [result] = await pool.query(
+      "UPDATE estudiantes SET matricula = ? WHERE id_estudiante = ?",
+      [matricula, id_estudiante]
+    );
 
-// Eliminar estudiante
-const deleteEstudiante = async (req, res) => {
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Estudiante no encontrado" });
+    }
+
+    res.json({ success: true });
+  }
+);
+
+/* =========================
+   ELIMINAR ESTUDIANTE
+========================= */
+router.delete(
+  "/:id_estudiante",
+  authenticateToken,
+  checkRole(["admin"]),
+  validateNumericId,
+  async (req, res) => {
     const { id_estudiante } = req.params;
-    try {
-        const [results] = await pool.query("DELETE FROM estudiantes WHERE id_estudiante = ?", [id_estudiante]);
-        if (results.affectedRows === 0) return res.status(404).json({ error: "Estudiante no encontrado" });
-        res.status(200).json({ message: "Estudiante eliminado correctamente" });
-    } catch (error) {
-        console.error("Error al eliminar estudiante:", error);
-        res.status(500).json({ error: "Error interno del servidor" });
-    }
-};
 
-// Definir rutas
-router.get("/", getEstudiantes);
-router.get("/:id_estudiante", getEstudianteById);
-router.get("/by-user/:id_user", getEstudianteByUserId);
-router.post("/", postEstudiante);
-router.put("/:id_estudiante", updateEstudiante);
-router.delete("/:id_estudiante", deleteEstudiante);
+    const [result] = await pool.query(
+      "DELETE FROM estudiantes WHERE id_estudiante = ?",
+      [id_estudiante]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Estudiante no encontrado" });
+    }
+
+    res.json({ success: true });
+  }
+);
 
 export default router;
