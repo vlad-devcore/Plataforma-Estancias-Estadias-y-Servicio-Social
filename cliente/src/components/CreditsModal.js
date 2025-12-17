@@ -45,11 +45,11 @@ const CreditsModal = () => {
       linkedin: 'https://linkedin.com/in/juanoch'
     },
     {
-      name: 'Marcos Vladimir Poot',
-      role: 'Desarrollador FullStack, Lider de Proyecto',
+      name: 'Marcos Vladimir',
+      role: 'Desarrollador Frontend, UX/UI,',
       emoji: '🧑‍💻',
       image: '/team/vladimir.jpg',
-      github: 'https://github.com/Marcos24Vlad',
+      github: 'https://github.com/vlad-devcore',
       linkedin: 'https://www.linkedin.com/in/marcos-vladimir-poot-cohuo-1a215a25b/'
     },
     {
