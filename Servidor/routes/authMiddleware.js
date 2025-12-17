@@ -32,7 +32,7 @@ export const authenticateToken = async (req, res, next) => {
     req.user = {
       id: users[0].id_user,
       email: users[0].email,
-      role: users[0].role
+      role: users[0].role,
     };
 
     next();
@@ -48,14 +48,14 @@ export const authenticateToken = async (req, res, next) => {
 export const checkRole = (roles = []) => {
   return (req, res, next) => {
     if (!req.user || !req.user.role) {
-      return res.status(403).json({ error: "Rol de usuario no disponible" });
+      return res.status(403).json({ error: "Rol no disponible" });
     }
 
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
         error: "Acceso no autorizado",
-        requiredRoles: roles,
-        yourRole: req.user.role
+        required: roles,
+        actual: req.user.role,
       });
     }
 
@@ -64,7 +64,7 @@ export const checkRole = (roles = []) => {
 };
 
 /* =====================================================
-   PREVENCIÓN DE ESCALAMIENTO DE PRIVILEGIOS
+   PREVENIR ESCALAMIENTO DE PRIVILEGIOS
 ===================================================== */
 export const preventPrivilegeEscalation = (req, res, next) => {
   const forbiddenFields = ["role", "id_user", "password"];
@@ -72,7 +72,7 @@ export const preventPrivilegeEscalation = (req, res, next) => {
   for (const field of forbiddenFields) {
     if (req.body && Object.prototype.hasOwnProperty.call(req.body, field)) {
       return res.status(403).json({
-        error: `No está permitido modificar el campo: ${field}`
+        error: `No está permitido modificar el campo: ${field}`,
       });
     }
   }
@@ -81,10 +81,40 @@ export const preventPrivilegeEscalation = (req, res, next) => {
 };
 
 /* =====================================================
-   VALIDACIÓN DE IDS NUMÉRICOS
+   VERIFICAR PROPIEDAD DE RECURSO
+===================================================== */
+export const checkOwnership = (param = "id_user") => {
+  return (req, res, next) => {
+    const resourceOwnerId = parseInt(req.params[param], 10);
+
+    if (!resourceOwnerId || isNaN(resourceOwnerId)) {
+      return res.status(400).json({ error: "ID inválido" });
+    }
+
+    // Admin siempre puede
+    if (req.user.role === "admin") {
+      return next();
+    }
+
+    if (req.user.id !== resourceOwnerId) {
+      return res.status(403).json({
+        error: "No tienes permiso para acceder a este recurso",
+      });
+    }
+
+    next();
+  };
+};
+
+/* =====================================================
+   VALIDAR ID NUMÉRICO
 ===================================================== */
 export const validateNumericId = (req, res, next) => {
-  const id = req.params.id || req.params.id_user;
+  const id =
+    req.params.id ||
+    req.params.id_user ||
+    req.params.id_estudiante ||
+    req.params.id_empresa;
 
   if (!id || isNaN(parseInt(id, 10))) {
     return res.status(400).json({ error: "ID inválido" });
