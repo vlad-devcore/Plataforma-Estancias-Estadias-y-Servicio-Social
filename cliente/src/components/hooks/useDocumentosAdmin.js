@@ -251,7 +251,7 @@ const useDocumentosAdmin = () => {
     approveDocument,
     rejectDocument,
     revertDocument,
-    resetMessages: () => {
+    resetMessages: () => { 
       setError(null);
       setSuccess(null);
     },
@@ -264,5 +264,4 @@ const useDocumentosAdmin = () => {
     documentsPerPage,
   };
 };
-
 export default useDocumentosAdmin;

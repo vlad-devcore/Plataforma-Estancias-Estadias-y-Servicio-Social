@@ -38,8 +38,9 @@ const DocumentManagement = () => {
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState("");
-  const [rejectionNote, setRejectionNote] = useState("");
+  const [rejectionNote, setRejectionNote] = useState(""); 
   const [actionInProgress, setActionInProgress] = useState(false);
+  
 
   const closeModal = () => {
     setModalOpen(false);
