@@ -14,39 +14,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout con fetch-depth para tener historial
+      # 1️⃣ Checkout
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2  # Necesario para comparar con commit anterior
+          fetch-depth: 2
 
-      # 2️⃣ Detectar cambios (CORREGIDO)
+      # 2️⃣ Detectar cambios
       - name: Detect changes
         run: |
-          # Si es el primer push, comparar con HEAD
           if [ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]; then
             echo "cliente_changed=true" >> $GITHUB_ENV
             echo "servidor_changed=true" >> $GITHUB_ENV
           else
-            # Verificar si el commit anterior existe
             if git cat-file -e ${{ github.event.before }} 2>/dev/null; then
               CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
             else
-              # Si no existe, usar HEAD~1
               CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
             fi
-            
+
             echo "$CHANGED_FILES" | grep -q '^cliente/' && echo "cliente_changed=true" >> $GITHUB_ENV || echo "cliente_changed=false" >> $GITHUB_ENV
             echo "$CHANGED_FILES" | grep -q '^Servidor/' && echo "servidor_changed=true" >> $GITHUB_ENV || echo "servidor_changed=false" >> $GITHUB_ENV
           fi
 
-      # 3️⃣ Mostrar qué cambió (para debugging)
+      # 3️⃣ Debug
       - name: Show detected changes
         run: |
           echo "Cliente changed: ${{ env.cliente_changed }}"
           echo "Servidor changed: ${{ env.servidor_changed }}"
 
-      # 4️⃣ SSH Agent
+      # 4️⃣ SSH
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -58,60 +55,46 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H academico.upqroo.edu.mx >> ~/.ssh/known_hosts
 
-      # 6️⃣ Deploy CLIENTE (Frontend)
+      # 6️⃣ DEPLOY CLIENTE (FRONTEND - PRODUCCIÓN REAL)
       - name: Deploy cliente
         if: env.cliente_changed == 'true'
         run: |
           echo "🚀 Deploying CLIENTE..."
-          rsync -avz --progress \
+          rsync -az \
             --exclude='node_modules' \
             --exclude='.env' \
             --exclude='build' \
             --exclude='.git' \
-            --exclude='.next' \
             cliente/ \
             gestionvinculacion@academico.upqroo.edu.mx:/var/www/PEE/cliente
 
           ssh gestionvinculacion@academico.upqroo.edu.mx << 'EOF'
             set -e
             cd /var/www/PEE/cliente
-            
-            # Detener PM2 primero para liberar archivos
-            echo "⏸️  Stopping PM2 process..."
-            pm2 stop front-PEE 2>/dev/null || echo "Process not running"
-            
-            # Limpiar cachés y node_modules problemáticos
-            echo "🧹 Cleaning caches..."
-            rm -rf node_modules/.cache
-            rm -rf .cache
-            rm -rf build
-            
-            # Instalar dependencias
+
             echo "📦 Installing dependencies..."
             npm install --prefer-offline --no-audit
-            
-            # Build
-            echo "🔨 Building..."
+
+            echo "🔨 Building frontend..."
             npm run build
-            
-            # Reiniciar PM2
-            echo "♻️  Restarting PM2..."
+
+            echo "♻️ Restarting PM2 frontend (PORT 3088)..."
             if pm2 id front-PEE > /dev/null 2>&1; then
               pm2 restart front-PEE
             else
-              pm2 start npm --name front-PEE -- start
+              pm2 serve build 3088 --name front-PEE
             fi
-            
+
             pm2 save
-            echo "✅ Cliente deployed successfully"
+            echo "✅ Frontend running on port 3088"
           EOF
 
-      # 7️⃣ Deploy SERVIDOR (Backend)
+      # 7️⃣ DEPLOY SERVIDOR (BACKEND)
       - name: Deploy Servidor
         if: env.servidor_changed == 'true'
         run: |
           echo "🚀 Deploying SERVIDOR..."
-          rsync -avz --progress \
+          rsync -az \
             --exclude='node_modules' \
             --exclude='.env' \
             --exclude='.git' \
@@ -121,35 +104,25 @@ jobs:
           ssh gestionvinculacion@academico.upqroo.edu.mx << 'EOF'
             set -e
             cd /var/www/PEE/Servidor
-            
-            # Detener PM2 primero
-            echo "⏸️  Stopping PM2 process..."
-            pm2 stop Back-PEE 2>/dev/null || echo "Process not running"
-            
-            # Limpiar cachés
-            echo "🧹 Cleaning caches..."
-            rm -rf node_modules/.cache
-            
-            # Instalar dependencias
+
             echo "📦 Installing dependencies..."
             npm install --prefer-offline --no-audit
-            
-            # Reiniciar PM2
-            echo "♻️  Restarting PM2..."
+
+            echo "♻️ Restarting PM2 backend..."
             if pm2 id Back-PEE > /dev/null 2>&1; then
               pm2 restart Back-PEE
             else
               pm2 start index.js --name Back-PEE
             fi
-            
+
             pm2 save
-            echo "✅ Servidor deployed successfully"
+            echo "✅ Backend running"
           EOF
 
-      # 8️⃣ Resumen final
+      # 8️⃣ Resumen
       - name: Deployment Summary
         if: always()
         run: |
-          echo "📊 Deployment Summary:"
+          echo "📊 Deployment Summary"
           echo "- Cliente deployed: ${{ env.cliente_changed }}"
           echo "- Servidor deployed: ${{ env.servidor_changed }}"
