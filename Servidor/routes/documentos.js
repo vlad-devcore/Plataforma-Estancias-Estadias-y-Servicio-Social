@@ -73,7 +73,8 @@ router.get("/tipo_documento", async (req, res) => {
       "SELECT IdTipoDoc, Nombre_TipoDoc FROM tipo_documento ORDER BY Nombre_TipoDoc"
     );
     res.json(rows);
-  } catch {
+  } catch (err) {
+    console.error("Error en /tipo_documento:", err);
     res.status(500).json({ error: "Error al obtener tipos de documentos" });
   }
 });
@@ -84,7 +85,8 @@ router.get("/programas_educativos", async (req, res) => {
       "SELECT DISTINCT nombre FROM programa_educativo WHERE nombre IS NOT NULL ORDER BY nombre"
     );
     res.json(rows.map(r => r.nombre));
-  } catch {
+  } catch (err) {
+    console.error("Error en /programas_educativos:", err);
     res.status(500).json({ error: "Error al obtener programas educativos" });
   }
 });
@@ -95,7 +97,8 @@ router.get("/periodos", async (req, res) => {
       "SELECT IdPeriodo, Año, Fase FROM periodos ORDER BY Año DESC, Fase"
     );
     res.json(rows);
-  } catch {
+  } catch (err) {
+    console.error("Error en /periodos:", err);
     res.status(500).json({ error: "Error al obtener periodos" });
   }
 });
@@ -141,13 +144,13 @@ router.post("/upload", upload.single("archivo"), async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
+    console.error("Error en /upload:", err);
     res.status(500).json({ error: "Error al subir documento" });
   }
 });
 
 /* ============================
-   VISUALIZAR (CORREGIDO - antes era download)
+   VISUALIZAR
 ============================ */
 router.get("/download/:id_Documento", async (req, res) => {
   try {
@@ -166,11 +169,10 @@ router.get("/download/:id_Documento", async (req, res) => {
       return res.status(404).json({ error: "Archivo no encontrado" });
     }
 
-    // CAMBIO CLAVE: Usar el Content-Type correcto en lugar de application/octet-stream
+    // Usar el Content-Type correcto
     const contentType = getMimeType(rows[0].NombreArchivo);
     res.setHeader("Content-Type", contentType);
     
-    // Mantener inline para visualizar
     res.setHeader(
       "Content-Disposition",
       `inline; filename="${encodeURIComponent(rows[0].NombreArchivo)}"`
@@ -178,19 +180,28 @@ router.get("/download/:id_Documento", async (req, res) => {
 
     fs.createReadStream(filePath).pipe(res);
   } catch (err) {
-    console.error(err);
+    console.error("Error en /download:", err);
     res.status(500).json({ error: "Error al visualizar documento" });
   }
 });
 
 /* ============================
-   LISTADO (CORREGIDO - con Matrícula)
+   LISTADO
 ============================ */
 router.get("/", async (req, res) => {
   try {
-    const [rows] = await pool.query(`
+    console.log("Iniciando query de listado...");
+    
+    const query = `
       SELECT 
-        d.*,
+        d.id_Documento,
+        d.NombreArchivo,
+        d.RutaArchivo,
+        d.IdTipoDoc,
+        d.id_usuario,
+        d.Comentarios,
+        d.Estatus,
+        d.id_proceso,
         t.Nombre_TipoDoc,
         pe.nombre AS ProgramaEducativo,
         e.Matricula,
@@ -198,15 +209,25 @@ router.get("/", async (req, res) => {
         e.Apellido_Paterno,
         e.Apellido_Materno
       FROM documentos d
-      JOIN tipo_documento t ON d.IdTipoDoc = t.IdTipoDoc
-      JOIN proceso p ON d.id_proceso = p.id_proceso
-      JOIN programa_educativo pe ON p.id_programa = pe.id_programa
-      JOIN estudiantes e ON p.id_estudiante = e.id_estudiante
-    `);
+      INNER JOIN tipo_documento t ON d.IdTipoDoc = t.IdTipoDoc
+      INNER JOIN proceso p ON d.id_proceso = p.id_proceso
+      INNER JOIN programa_educativo pe ON p.id_programa = pe.id_programa
+      INNER JOIN estudiantes e ON p.id_estudiante = e.id_estudiante
+    `;
+    
+    console.log("Ejecutando query...");
+    const [rows] = await pool.query(query);
+    console.log(`Query exitoso. Registros encontrados: ${rows.length}`);
+    
     res.json(rows);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error al obtener documentos" });
+    console.error("Error COMPLETO en listado:", err);
+    console.error("Error mensaje:", err.message);
+    console.error("Error stack:", err.stack);
+    res.status(500).json({ 
+      error: "Error al obtener documentos",
+      detalle: err.message 
+    });
   }
 });
 
