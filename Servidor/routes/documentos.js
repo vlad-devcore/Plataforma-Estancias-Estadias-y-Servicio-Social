@@ -15,6 +15,28 @@ const __dirname = path.dirname(__filename);
 const router = express.Router();
 
 /* ============================
+   HELPER: Obtener id_estudiante desde id_user
+============================ */
+const getEstudianteId = async (userId, userRole) => {
+  // Si es admin, no necesita id_estudiante
+  if (userRole === 'admin') {
+    return null;
+  }
+  
+  // Buscar id_estudiante en la tabla estudiantes
+  const [estudiante] = await pool.query(
+    "SELECT id_estudiante FROM estudiantes WHERE id_estudiante = ?",
+    [userId]
+  );
+  
+  if (estudiante.length > 0) {
+    return estudiante[0].id_estudiante;
+  }
+  
+  return null;
+};
+
+/* ============================
    MULTER - Configuración de almacenamiento
 ============================ */
 const storage = multer.diskStorage({
@@ -34,7 +56,7 @@ const storage = multer.diskStorage({
 const upload = multer({ 
   storage,
   limits: {
-    fileSize: 10 * 1024 * 1024, // Límite de 10MB
+    fileSize: 10 * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = [
@@ -132,27 +154,41 @@ router.get("/periodos", async (req, res) => {
 router.post("/upload", authenticateToken, upload.single("archivo"), async (req, res) => {
   try {
     const { IdTipoDoc, id_proceso } = req.body;
-    const userId = req.user.id; // ID del estudiante
+    const userId = req.user.id; // id_user de la tabla users
+    const userRole = req.user.role;
     
-    console.log("📤 Upload iniciado:", { userId, IdTipoDoc, id_proceso, hasFile: !!req.file });
+    console.log("📤 Upload iniciado - userId:", userId, "role:", userRole);
     
     if (!IdTipoDoc || !id_proceso || !req.file) {
       return res.status(400).json({ error: "Datos incompletos" });
     }
 
-    // Verificar que el proceso pertenece al usuario
+    // Obtener id_estudiante
+    const estudianteId = await getEstudianteId(userId, userRole);
+    
+    if (!estudianteId && userRole !== 'admin') {
+      if (req.file && req.file.path) {
+        fs.unlinkSync(req.file.path);
+      }
+      console.error("❌ No se encontró id_estudiante para userId:", userId);
+      return res.status(403).json({ error: "Usuario no encontrado como estudiante" });
+    }
+
+    console.log("🎓 id_estudiante encontrado:", estudianteId);
+
+    // Verificar que el proceso pertenece al estudiante
     const [procesoCheck] = await pool.query(
       `SELECT p.id_proceso 
        FROM proceso p 
        WHERE p.id_proceso = ? AND p.id_estudiante = ?`,
-      [id_proceso, userId]
+      [id_proceso, estudianteId]
     );
 
     if (procesoCheck.length === 0) {
       if (req.file && req.file.path) {
         fs.unlinkSync(req.file.path);
       }
-      console.error("❌ Proceso no pertenece al usuario");
+      console.error("❌ Proceso no pertenece al estudiante");
       return res.status(403).json({ 
         error: "No tienes permiso para subir documentos a este proceso" 
       });
@@ -166,7 +202,7 @@ router.post("/upload", authenticateToken, upload.single("archivo"), async (req, 
       `SELECT id_Documento, RutaArchivo 
        FROM documentos 
        WHERE id_proceso = ? AND IdTipoDoc = ? AND id_usuario = ?`,
-      [id_proceso, IdTipoDoc, userId]
+      [id_proceso, IdTipoDoc, estudianteId]
     );
 
     if (existing.length) {
@@ -187,7 +223,7 @@ router.post("/upload", authenticateToken, upload.single("archivo"), async (req, 
         `INSERT INTO documentos 
          (NombreArchivo, RutaArchivo, IdTipoDoc, id_usuario, Estatus, id_proceso)
          VALUES (?, ?, ?, ?, 'Pendiente', ?)`,
-        [nombreArchivo, rutaArchivo, IdTipoDoc, userId, id_proceso]
+        [nombreArchivo, rutaArchivo, IdTipoDoc, estudianteId, id_proceso]
       );
       console.log("✅ Nuevo documento insertado");
     }
@@ -210,9 +246,10 @@ router.get("/download/:id_Documento", authenticateToken, async (req, res) => {
   try {
     const documentId = req.params.id_Documento;
     const userId = req.user.id;
-    const isAdmin = req.user.role === 'admin';
+    const userRole = req.user.role;
+    const isAdmin = userRole === 'admin';
 
-    console.log("🔎 Download:", { documentId, userId, isAdmin });
+    console.log("🔎 Download - documentId:", documentId, "userId:", userId, "isAdmin:", isAdmin);
     
     const [rows] = await pool.query(
       `SELECT d.NombreArchivo, d.RutaArchivo, d.id_usuario 
@@ -225,11 +262,16 @@ router.get("/download/:id_Documento", authenticateToken, async (req, res) => {
       return res.status(404).json({ error: "Documento no encontrado" });
     }
 
-    if (!isAdmin && rows[0].id_usuario !== userId) {
-      console.log("🚫 Acceso denegado");
-      return res.status(403).json({ 
-        error: "No tienes permiso para acceder a este documento" 
-      });
+    // Obtener id_estudiante para comparar
+    if (!isAdmin) {
+      const estudianteId = await getEstudianteId(userId, userRole);
+      
+      if (rows[0].id_usuario !== estudianteId) {
+        console.log("🚫 Acceso denegado - doc.id_usuario:", rows[0].id_usuario, "estudianteId:", estudianteId);
+        return res.status(403).json({ 
+          error: "No tienes permiso para acceder a este documento" 
+        });
+      }
     }
 
     const filePath = resolveFilePath(rows[0].RutaArchivo);
@@ -353,7 +395,8 @@ router.delete("/:id", authenticateToken, async (req, res) => {
   try {
     const documentId = req.params.id;
     const userId = req.user.id;
-    const isAdmin = req.user.role === 'admin';
+    const userRole = req.user.role;
+    const isAdmin = userRole === 'admin';
 
     const [documento] = await pool.query(
       "SELECT id_usuario, RutaArchivo FROM documentos WHERE id_Documento = ?",
@@ -364,10 +407,15 @@ router.delete("/:id", authenticateToken, async (req, res) => {
       return res.status(404).json({ error: "Documento no encontrado" });
     }
 
-    if (!isAdmin && documento[0].id_usuario !== userId) {
-      return res.status(403).json({ 
-        error: "No tienes permiso para eliminar este documento" 
-      });
+    // Validar pertenencia si no es admin
+    if (!isAdmin) {
+      const estudianteId = await getEstudianteId(userId, userRole);
+      
+      if (documento[0].id_usuario !== estudianteId) {
+        return res.status(403).json({ 
+          error: "No tienes permiso para eliminar este documento" 
+        });
+      }
     }
 
     const filePath = resolveFilePath(documento[0].RutaArchivo);
@@ -385,7 +433,7 @@ router.delete("/:id", authenticateToken, async (req, res) => {
 });
 
 /* ============================
-   LISTADO - AL FINAL
+   LISTADO - AL FINAL (Ruta genérica)
 ============================ */
 
 router.get("/", authenticateToken, async (req, res) => {
@@ -398,10 +446,11 @@ router.get("/", authenticateToken, async (req, res) => {
       return res.status(401).json({ error: "Usuario no autenticado" });
     }
 
-    const userId = req.user.id;
-    const isAdmin = req.user.role === 'admin';
+    const userId = req.user.id; // id_user de tabla users
+    const userRole = req.user.role;
+    const isAdmin = userRole === 'admin';
 
-    console.log("  - userId:", userId, "| isAdmin:", isAdmin);
+    console.log("  - userId:", userId, "| role:", userRole, "| isAdmin:", isAdmin);
 
     let query = `
       SELECT 
@@ -419,8 +468,17 @@ router.get("/", authenticateToken, async (req, res) => {
     let params = [];
 
     if (!isAdmin) {
+      // Obtener id_estudiante para filtrar
+      const estudianteId = await getEstudianteId(userId, userRole);
+      
+      if (!estudianteId) {
+        console.error("❌ No se encontró id_estudiante");
+        return res.status(403).json({ error: "Usuario no encontrado como estudiante" });
+      }
+      
+      console.log("  - Filtrando por id_estudiante:", estudianteId);
       query += " WHERE d.id_usuario = ?";
-      params.push(userId);
+      params.push(estudianteId);
     }
 
     query += " ORDER BY d.id_Documento DESC";
