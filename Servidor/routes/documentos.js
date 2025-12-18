@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import pool from "../config/config.db.js";
 import { fileURLToPath } from "url";
+import { authenticateToken, checkRole } from "./authMiddleware.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,7 +28,23 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage });
+const upload = multer({ 
+  storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB máximo
+  },
+  fileFilter: (req, file, cb) => {
+    // Tipos de archivo permitidos
+    const allowedTypes = /pdf|jpg|jpeg|png|doc|docx|xls|xlsx/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (extname && mimetype) {
+      return cb(null, true);
+    }
+    cb(new Error("Tipo de archivo no permitido"));
+  }
+});
 
 /* ============================
    HELPERS
@@ -72,8 +89,25 @@ const getMimeType = (filename) => {
   return mimeTypes[ext] || 'application/octet-stream';
 };
 
+// 🔒 NUEVO: Helper para verificar pertenencia del documento
+const verificarPerteneceUsuario = async (idDocumento, userId, role) => {
+  const [rows] = await pool.query(`
+    SELECT d.id_usuario, d.id_Documento
+    FROM documentos d
+    WHERE d.id_Documento = ?
+  `, [idDocumento]);
+
+  if (!rows.length) return false;
+  
+  // Admins y coordinadores pueden acceder a todo
+  if (role === 'administrador' || role === 'coordinador') return true;
+  
+  // Usuarios solo sus propios documentos
+  return rows[0].id_usuario === userId;
+};
+
 /* ============================
-   CATÁLOGOS
+   CATÁLOGOS - PÚBLICOS (no requieren auth)
 ============================ */
 router.get("/tipo_documento", async (req, res) => {
   try {
@@ -112,13 +146,24 @@ router.get("/periodos", async (req, res) => {
 });
 
 /* ============================
-   UPLOAD
+   UPLOAD - 🔒 REQUIERE AUTENTICACIÓN
 ============================ */
-router.post("/upload", upload.single("archivo"), async (req, res) => {
+router.post("/upload", authenticateToken, upload.single("archivo"), async (req, res) => {
   try {
     const { IdTipoDoc, id_usuario, id_proceso } = req.body;
+    const currentUserId = req.user.id;
+    const isAdmin = req.user.role === 'administrador';
+
+    // Validar datos obligatorios
     if (!IdTipoDoc || !id_usuario || !id_proceso || !req.file) {
       return res.status(400).json({ error: "Datos incompletos" });
+    }
+
+    // 🔒 SEGURIDAD: Usuario común solo puede subir sus propios documentos
+    if (!isAdmin && parseInt(id_usuario) !== currentUserId) {
+      return res.status(403).json({ 
+        error: "Acceso denegado. Solo puedes subir tus propios documentos" 
+      });
     }
 
     const nombreArchivo = req.file.originalname;
@@ -166,20 +211,34 @@ router.post("/upload", upload.single("archivo"), async (req, res) => {
 });
 
 /* ============================
-   VISUALIZAR
+   VISUALIZAR/DESCARGAR - 🔒 REQUIERE AUTENTICACIÓN Y PERTENENCIA
 ============================ */
-router.get("/download/:id_Documento", async (req, res) => {
+router.get("/download/:id_Documento", authenticateToken, async (req, res) => {
   try {
-    console.log("🔎 Buscando documento ID:", req.params.id_Documento);
+    const { id_Documento } = req.params;
+    const currentUserId = req.user.id;
+    const userRole = req.user.role;
+
+    console.log("🔎 Buscando documento ID:", id_Documento);
+    console.log("👤 Usuario solicitante:", currentUserId, "Rol:", userRole);
     
     const [rows] = await pool.query(
-      "SELECT NombreArchivo, RutaArchivo FROM documentos WHERE id_Documento = ?",
-      [req.params.id_Documento]
+      "SELECT NombreArchivo, RutaArchivo, id_usuario FROM documentos WHERE id_Documento = ?",
+      [id_Documento]
     );
 
     if (!rows.length) {
       console.log("❌ Documento no encontrado en DB");
       return res.status(404).json({ error: "Documento no encontrado en base de datos" });
+    }
+
+    // 🔒 SEGURIDAD: Verificar pertenencia del documento
+    const perteneceAlUsuario = await verificarPerteneceUsuario(id_Documento, currentUserId, userRole);
+    if (!perteneceAlUsuario) {
+      console.log("❌ Acceso denegado - documento no pertenece al usuario");
+      return res.status(403).json({ 
+        error: "Acceso denegado. No tienes permisos para ver este documento" 
+      });
     }
 
     console.log("📄 Documento encontrado:", rows[0].NombreArchivo);
@@ -219,11 +278,15 @@ router.get("/download/:id_Documento", async (req, res) => {
 });
 
 /* ============================
-   LISTADO
+   LISTADO - 🔒 REQUIERE AUTENTICACIÓN
+   Admin ve todos, usuario común solo los suyos
 ============================ */
-router.get("/", async (req, res) => {
+router.get("/", authenticateToken, async (req, res) => {
   try {
-    const [rows] = await pool.query(`
+    const currentUserId = req.user.id;
+    const isAdmin = req.user.role === 'administrador';
+
+    let query = `
       SELECT 
         d.*,
         t.Nombre_TipoDoc,
@@ -234,7 +297,22 @@ router.get("/", async (req, res) => {
       INNER JOIN proceso p ON d.id_proceso = p.id_proceso
       INNER JOIN programa_educativo pe ON p.id_programa = pe.id_programa
       INNER JOIN estudiantes e ON p.id_estudiante = e.id_estudiante
-    `);
+    `;
+
+    let params = [];
+
+    // 🔒 SEGURIDAD: Usuario común solo ve sus propios documentos
+    if (!isAdmin) {
+      query += ` WHERE d.id_usuario = ?`;
+      params.push(currentUserId);
+    }
+
+    query += ` ORDER BY d.id_Documento DESC`;
+
+    const [rows] = await pool.query(query, params);
+    
+    console.log(`✅ Listado de documentos - Usuario: ${currentUserId}, Rol: ${req.user.role}, Documentos: ${rows.length}`);
+    
     res.json(rows);
   } catch (err) {
     console.error("❌ Error en listado:", err);
