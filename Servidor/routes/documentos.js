@@ -331,14 +331,36 @@ router.get("/download/:id_Documento",
 /**
  * GET /api/documentos
  * Lista documentos del usuario autenticado
- * Acceso: Usuario autenticado ve solo SUS documentos, Admin ve TODOS
+ * Acceso: TEMPORAL SIN AUTH - Filtrado por usuario si hay token
  * 
- * SEGURIDAD: Los estudiantes solo ven sus propios documentos
+ * TODO: Requiere investigación del frontend para activar authenticateToken
+ * NOTA: Aunque sea sin auth, mantiene el filtrado de seguridad
  */
-router.get("/", authenticateToken, async (req, res) => {
+router.get("/", async (req, res) => {
   try {
-    const userId = req.user.id;
-    const isAdmin = req.user.role === 'admin';
+    // Intentar obtener el usuario del token si existe
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    let userId = null;
+    let isAdmin = false;
+    
+    if (token) {
+      try {
+        const jwt = (await import('jsonwebtoken')).default;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const [users] = await pool.query(
+          "SELECT id_user, role FROM users WHERE id_user = ?", 
+          [decoded.id]
+        );
+        if (users.length > 0) {
+          userId = users[0].id_user;
+          isAdmin = users[0].role === 'admin';
+        }
+      } catch (err) {
+        console.log("⚠️ Token inválido o no proporcionado en listado");
+      }
+    }
 
     let query = `
       SELECT 
@@ -355,17 +377,20 @@ router.get("/", authenticateToken, async (req, res) => {
 
     let params = [];
 
-    // Si NO es admin, filtrar solo sus documentos
-    if (!isAdmin) {
+    // SEGURIDAD: Si hay usuario identificado y NO es admin, filtrar solo sus documentos
+    if (userId && !isAdmin) {
       query += " WHERE d.id_usuario = ?";
       params.push(userId);
+    } else if (!userId) {
+      // Si no hay token válido, devolver lista vacía (sin exponer datos)
+      return res.json([]);
     }
 
     query += " ORDER BY d.id_Documento DESC";
 
     const [rows] = await pool.query(query, params);
     
-    console.log(`📋 Documentos encontrados: ${rows.length} | Usuario: ${userId} | Admin: ${isAdmin}`);
+    console.log(`📋 Documentos encontrados: ${rows.length} | Usuario: ${userId || 'ninguno'} | Admin: ${isAdmin}`);
     
     res.json(rows);
   } catch (err) {
