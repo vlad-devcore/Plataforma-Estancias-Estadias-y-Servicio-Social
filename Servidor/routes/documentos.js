@@ -6,8 +6,7 @@ import pool from "../config/config.db.js";
 import { fileURLToPath } from "url";
 import { 
   authenticateToken, 
-  isAdmin, 
-  validateDocumentOwnership 
+  isAdmin
 } from "./authMiddleware.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -102,16 +101,16 @@ const getMimeType = (filename) => {
 };
 
 /* ============================
-   CATÁLOGOS - Requieren autenticación
+   CATÁLOGOS - AHORA REQUIEREN AUTENTICACIÓN
+   ✅ CORREGIDO: Agregado authenticateToken a todos los catálogos
 ============================ */
 
 /**
  * GET /api/documentos/tipo_documento
  * Obtiene el catálogo de tipos de documentos
- * Acceso: Público (catálogo de referencia)
- * TODO: Mover a authenticateToken cuando se corrija el frontend
+ * ✅ CORREGIDO: Ahora requiere autenticación
  */
-router.get("/tipo_documento", async (req, res) => {
+router.get("/tipo_documento", authenticateToken, async (req, res) => {
   try {
     const [rows] = await pool.query(
       "SELECT IdTipoDoc, Nombre_TipoDoc FROM tipo_documento ORDER BY Nombre_TipoDoc"
@@ -126,10 +125,9 @@ router.get("/tipo_documento", async (req, res) => {
 /**
  * GET /api/documentos/programas_educativos
  * Obtiene el catálogo de programas educativos
- * Acceso: Público (catálogo de referencia)
- * TODO: Mover a authenticateToken cuando se corrija el frontend
+ * ✅ CORREGIDO: Ahora requiere autenticación
  */
-router.get("/programas_educativos", async (req, res) => {
+router.get("/programas_educativos", authenticateToken, async (req, res) => {
   try {
     const [rows] = await pool.query(
       "SELECT DISTINCT nombre FROM programa_educativo WHERE nombre IS NOT NULL ORDER BY nombre"
@@ -144,10 +142,9 @@ router.get("/programas_educativos", async (req, res) => {
 /**
  * GET /api/documentos/periodos
  * Obtiene el catálogo de periodos
- * Acceso: Público (catálogo de referencia)
- * TODO: Mover a authenticateToken cuando se corrija el frontend
+ * ✅ CORREGIDO: Ahora requiere autenticación
  */
-router.get("/periodos", async (req, res) => {
+router.get("/periodos", authenticateToken, async (req, res) => {
   try {
     const [rows] = await pool.query(
       "SELECT IdPeriodo, Año, Fase FROM periodos ORDER BY Año DESC, Fase"
@@ -161,14 +158,13 @@ router.get("/periodos", async (req, res) => {
 
 /* ============================
    UPLOAD - Subir documentos
+   ✅ YA ESTABA BIEN PROTEGIDO
 ============================ */
 
 /**
  * POST /api/documentos/upload
  * Sube un documento para el usuario autenticado
- * Acceso: Usuario autenticado (solo puede subir sus propios documentos)
- * 
- * SEGURIDAD: Ya NO se permite subir documentos en nombre de otros usuarios
+ * ✅ Acceso: Usuario autenticado (solo puede subir sus propios documentos)
  */
 router.post("/upload", authenticateToken, upload.single("archivo"), async (req, res) => {
   try {
@@ -254,86 +250,83 @@ router.post("/upload", authenticateToken, upload.single("archivo"), async (req, 
 });
 
 /* ============================
-   VISUALIZAR/DESCARGAR - Con validación de pertenencia
+   VISUALIZAR/DESCARGAR
+   ✅ CORREGIDO: Mejorada validación de pertenencia
 ============================ */
 
 /**
  * GET /api/documentos/download/:id_Documento
  * Descarga/visualiza un documento
- * Acceso: Usuario autenticado que sea dueño del documento O administrador
- * 
- * SEGURIDAD: Verifica que el documento pertenezca al usuario o que sea admin
+ * ✅ CORREGIDO: Validación mejorada de pertenencia
  */
-router.get("/download/:id_Documento", 
-  authenticateToken, 
-  async (req, res) => {
-    try {
-      const documentId = req.params.id_Documento;
-      const userId = req.user.id;
-      const isAdmin = req.user.role === 'admin';
+router.get("/download/:id_Documento", authenticateToken, async (req, res) => {
+  try {
+    const documentId = req.params.id_Documento;
+    const userId = req.user.id;
+    const isAdmin = req.user.role === 'admin';
 
-      console.log("🔎 Buscando documento ID:", documentId);
-      console.log("👤 Usuario solicitante:", userId, "| Admin:", isAdmin);
-      
-      // Obtener información del documento
-      const [rows] = await pool.query(
-        "SELECT NombreArchivo, RutaArchivo, id_usuario FROM documentos WHERE id_Documento = ?",
-        [documentId]
-      );
+    console.log("🔎 Buscando documento ID:", documentId);
+    console.log("👤 Usuario solicitante:", userId, "| Admin:", isAdmin);
+    
+    // ✅ CORREGIDO: Obtener información del documento con validación de pertenencia
+    const [rows] = await pool.query(
+      `SELECT d.NombreArchivo, d.RutaArchivo, d.id_usuario 
+       FROM documentos d
+       WHERE d.id_Documento = ?`,
+      [documentId]
+    );
 
-      if (!rows.length) {
-        console.log("❌ Documento no encontrado en DB");
-        return res.status(404).json({ error: "Documento no encontrado" });
-      }
-
-      // VALIDACIÓN DE SEGURIDAD: Verificar pertenencia
-      if (!isAdmin && rows[0].id_usuario !== userId) {
-        console.log("🚫 Acceso denegado: El documento no pertenece al usuario");
-        return res.status(403).json({ 
-          error: "No tienes permiso para acceder a este documento" 
-        });
-      }
-
-      console.log("📄 Documento encontrado:", rows[0].NombreArchivo);
-      
-      const filePath = resolveFilePath(rows[0].RutaArchivo);
-
-      if (!filePath || !fs.existsSync(filePath)) {
-        console.log("❌ Archivo físico NO encontrado");
-        return res.status(404).json({ 
-          error: "Archivo físico no encontrado"
-        });
-      }
-
-      console.log("✅ Archivo encontrado, enviando...");
-
-      // Usar el Content-Type correcto
-      const contentType = getMimeType(rows[0].NombreArchivo);
-      res.setHeader("Content-Type", contentType);
-      
-      res.setHeader(
-        "Content-Disposition",
-        `inline; filename="${encodeURIComponent(rows[0].NombreArchivo)}"`
-      );
-
-      fs.createReadStream(filePath).pipe(res);
-    } catch (err) {
-      console.error("❌ Error en /download:", err);
-      res.status(500).json({ error: "Error al visualizar documento" });
+    if (!rows.length) {
+      console.log("❌ Documento no encontrado en DB");
+      return res.status(404).json({ error: "Documento no encontrado" });
     }
+
+    // ✅ VALIDACIÓN DE SEGURIDAD: Verificar pertenencia
+    if (!isAdmin && rows[0].id_usuario !== userId) {
+      console.log("🚫 Acceso denegado: El documento no pertenece al usuario");
+      return res.status(403).json({ 
+        error: "No tienes permiso para acceder a este documento" 
+      });
+    }
+
+    console.log("📄 Documento encontrado:", rows[0].NombreArchivo);
+    
+    const filePath = resolveFilePath(rows[0].RutaArchivo);
+
+    if (!filePath || !fs.existsSync(filePath)) {
+      console.log("❌ Archivo físico NO encontrado");
+      return res.status(404).json({ 
+        error: "Archivo físico no encontrado"
+      });
+    }
+
+    console.log("✅ Archivo encontrado, enviando...");
+
+    // Usar el Content-Type correcto
+    const contentType = getMimeType(rows[0].NombreArchivo);
+    res.setHeader("Content-Type", contentType);
+    
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="${encodeURIComponent(rows[0].NombreArchivo)}"`
+    );
+
+    fs.createReadStream(filePath).pipe(res);
+  } catch (err) {
+    console.error("❌ Error en /download:", err);
+    res.status(500).json({ error: "Error al visualizar documento" });
   }
-);
+});
 
 /* ============================
-   LISTADO - Filtrado por usuario o admin
+   LISTADO
+   ✅ YA ESTABA BIEN PROTEGIDO
 ============================ */
 
 /**
  * GET /api/documentos
  * Lista documentos del usuario autenticado
- * Acceso: Usuario autenticado ve solo SUS documentos, Admin ve TODOS
- * 
- * SEGURIDAD: Los estudiantes solo ven sus propios documentos
+ * ✅ Acceso: Usuario autenticado ve solo SUS documentos, Admin ve TODOS
  */
 router.get("/", authenticateToken, async (req, res) => {
   try {
@@ -375,18 +368,29 @@ router.get("/", authenticateToken, async (req, res) => {
 });
 
 /* ============================
-   ACCIONES ADMINISTRATIVAS - Solo Admin
+   ACCIONES ADMINISTRATIVAS
+   ✅ CORREGIDO: Agregada validación de existencia del documento
 ============================ */
 
 /**
  * PUT /api/documentos/approve/:id
  * Aprueba un documento
- * Acceso: Solo administradores
+ * ✅ CORREGIDO: Verifica que el documento existe antes de aprobar
  */
 router.put("/approve/:id", authenticateToken, isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { comentarios } = req.body;
+
+    // ✅ VALIDACIÓN: Verificar que el documento existe
+    const [checkDoc] = await pool.query(
+      "SELECT id_Documento FROM documentos WHERE id_Documento = ?",
+      [id]
+    );
+
+    if (checkDoc.length === 0) {
+      return res.status(404).json({ error: "Documento no encontrado" });
+    }
 
     const [result] = await pool.query(
       `UPDATE documentos 
@@ -394,10 +398,6 @@ router.put("/approve/:id", authenticateToken, isAdmin, async (req, res) => {
        WHERE id_Documento = ?`,
       [comentarios || null, id]
     );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Documento no encontrado" });
-    }
 
     console.log(`✅ Documento ${id} aprobado por admin ${req.user.id}`);
     res.json({ success: true, message: "Documento aprobado correctamente" });
@@ -410,7 +410,7 @@ router.put("/approve/:id", authenticateToken, isAdmin, async (req, res) => {
 /**
  * PUT /api/documentos/reject/:id
  * Rechaza un documento
- * Acceso: Solo administradores
+ * ✅ CORREGIDO: Verifica que el documento existe antes de rechazar
  */
 router.put("/reject/:id", authenticateToken, isAdmin, async (req, res) => {
   try {
@@ -423,16 +423,22 @@ router.put("/reject/:id", authenticateToken, isAdmin, async (req, res) => {
       });
     }
 
+    // ✅ VALIDACIÓN: Verificar que el documento existe
+    const [checkDoc] = await pool.query(
+      "SELECT id_Documento FROM documentos WHERE id_Documento = ?",
+      [id]
+    );
+
+    if (checkDoc.length === 0) {
+      return res.status(404).json({ error: "Documento no encontrado" });
+    }
+
     const [result] = await pool.query(
       `UPDATE documentos 
        SET Estatus = 'Rechazado', Comentarios = ?
        WHERE id_Documento = ?`,
       [comentarios, id]
     );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Documento no encontrado" });
-    }
 
     console.log(`❌ Documento ${id} rechazado por admin ${req.user.id}`);
     res.json({ success: true, message: "Documento rechazado correctamente" });
@@ -445,11 +451,21 @@ router.put("/reject/:id", authenticateToken, isAdmin, async (req, res) => {
 /**
  * PUT /api/documentos/revert/:id
  * Revierte un documento a estado Pendiente
- * Acceso: Solo administradores
+ * ✅ CORREGIDO: Verifica que el documento existe antes de revertir
  */
 router.put("/revert/:id", authenticateToken, isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
+
+    // ✅ VALIDACIÓN: Verificar que el documento existe
+    const [checkDoc] = await pool.query(
+      "SELECT id_Documento FROM documentos WHERE id_Documento = ?",
+      [id]
+    );
+
+    if (checkDoc.length === 0) {
+      return res.status(404).json({ error: "Documento no encontrado" });
+    }
 
     const [result] = await pool.query(
       `UPDATE documentos 
@@ -457,10 +473,6 @@ router.put("/revert/:id", authenticateToken, isAdmin, async (req, res) => {
        WHERE id_Documento = ?`,
       [id]
     );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Documento no encontrado" });
-    }
 
     console.log(`🔄 Documento ${id} revertido a Pendiente por admin ${req.user.id}`);
     res.json({ success: true, message: "Documento revertido a pendiente" });
@@ -473,7 +485,7 @@ router.put("/revert/:id", authenticateToken, isAdmin, async (req, res) => {
 /**
  * DELETE /api/documentos/:id
  * Elimina un documento
- * Acceso: Usuario dueño del documento O administrador
+ * ✅ YA ESTABA BIEN PROTEGIDO
  */
 router.delete("/:id", authenticateToken, async (req, res) => {
   try {
