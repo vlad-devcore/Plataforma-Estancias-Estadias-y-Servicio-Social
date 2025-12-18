@@ -18,23 +18,22 @@ const router = express.Router();
    HELPER: Obtener id_estudiante desde id_user
 ============================ */
 const getEstudianteId = async (userId, userRole) => {
-  // Si es admin, no necesita id_estudiante
   if (userRole === 'admin') {
     return null;
   }
-  
-  // Buscar id_estudiante en la tabla estudiantes
-  const [estudiante] = await pool.query(
-    "SELECT id_estudiante FROM estudiantes WHERE id_estudiante = ?",
+
+  const [rows] = await pool.query(
+    "SELECT id_estudiante FROM estudiantes WHERE id_user = ?",
     [userId]
   );
-  
-  if (estudiante.length > 0) {
-    return estudiante[0].id_estudiante;
+
+  if (rows.length > 0) {
+    return rows[0].id_estudiante;
   }
-  
+
   return null;
 };
+
 
 /* ============================
    MULTER - Configuración de almacenamiento
