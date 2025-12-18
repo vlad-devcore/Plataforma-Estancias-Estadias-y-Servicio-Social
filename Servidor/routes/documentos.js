@@ -35,13 +35,21 @@ const upload = multer({ storage });
 const resolveFilePath = (rutaArchivo) => {
   if (!rutaArchivo) return null;
 
+  console.log("🔍 Ruta original desde DB:", rutaArchivo);
+
   // quitar slash inicial
   let relativePath = rutaArchivo.replace(/^\/+/, "");
+  console.log("📝 Después de quitar slash inicial:", relativePath);
 
   // forzar Uploads/documentos (case-insensitive)
   relativePath = relativePath.replace(/^uploads/i, "Uploads");
+  console.log("📝 Después de normalizar Uploads:", relativePath);
 
-  return path.join(__dirname, "..", "public", relativePath);
+  const finalPath = path.join(__dirname, "..", "public", relativePath);
+  console.log("📂 Ruta final completa:", finalPath);
+  console.log("✅ ¿Existe el archivo?", fs.existsSync(finalPath));
+
+  return finalPath;
 };
 
 // Helper para obtener el tipo MIME correcto
@@ -114,7 +122,10 @@ router.post("/upload", upload.single("archivo"), async (req, res) => {
     }
 
     const nombreArchivo = req.file.originalname;
-    const rutaArchivo = `/uploads/documentos/${req.file.filename}`;
+    const rutaArchivo = `/Uploads/documentos/${req.file.filename}`;
+
+    console.log("📤 Subiendo archivo:", nombreArchivo);
+    console.log("📂 Ruta a guardar en DB:", rutaArchivo);
 
     const [existing] = await pool.query(
       `SELECT id_Documento, RutaArchivo 
@@ -125,7 +136,10 @@ router.post("/upload", upload.single("archivo"), async (req, res) => {
 
     if (existing.length) {
       const oldPath = resolveFilePath(existing[0].RutaArchivo);
-      if (oldPath && fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+      if (oldPath && fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+        console.log("🗑️ Archivo antiguo eliminado");
+      }
 
       await pool.query(
         `UPDATE documentos 
@@ -133,6 +147,7 @@ router.post("/upload", upload.single("archivo"), async (req, res) => {
          WHERE id_Documento = ?`,
         [nombreArchivo, rutaArchivo, existing[0].id_Documento]
       );
+      console.log("✅ Documento actualizado");
     } else {
       await pool.query(
         `INSERT INTO documentos 
@@ -140,11 +155,12 @@ router.post("/upload", upload.single("archivo"), async (req, res) => {
          VALUES (?, ?, ?, ?, 'Pendiente', ?)`,
         [nombreArchivo, rutaArchivo, IdTipoDoc, id_usuario, id_proceso]
       );
+      console.log("✅ Nuevo documento insertado");
     }
 
     res.json({ success: true });
   } catch (err) {
-    console.error("Error en /upload:", err);
+    console.error("❌ Error en /upload:", err);
     res.status(500).json({ error: "Error al subir documento" });
   }
 });
@@ -154,20 +170,37 @@ router.post("/upload", upload.single("archivo"), async (req, res) => {
 ============================ */
 router.get("/download/:id_Documento", async (req, res) => {
   try {
+    console.log("🔎 Buscando documento ID:", req.params.id_Documento);
+    
     const [rows] = await pool.query(
       "SELECT NombreArchivo, RutaArchivo FROM documentos WHERE id_Documento = ?",
       [req.params.id_Documento]
     );
 
     if (!rows.length) {
-      return res.status(404).json({ error: "Documento no encontrado" });
+      console.log("❌ Documento no encontrado en DB");
+      return res.status(404).json({ error: "Documento no encontrado en base de datos" });
     }
 
+    console.log("📄 Documento encontrado:", rows[0].NombreArchivo);
+    
     const filePath = resolveFilePath(rows[0].RutaArchivo);
 
     if (!filePath || !fs.existsSync(filePath)) {
-      return res.status(404).json({ error: "Archivo no encontrado" });
+      console.log("❌ Archivo físico NO encontrado");
+      console.log("📂 Listando archivos en la carpeta:");
+      const uploadDir = path.join(__dirname, "..", "public", "Uploads", "documentos");
+      if (fs.existsSync(uploadDir)) {
+        const files = fs.readdirSync(uploadDir);
+        console.log("📁 Archivos disponibles:", files.slice(0, 10)); // primeros 10
+      }
+      return res.status(404).json({ 
+        error: "Archivo físico no encontrado",
+        rutaBuscada: filePath 
+      });
     }
+
+    console.log("✅ Archivo encontrado, enviando...");
 
     // Usar el Content-Type correcto
     const contentType = getMimeType(rows[0].NombreArchivo);
@@ -180,7 +213,7 @@ router.get("/download/:id_Documento", async (req, res) => {
 
     fs.createReadStream(filePath).pipe(res);
   } catch (err) {
-    console.error("Error en /download:", err);
+    console.error("❌ Error en /download:", err);
     res.status(500).json({ error: "Error al visualizar documento" });
   }
 });
@@ -190,44 +223,22 @@ router.get("/download/:id_Documento", async (req, res) => {
 ============================ */
 router.get("/", async (req, res) => {
   try {
-    console.log("Iniciando query de listado...");
-    
-    const query = `
+    const [rows] = await pool.query(`
       SELECT 
-        d.id_Documento,
-        d.NombreArchivo,
-        d.RutaArchivo,
-        d.IdTipoDoc,
-        d.id_usuario,
-        d.Comentarios,
-        d.Estatus,
-        d.id_proceso,
+        d.*,
         t.Nombre_TipoDoc,
         pe.nombre AS ProgramaEducativo,
-        e.Matricula,
-        e.Nombre AS NombreEstudiante,
-        e.Apellido_Paterno,
-        e.Apellido_Materno
+        e.Matricula
       FROM documentos d
       INNER JOIN tipo_documento t ON d.IdTipoDoc = t.IdTipoDoc
       INNER JOIN proceso p ON d.id_proceso = p.id_proceso
       INNER JOIN programa_educativo pe ON p.id_programa = pe.id_programa
       INNER JOIN estudiantes e ON p.id_estudiante = e.id_estudiante
-    `;
-    
-    console.log("Ejecutando query...");
-    const [rows] = await pool.query(query);
-    console.log(`Query exitoso. Registros encontrados: ${rows.length}`);
-    
+    `);
     res.json(rows);
   } catch (err) {
-    console.error("Error COMPLETO en listado:", err);
-    console.error("Error mensaje:", err.message);
-    console.error("Error stack:", err.stack);
-    res.status(500).json({ 
-      error: "Error al obtener documentos",
-      detalle: err.message 
-    });
+    console.error("❌ Error en listado:", err);
+    res.status(500).json({ error: "Error al obtener documentos" });
   }
 });
 
