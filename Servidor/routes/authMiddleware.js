@@ -1,7 +1,6 @@
 // backend/src/routes/authMiddleware.js
 import jwt from "jsonwebtoken";
 import pool from "../config/config.db.js";
-import { authenticateToken, checkRole } from "./authMiddleware.js";
 
 
 const JWT_SECRET = process.env.JWT_SECRET;
