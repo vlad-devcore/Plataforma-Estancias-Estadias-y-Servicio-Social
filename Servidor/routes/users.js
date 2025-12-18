@@ -6,6 +6,7 @@ import csv from 'csv-parser';
 import bcrypt from 'bcrypt';
 import path from 'path';
 import iconv from 'iconv-lite';
+import { authenticateToken, isAdmin, isOwnerOrAdmin } from './authMiddleware.js';
 
 const router = express.Router();
 
@@ -20,20 +21,6 @@ const upload = multer({
     cb(null, true);
   },
 });
-
-// Middleware para verificar JWT
-const authMiddleware = (req, res, next) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
-  if (!token) {
-    return res.status(401).json({ error: 'Acceso denegado, token requerido' });
-  }
-  try {
-    // Asume que verificas el token con jwt.verify
-    next();
-  } catch (error) {
-    res.status(401).json({ error: 'Token inválido' });
-  }
-};
 
 // Validar datos del usuario
 const validateUserData = (data, requirePassword = true) => {
@@ -65,8 +52,8 @@ const getEmailPrefix = (email) => {
   return email.split('@')[0] || 'default';
 };
 
-// Obtener usuarios con paginación, búsqueda y filtro por rol
-router.get('/', authMiddleware, async (req, res) => {
+// 🔒 PROTEGIDO: Solo admins pueden listar todos los usuarios
+router.get('/', authenticateToken, isAdmin, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -110,12 +97,13 @@ router.get('/', authMiddleware, async (req, res) => {
       totalPages: Math.ceil(total / limit)
     });
   } catch (error) {
+    console.error("Error en GET /users:", error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
-// Inserción masiva desde CSV
-router.post('/upload', authMiddleware, upload.single('file'), async (req, res) => {
+// 🔒 PROTEGIDO: Solo admins pueden hacer carga masiva de usuarios
+router.post('/upload', authenticateToken, isAdmin, upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No se ha proporcionado un archivo CSV' });
   }
@@ -244,26 +232,33 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
 
     res.status(201).json(response);
   } catch (error) {
+    console.error("Error en POST /users/upload:", error);
     res.status(400).json({ error: error.message || 'Error al procesar el archivo CSV', details: errors });
   } finally {
     connection.release();
   }
 });
 
-// Obtener usuario por ID
-router.get('/:id_user', authMiddleware, async (req, res) => {
+// 🔒 PROTEGIDO: Solo puedes ver tu propio perfil (o admin puede ver cualquiera)
+router.get('/:id_user', authenticateToken, isOwnerOrAdmin, async (req, res) => {
   const { id_user } = req.params;
   try {
-    const [results] = await pool.query('SELECT * FROM users WHERE id_user = ?', [id_user]);
-    if (results.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+    const [results] = await pool.query(
+      'SELECT id_user, email, nombre, apellido_paterno, apellido_materno, genero, role FROM users WHERE id_user = ?',
+      [id_user]
+    );
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
     res.status(200).json(results[0]);
   } catch (error) {
+    console.error("Error en GET /users/:id_user:", error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
-// Crear un usuario manualmente
-router.post('/', authMiddleware, async (req, res) => {
+// 🔒 PROTEGIDO: Solo admins pueden crear usuarios
+router.post('/', authenticateToken, isAdmin, async (req, res) => {
   const { email, password, nombre, apellido_paterno, apellido_materno, genero, role } = req.body;
 
   const validationError = validateUserData(req.body, true); // Requerir password
@@ -311,18 +306,36 @@ router.post('/', authMiddleware, async (req, res) => {
     res.status(201).json({ message: 'Usuario añadido correctamente', id_user: userId });
   } catch (error) {
     await connection.rollback();
+    console.error("Error en POST /users:", error);
     res.status(500).json({ error: error.message || 'Error interno del servidor' });
   } finally {
     connection.release();
   }
 });
 
-// Actualizar un usuario
-router.put('/:id_user', authMiddleware, async (req, res) => {
+// 🔒 PROTEGIDO: Solo puedes actualizar tu propio perfil (campos limitados)
+//               Admin puede actualizar cualquier perfil (todos los campos)
+router.put('/:id_user', authenticateToken, async (req, res) => {
   const { id_user } = req.params;
+  const requestUserId = req.user.id;
+  const isAdmin = req.user.role === 'administrador';
   const { email, nombre, apellido_paterno, apellido_materno, genero, role } = req.body;
 
-  const validationError = validateUserData({ email, nombre, apellido_paterno, role }, false); // No requerir password
+  // 🛡️ SEGURIDAD CRÍTICA: Validar que solo admin puede cambiar roles
+  if (role && !isAdmin) {
+    return res.status(403).json({ 
+      error: 'No tienes permiso para modificar el rol. Solo administradores pueden hacerlo.' 
+    });
+  }
+
+  // 🛡️ SEGURIDAD CRÍTICA: Usuarios normales solo pueden editar su propio perfil
+  if (!isAdmin && parseInt(id_user) !== requestUserId) {
+    return res.status(403).json({ 
+      error: 'No tienes permiso para modificar este perfil' 
+    });
+  }
+
+  const validationError = validateUserData({ email, nombre, apellido_paterno, role: role || req.user.role }, false);
   if (validationError) {
     return res.status(400).json({ error: validationError });
   }
@@ -331,6 +344,7 @@ router.put('/:id_user', authMiddleware, async (req, res) => {
   try {
     await connection.beginTransaction();
 
+    // Verificar que el email no esté en uso por otro usuario
     const [existing] = await connection.query('SELECT id_user FROM users WHERE email = ? AND id_user != ?', [
       email,
       id_user,
@@ -339,10 +353,20 @@ router.put('/:id_user', authMiddleware, async (req, res) => {
       throw new Error('El email ya está registrado por otro usuario');
     }
 
-    const [results] = await connection.query(
-      'UPDATE users SET email = ?, nombre = ?, apellido_paterno = ?, apellido_materno = ?, genero = ?, role = ? WHERE id_user = ?',
-      [email, nombre, apellido_paterno, apellido_materno, genero ? genero.toLowerCase() : null, role, id_user]
-    );
+    // Construir query dinámicamente según permisos
+    let updateQuery = 'UPDATE users SET email = ?, nombre = ?, apellido_paterno = ?, apellido_materno = ?, genero = ?';
+    let queryParams = [email, nombre, apellido_paterno, apellido_materno, genero ? genero.toLowerCase() : null];
+
+    // Solo admin puede cambiar el rol
+    if (isAdmin && role) {
+      updateQuery += ', role = ?';
+      queryParams.push(role);
+    }
+
+    updateQuery += ' WHERE id_user = ?';
+    queryParams.push(id_user);
+
+    const [results] = await connection.query(updateQuery, queryParams);
 
     if (results.affectedRows === 0) {
       throw new Error('Usuario no encontrado');
@@ -352,6 +376,7 @@ router.put('/:id_user', authMiddleware, async (req, res) => {
     res.status(200).json({ message: 'Usuario actualizado correctamente' });
   } catch (error) {
     await connection.rollback();
+    console.error("Error en PUT /users/:id_user:", error);
     res.status(error.message === 'Usuario no encontrado' ? 404 : 500).json({
       error: error.message || 'Error interno del servidor',
     });
@@ -360,8 +385,8 @@ router.put('/:id_user', authMiddleware, async (req, res) => {
   }
 });
 
-// Eliminar un usuario
-router.delete('/:id_user', authMiddleware, async (req, res) => {
+// 🔒 PROTEGIDO: Solo admins pueden eliminar usuarios
+router.delete('/:id_user', authenticateToken, isAdmin, async (req, res) => {
   const { id_user } = req.params;
 
   const connection = await pool.getConnection();
@@ -377,6 +402,7 @@ router.delete('/:id_user', authMiddleware, async (req, res) => {
     res.status(200).json({ message: 'Usuario eliminado correctamente' });
   } catch (error) {
     await connection.rollback();
+    console.error("Error en DELETE /users/:id_user:", error);
     res.status(error.message === 'Usuario no encontrado' ? 404 : 500).json({
       error: error.message || 'Error interno del servidor',
     });
