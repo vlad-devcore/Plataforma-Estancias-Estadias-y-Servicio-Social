@@ -5,9 +5,10 @@ import fs from "fs";
 import path from "path";
 import morgan from "morgan";
 import { fileURLToPath } from "url";
+
 import userRouter from "./routes/users.js";
 import estudianteRouter from "./routes/estudiantes.js";
-import empresaRouter, { errorHandler } from "./routes/empresas.js"; 
+import empresaRouter, { errorHandler } from "./routes/empresas.js";
 import documentoRouter from "./routes/documentos.js";
 import authRouter from "./routes/auth.js";
 import documentosAdminRouter from "./routes/documentosAdmin.js";
@@ -23,19 +24,20 @@ dotenv.config();
 const app = express();
 const PORT = process.env.SERVER_PORT;
 
-// Obtener __dirname en módulos de ES
+// __dirname para ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Crear la carpeta "public/uploads/documentos" si no existe
-const uploadsDir = path.join(__dirname, "public", "Uploads", "documentos");
+// Crear carpeta uploads (usar lowercase de forma consistente)
+const uploadsDir = path.join(__dirname, "public", "uploads", "documentos");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
+// Cron
 tareaActualizarPeriodos();
 
-// Configurar CORS
+// CORS
 app.use(
   cors({
     origin: "*",
@@ -46,14 +48,14 @@ app.use(
 
 app.use(express.json());
 
-// Configurar Morgan para ver el body de las solicitudes
+// Morgan
 morgan.token("body", (req) => JSON.stringify(req.body));
 app.use(morgan(":method :url :status - Body: :body"));
 
-// Servir archivos estáticos desde public/uploads
-app.use("/uploads", express.static(path.join(__dirname, "public", "Uploads")));
+// Archivos estáticos
+app.use("/uploads", express.static(path.join(__dirname, "public", "uploads")));
 
-// Montar rutas
+// Rutas
 app.use("/api/users", userRouter);
 app.use("/api/estudiantes", estudianteRouter);
 app.use("/api/empresas", empresaRouter);
@@ -66,28 +68,27 @@ app.use("/api/programas", programasRouter);
 app.use("/api/asesores", asesoresRouter);
 app.use("/api/chatbot", chatbotRouter);
 
-// Ruta de prueba
+// Root
 app.get("/", (req, res) => {
-  res.send("¡Servidor funcionando! CH");
+  res.send("¡Servidor funcionando!");
 });
 
-
-// Ruta para la raíz de la API (Responde a GET /api/)
-app.get("/api/", (req, res) => {
-  res.status(200).send("API funcionando y rutas disponibles.");
+// API root (CORREGIDO, sin carácter invisible)
+app.get("/api", (req, res) => {
+  res.status(200).send("API funcionando y rutas disponibles.");
 });
 
-// Middleware para rutas no encontradas
+// 404
 app.use((req, res, next) => {
   const error = new Error("Ruta no encontrada");
   error.status = 404;
   next(error);
 });
 
-// Middleware de manejo de errores
+// Error handler
 app.use(errorHandler);
 
-// Iniciar servidor
+// Start
 app.listen(PORT, () => {
   console.log(`Servidor activo en http://localhost:${PORT}`);
 });
