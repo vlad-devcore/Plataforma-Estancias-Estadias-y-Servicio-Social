@@ -89,7 +89,7 @@ const getMimeType = (filename) => {
   return mimeTypes[ext] || 'application/octet-stream';
 };
 
-// 🔒 NUEVO: Helper para verificar pertenencia del documento
+// 🔒 Helper para verificar pertenencia del documento
 const verificarPerteneceUsuario = async (idDocumento, userId, role) => {
   const [rows] = await pool.query(`
     SELECT d.id_usuario, d.id_Documento
@@ -107,7 +107,8 @@ const verificarPerteneceUsuario = async (idDocumento, userId, role) => {
 };
 
 /* ============================
-   CATÁLOGOS - PÚBLICOS (no requieren auth)
+   🌐 CATÁLOGOS - PÚBLICOS (SIN AUTENTICACIÓN)
+   Estos endpoints NO requieren token porque son datos de referencia
 ============================ */
 router.get("/tipo_documento", async (req, res) => {
   try {
@@ -146,8 +147,10 @@ router.get("/periodos", async (req, res) => {
 });
 
 /* ============================
-   UPLOAD - 🔒 REQUIERE AUTENTICACIÓN
+   🔒 ENDPOINTS PROTEGIDOS - REQUIEREN AUTENTICACIÓN
 ============================ */
+
+/* UPLOAD - Usuario solo puede subir sus propios documentos */
 router.post("/upload", authenticateToken, upload.single("archivo"), async (req, res) => {
   try {
     const { IdTipoDoc, id_usuario, id_proceso } = req.body;
@@ -210,9 +213,7 @@ router.post("/upload", authenticateToken, upload.single("archivo"), async (req, 
   }
 });
 
-/* ============================
-   VISUALIZAR/DESCARGAR - 🔒 REQUIERE AUTENTICACIÓN Y PERTENENCIA
-============================ */
+/* VISUALIZAR/DESCARGAR - Solo documentos propios o si eres admin */
 router.get("/download/:id_Documento", authenticateToken, async (req, res) => {
   try {
     const { id_Documento } = req.params;
@@ -251,7 +252,7 @@ router.get("/download/:id_Documento", authenticateToken, async (req, res) => {
       const uploadDir = path.join(__dirname, "..", "public", "Uploads", "documentos");
       if (fs.existsSync(uploadDir)) {
         const files = fs.readdirSync(uploadDir);
-        console.log("📁 Archivos disponibles:", files.slice(0, 10)); // primeros 10
+        console.log("📁 Archivos disponibles:", files.slice(0, 10));
       }
       return res.status(404).json({ 
         error: "Archivo físico no encontrado",
@@ -261,10 +262,8 @@ router.get("/download/:id_Documento", authenticateToken, async (req, res) => {
 
     console.log("✅ Archivo encontrado, enviando...");
 
-    // Usar el Content-Type correcto
     const contentType = getMimeType(rows[0].NombreArchivo);
     res.setHeader("Content-Type", contentType);
-    
     res.setHeader(
       "Content-Disposition",
       `inline; filename="${encodeURIComponent(rows[0].NombreArchivo)}"`
@@ -277,10 +276,7 @@ router.get("/download/:id_Documento", authenticateToken, async (req, res) => {
   }
 });
 
-/* ============================
-   LISTADO - 🔒 REQUIERE AUTENTICACIÓN
-   Admin ve todos, usuario común solo los suyos
-============================ */
+/* LISTADO - Admin ve todos, usuario común solo los suyos */
 router.get("/", authenticateToken, async (req, res) => {
   try {
     const currentUserId = req.user.id;
