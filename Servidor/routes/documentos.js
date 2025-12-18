@@ -4,11 +4,6 @@ import fs from "fs";
 import path from "path";
 import pool from "../config/config.db.js";
 import { fileURLToPath } from "url";
-import { authenticateToken, checkRole } from "./authMiddleware.js";
-
-
-
-
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -119,19 +114,10 @@ router.get("/periodos", async (req, res) => {
 /* ============================
    UPLOAD
 ============================ */
-router.post(
-  "/upload",
-  authenticateToken,
-  checkRole("alumno"),
-  upload.single("archivo"),
-  async (req, res) => {
-
+router.post("/upload", upload.single("archivo"), async (req, res) => {
   try {
-    const { IdTipoDoc, id_proceso } = req.body;
-const id_usuario = req.user.id;
-
-    if (!IdTipoDoc || !id_proceso || !req.file)
- {
+    const { IdTipoDoc, id_usuario, id_proceso } = req.body;
+    if (!IdTipoDoc || !id_usuario || !id_proceso || !req.file) {
       return res.status(400).json({ error: "Datos incompletos" });
     }
 
@@ -182,28 +168,23 @@ const id_usuario = req.user.id;
 /* ============================
    VISUALIZAR
 ============================ */
-router.get(
-  "/download/:id_Documento",
-  authenticateToken,
-  async (req, res) => {
-    try {
-      const id_usuario = req.user.id;
-
-      const [rows] = await pool.query(
-        `SELECT NombreArchivo, RutaArchivo 
-         FROM documentos 
-         WHERE id_Documento = ? AND id_usuario = ?`,
-        [req.params.id_Documento, id_usuario]
-      );
-
-      if (!rows.length) {
-        return res.status(403).json({
-          error: "No tienes permiso para acceder a este documento"
-        });
-      }
-
-      const filePath = resolveFilePath(rows[0].RutaArchivo);
+router.get("/download/:id_Documento", async (req, res) => {
+  try {
+    console.log("🔎 Buscando documento ID:", req.params.id_Documento);
     
+    const [rows] = await pool.query(
+      "SELECT NombreArchivo, RutaArchivo FROM documentos WHERE id_Documento = ?",
+      [req.params.id_Documento]
+    );
+
+    if (!rows.length) {
+      console.log("❌ Documento no encontrado en DB");
+      return res.status(404).json({ error: "Documento no encontrado en base de datos" });
+    }
+
+    console.log("📄 Documento encontrado:", rows[0].NombreArchivo);
+    
+    const filePath = resolveFilePath(rows[0].RutaArchivo);
 
     if (!filePath || !fs.existsSync(filePath)) {
       console.log("❌ Archivo físico NO encontrado");
@@ -240,30 +221,25 @@ router.get(
 /* ============================
    LISTADO
 ============================ */
-router.get(
-  "/",
-  authenticateToken,
-  checkRole("alumno"),
-  async (req, res) => {
-    try {
-      const id_usuario = req.user.id;
-
-      const [rows] = await pool.query(`
-        SELECT 
-          d.*,
-          t.Nombre_TipoDoc
-        FROM documentos d
-        INNER JOIN tipo_documento t ON d.IdTipoDoc = t.IdTipoDoc
-        WHERE d.id_usuario = ?
-      `, [id_usuario]);
-
-      res.json(rows);
-    } catch (err) {
-      console.error("❌ Error en listado:", err);
-      res.status(500).json({ error: "Error al obtener documentos" });
-    }
+router.get("/", async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT 
+        d.*,
+        t.Nombre_TipoDoc,
+        pe.nombre AS ProgramaEducativo,
+        e.Matricula
+      FROM documentos d
+      INNER JOIN tipo_documento t ON d.IdTipoDoc = t.IdTipoDoc
+      INNER JOIN proceso p ON d.id_proceso = p.id_proceso
+      INNER JOIN programa_educativo pe ON p.id_programa = pe.id_programa
+      INNER JOIN estudiantes e ON p.id_estudiante = e.id_estudiante
+    `);
+    res.json(rows);
+  } catch (err) {
+    console.error("❌ Error en listado:", err);
+    res.status(500).json({ error: "Error al obtener documentos" });
   }
-);
-
+});
 
 export default router;
