@@ -6,7 +6,7 @@ import csv from 'csv-parser';
 import bcrypt from 'bcrypt';
 import path from 'path';
 import iconv from 'iconv-lite';
-import { authMiddleware } from './authMiddleware.js';
+import authMiddleware from './authMiddleware.js';
 
 const router = express.Router();
 
