@@ -45,7 +45,7 @@ const CreditsModal = () => {
       linkedin: 'https://linkedin.com/in/juanoch'
     },
     {
-      name: 'Marcos Vladimir',
+      name: 'Marcos Vladimir Poot',
       role: 'Desarrollador Frontend, UX/UI,',
       emoji: '🧑‍💻',
       image: '/team/vladimir.jpg',
