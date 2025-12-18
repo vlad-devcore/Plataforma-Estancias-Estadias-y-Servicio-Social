@@ -96,10 +96,10 @@ jobs:
             
             # Reiniciar PM2
             echo "♻️  Restarting PM2..."
-            if pm2 id front-PEE > /dev/null 2>&1; then
-              pm2 restart front-PEE
+            if pm2 id frontend-PEE > /dev/null 2>&1; then
+              pm2 restart frontend-PEE
             else
-              pm2 start npm --name front-PEE -- start
+              pm2 start npm --name frontend-PEE -- start
             fi
             
             pm2 save
