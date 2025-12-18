@@ -101,17 +101,18 @@ const getMimeType = (filename) => {
 };
 
 /* ============================
-   CATÁLOGOS - AHORA REQUIEREN AUTENTICACIÓN
-   ✅ CORREGIDO: Agregado authenticateToken a todos los catálogos
+   ⚠️ IMPORTANTE: RUTAS ESPECÍFICAS PRIMERO
+   Las rutas específicas deben ir ANTES de las genéricas
 ============================ */
 
-// ⚠️ SOLO CAMBIAR ESTAS 3 RUTAS DE CATÁLOGOS
-// El resto del archivo queda igual
+/* ============================
+   CATÁLOGOS - Sin autenticación (datos públicos de referencia)
+============================ */
 
 /**
  * GET /api/documentos/tipo_documento
  * Obtiene el catálogo de tipos de documentos
- * ⚠️ TEMPORAL: Sin autenticación (catálogo público de referencia)
+ * Acceso: Público (catálogo de referencia)
  */
 router.get("/tipo_documento", async (req, res) => {
   try {
@@ -128,7 +129,7 @@ router.get("/tipo_documento", async (req, res) => {
 /**
  * GET /api/documentos/programas_educativos
  * Obtiene el catálogo de programas educativos
- * ⚠️ TEMPORAL: Sin autenticación (catálogo público de referencia)
+ * Acceso: Público (catálogo de referencia)
  */
 router.get("/programas_educativos", async (req, res) => {
   try {
@@ -145,7 +146,7 @@ router.get("/programas_educativos", async (req, res) => {
 /**
  * GET /api/documentos/periodos
  * Obtiene el catálogo de periodos
- * ⚠️ TEMPORAL: Sin autenticación (catálogo público de referencia)
+ * Acceso: Público (catálogo de referencia)
  */
 router.get("/periodos", async (req, res) => {
   try {
@@ -161,13 +162,12 @@ router.get("/periodos", async (req, res) => {
 
 /* ============================
    UPLOAD - Subir documentos
-   ✅ YA ESTABA BIEN PROTEGIDO
 ============================ */
 
 /**
  * POST /api/documentos/upload
  * Sube un documento para el usuario autenticado
- * ✅ Acceso: Usuario autenticado (solo puede subir sus propios documentos)
+ * Acceso: Usuario autenticado (solo puede subir sus propios documentos)
  */
 router.post("/upload", authenticateToken, upload.single("archivo"), async (req, res) => {
   try {
@@ -253,14 +253,13 @@ router.post("/upload", authenticateToken, upload.single("archivo"), async (req, 
 });
 
 /* ============================
-   VISUALIZAR/DESCARGAR
-   ✅ CORREGIDO: Mejorada validación de pertenencia
+   VISUALIZAR/DESCARGAR - Con validación de pertenencia
 ============================ */
 
 /**
  * GET /api/documentos/download/:id_Documento
  * Descarga/visualiza un documento
- * ✅ CORREGIDO: Validación mejorada de pertenencia
+ * Acceso: Usuario autenticado que sea dueño del documento O administrador
  */
 router.get("/download/:id_Documento", authenticateToken, async (req, res) => {
   try {
@@ -271,7 +270,7 @@ router.get("/download/:id_Documento", authenticateToken, async (req, res) => {
     console.log("🔎 Buscando documento ID:", documentId);
     console.log("👤 Usuario solicitante:", userId, "| Admin:", isAdmin);
     
-    // ✅ CORREGIDO: Obtener información del documento con validación de pertenencia
+    // Obtener información del documento con validación de pertenencia
     const [rows] = await pool.query(
       `SELECT d.NombreArchivo, d.RutaArchivo, d.id_usuario 
        FROM documentos d
@@ -284,7 +283,7 @@ router.get("/download/:id_Documento", authenticateToken, async (req, res) => {
       return res.status(404).json({ error: "Documento no encontrado" });
     }
 
-    // ✅ VALIDACIÓN DE SEGURIDAD: Verificar pertenencia
+    // VALIDACIÓN DE SEGURIDAD: Verificar pertenencia
     if (!isAdmin && rows[0].id_usuario !== userId) {
       console.log("🚫 Acceso denegado: El documento no pertenece al usuario");
       return res.status(403).json({ 
@@ -322,70 +321,20 @@ router.get("/download/:id_Documento", authenticateToken, async (req, res) => {
 });
 
 /* ============================
-   LISTADO
-   ✅ YA ESTABA BIEN PROTEGIDO
-============================ */
-
-/**
- * GET /api/documentos
- * Lista documentos del usuario autenticado
- * ✅ Acceso: Usuario autenticado ve solo SUS documentos, Admin ve TODOS
- */
-router.get("/", authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const isAdmin = req.user.role === 'admin';
-
-    let query = `
-      SELECT 
-        d.*,
-        t.Nombre_TipoDoc,
-        pe.nombre AS ProgramaEducativo,
-        e.Matricula
-      FROM documentos d
-      INNER JOIN tipo_documento t ON d.IdTipoDoc = t.IdTipoDoc
-      INNER JOIN proceso p ON d.id_proceso = p.id_proceso
-      INNER JOIN programa_educativo pe ON p.id_programa = pe.id_programa
-      INNER JOIN estudiantes e ON p.id_estudiante = e.id_estudiante
-    `;
-
-    let params = [];
-
-    // Si NO es admin, filtrar solo sus documentos
-    if (!isAdmin) {
-      query += " WHERE d.id_usuario = ?";
-      params.push(userId);
-    }
-
-    query += " ORDER BY d.id_Documento DESC";
-
-    const [rows] = await pool.query(query, params);
-    
-    console.log(`📋 Documentos encontrados: ${rows.length} | Usuario: ${userId} | Admin: ${isAdmin}`);
-    
-    res.json(rows);
-  } catch (err) {
-    console.error("❌ Error en listado:", err);
-    res.status(500).json({ error: "Error al obtener documentos" });
-  }
-});
-
-/* ============================
-   ACCIONES ADMINISTRATIVAS
-   ✅ CORREGIDO: Agregada validación de existencia del documento
+   ACCIONES ADMINISTRATIVAS - Solo Admin
 ============================ */
 
 /**
  * PUT /api/documentos/approve/:id
  * Aprueba un documento
- * ✅ CORREGIDO: Verifica que el documento existe antes de aprobar
+ * Acceso: Solo administradores
  */
 router.put("/approve/:id", authenticateToken, isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { comentarios } = req.body;
 
-    // ✅ VALIDACIÓN: Verificar que el documento existe
+    // VALIDACIÓN: Verificar que el documento existe
     const [checkDoc] = await pool.query(
       "SELECT id_Documento FROM documentos WHERE id_Documento = ?",
       [id]
@@ -395,7 +344,7 @@ router.put("/approve/:id", authenticateToken, isAdmin, async (req, res) => {
       return res.status(404).json({ error: "Documento no encontrado" });
     }
 
-    const [result] = await pool.query(
+    await pool.query(
       `UPDATE documentos 
        SET Estatus = 'Aprobado', Comentarios = ?
        WHERE id_Documento = ?`,
@@ -413,7 +362,7 @@ router.put("/approve/:id", authenticateToken, isAdmin, async (req, res) => {
 /**
  * PUT /api/documentos/reject/:id
  * Rechaza un documento
- * ✅ CORREGIDO: Verifica que el documento existe antes de rechazar
+ * Acceso: Solo administradores
  */
 router.put("/reject/:id", authenticateToken, isAdmin, async (req, res) => {
   try {
@@ -426,7 +375,7 @@ router.put("/reject/:id", authenticateToken, isAdmin, async (req, res) => {
       });
     }
 
-    // ✅ VALIDACIÓN: Verificar que el documento existe
+    // VALIDACIÓN: Verificar que el documento existe
     const [checkDoc] = await pool.query(
       "SELECT id_Documento FROM documentos WHERE id_Documento = ?",
       [id]
@@ -436,7 +385,7 @@ router.put("/reject/:id", authenticateToken, isAdmin, async (req, res) => {
       return res.status(404).json({ error: "Documento no encontrado" });
     }
 
-    const [result] = await pool.query(
+    await pool.query(
       `UPDATE documentos 
        SET Estatus = 'Rechazado', Comentarios = ?
        WHERE id_Documento = ?`,
@@ -454,13 +403,13 @@ router.put("/reject/:id", authenticateToken, isAdmin, async (req, res) => {
 /**
  * PUT /api/documentos/revert/:id
  * Revierte un documento a estado Pendiente
- * ✅ CORREGIDO: Verifica que el documento existe antes de revertir
+ * Acceso: Solo administradores
  */
 router.put("/revert/:id", authenticateToken, isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
 
-    // ✅ VALIDACIÓN: Verificar que el documento existe
+    // VALIDACIÓN: Verificar que el documento existe
     const [checkDoc] = await pool.query(
       "SELECT id_Documento FROM documentos WHERE id_Documento = ?",
       [id]
@@ -470,7 +419,7 @@ router.put("/revert/:id", authenticateToken, isAdmin, async (req, res) => {
       return res.status(404).json({ error: "Documento no encontrado" });
     }
 
-    const [result] = await pool.query(
+    await pool.query(
       `UPDATE documentos 
        SET Estatus = 'Pendiente', Comentarios = NULL
        WHERE id_Documento = ?`,
@@ -485,10 +434,14 @@ router.put("/revert/:id", authenticateToken, isAdmin, async (req, res) => {
   }
 });
 
+/* ============================
+   DELETE - Eliminar documento
+============================ */
+
 /**
  * DELETE /api/documentos/:id
  * Elimina un documento
- * ✅ YA ESTABA BIEN PROTEGIDO
+ * Acceso: Usuario dueño del documento O administrador
  */
 router.delete("/:id", authenticateToken, async (req, res) => {
   try {
@@ -528,6 +481,73 @@ router.delete("/:id", authenticateToken, async (req, res) => {
   } catch (err) {
     console.error("❌ Error al eliminar documento:", err);
     res.status(500).json({ error: "Error al eliminar documento" });
+  }
+});
+
+/* ============================
+   LISTADO - DEBE IR AL FINAL (Ruta genérica)
+   ✅ CORREGIDO: Movido al final para evitar conflictos
+============================ */
+
+/**
+ * GET /api/documentos
+ * Lista documentos del usuario autenticado
+ * Acceso: Usuario autenticado ve solo SUS documentos, Admin ve TODOS
+ * 
+ * ⚠️ IMPORTANTE: Esta ruta DEBE ir al final porque es genérica (/)
+ */
+router.get("/", authenticateToken, async (req, res) => {
+  try {
+    // DEBUG: Verificar autenticación
+    console.log("🔍 DEBUG /api/documentos:");
+    console.log("  - req.user existe:", !!req.user);
+    console.log("  - Authorization header:", req.headers['authorization']?.substring(0, 20) + "...");
+    
+    if (!req.user) {
+      console.error("❌ ERROR: req.user es undefined después de authenticateToken");
+      return res.status(401).json({ error: "Usuario no autenticado" });
+    }
+
+    const userId = req.user.id;
+    const isAdmin = req.user.role === 'admin';
+
+    console.log("  - userId:", userId);
+    console.log("  - isAdmin:", isAdmin);
+
+    let query = `
+      SELECT 
+        d.*,
+        t.Nombre_TipoDoc,
+        pe.nombre AS ProgramaEducativo,
+        e.Matricula
+      FROM documentos d
+      INNER JOIN tipo_documento t ON d.IdTipoDoc = t.IdTipoDoc
+      INNER JOIN proceso p ON d.id_proceso = p.id_proceso
+      INNER JOIN programa_educativo pe ON p.id_programa = pe.id_programa
+      INNER JOIN estudiantes e ON p.id_estudiante = e.id_estudiante
+    `;
+
+    let params = [];
+
+    // Si NO es admin, filtrar solo sus documentos
+    if (!isAdmin) {
+      query += " WHERE d.id_usuario = ?";
+      params.push(userId);
+      console.log("  - Filtrando por usuario:", userId);
+    } else {
+      console.log("  - Admin: mostrando todos los documentos");
+    }
+
+    query += " ORDER BY d.id_Documento DESC";
+
+    const [rows] = await pool.query(query, params);
+    
+    console.log(`📋 Documentos encontrados: ${rows.length}`);
+    
+    res.json(rows);
+  } catch (err) {
+    console.error("❌ Error en listado:", err);
+    res.status(500).json({ error: "Error al obtener documentos" });
   }
 });
 
