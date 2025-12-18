@@ -6,7 +6,7 @@ import csv from 'csv-parser';
 import bcrypt from 'bcrypt';
 import path from 'path';
 import iconv from 'iconv-lite';
-import authMiddleware from './authMiddleware.js';
+import { authenticateToken, checkRole } from './authMiddleware.js';
 
 const router = express.Router();
 
@@ -55,13 +55,8 @@ const getEmailPrefix = (email) => {
 // ============= ENDPOINTS SEGUROS =============
 
 // Obtener usuarios con paginación, búsqueda y filtro por rol (SOLO ADMIN)
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', authenticateToken, checkRole(['administrador']), async (req, res) => {
   try {
-    // Verificar que sea administrador
-    if (req.user.role !== 'administrador') {
-      return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden listar usuarios' });
-    }
-
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
@@ -108,13 +103,8 @@ router.get('/', authMiddleware, async (req, res) => {
 });
 
 // Inserción masiva desde CSV (SOLO ADMIN)
-router.post('/upload', authMiddleware, upload.single('file'), async (req, res) => {
+router.post('/upload', authenticateToken, checkRole(['administrador']), upload.single('file'), async (req, res) => {
   try {
-    // Verificar que sea administrador
-    if (req.user.role !== 'administrador') {
-      return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden cargar usuarios' });
-    }
-
     if (!req.file) {
       return res.status(400).json({ error: 'No se ha proporcionado un archivo CSV' });
     }
@@ -246,11 +236,11 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
 });
 
 // Obtener usuario por ID (Admin ve cualquiera, usuario común solo ve su propio perfil)
-router.get('/:id_user', authMiddleware, async (req, res) => {
+router.get('/:id_user', authenticateToken, async (req, res) => {
   try {
     const { id_user } = req.params;
     const requestedId = parseInt(id_user);
-    const currentUserId = req.user.id_user;
+    const currentUserId = req.user.id;
     const isAdmin = req.user.role === 'administrador';
 
     // Usuario común solo puede ver su propio perfil
@@ -275,13 +265,8 @@ router.get('/:id_user', authMiddleware, async (req, res) => {
 });
 
 // Crear un usuario manualmente (SOLO ADMIN)
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', authenticateToken, checkRole(['administrador']), async (req, res) => {
   try {
-    // Verificar que sea administrador
-    if (req.user.role !== 'administrador') {
-      return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden crear usuarios' });
-    }
-
     const { email, password, nombre, apellido_paterno, apellido_materno, genero, role } = req.body;
 
     const validationError = validateUserData(req.body, true);
@@ -337,11 +322,11 @@ router.post('/', authMiddleware, async (req, res) => {
 });
 
 // Actualizar un usuario (Admin actualiza cualquiera, usuario común solo su perfil Y NO PUEDE CAMBIAR ROL)
-router.put('/:id_user', authMiddleware, async (req, res) => {
+router.put('/:id_user', authenticateToken, async (req, res) => {
   try {
     const { id_user } = req.params;
     const requestedId = parseInt(id_user);
-    const currentUserId = req.user.id_user;
+    const currentUserId = req.user.id;
     const isAdmin = req.user.role === 'administrador';
     const { email, nombre, apellido_paterno, apellido_materno, genero, role } = req.body;
 
@@ -424,13 +409,8 @@ router.put('/:id_user', authMiddleware, async (req, res) => {
 });
 
 // Eliminar un usuario (SOLO ADMIN)
-router.delete('/:id_user', authMiddleware, async (req, res) => {
+router.delete('/:id_user', authenticateToken, checkRole(['administrador']), async (req, res) => {
   try {
-    // Verificar que sea administrador
-    if (req.user.role !== 'administrador') {
-      return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden eliminar usuarios' });
-    }
-
     const { id_user } = req.params;
     const requestedId = parseInt(id_user);
 
