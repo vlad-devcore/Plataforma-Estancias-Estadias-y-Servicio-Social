@@ -146,11 +146,9 @@ router.get("/download/:id_Documento", async (req, res) => {
       return res.status(404).json({ error: "Archivo no encontrado" });
     }
 
-    res.setHeader(
-      "Content-Disposition",
-      `inline; filename="${encodeURIComponent(rows[0].NombreArchivo)}"`
-    );
-    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader("Content-Type", contentType);
+    fs.createReadStream(filePath).pipe(res);
+
 
     fs.createReadStream(filePath).pipe(res);
   } catch (err) {
