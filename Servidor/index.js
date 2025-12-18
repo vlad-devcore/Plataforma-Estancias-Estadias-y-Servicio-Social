@@ -52,8 +52,10 @@ app.use(express.json());
 morgan.token("body", (req) => JSON.stringify(req.body));
 app.use(morgan(":method :url :status - Body: :body"));
 
-// Archivos estáticos
+// Servir uploads (compatibilidad Uploads / uploads)
 app.use("/uploads", express.static(path.join(__dirname, "public", "uploads")));
+app.use("/Uploads", express.static(path.join(__dirname, "public", "Uploads")));
+
 
 // Rutas
 app.use("/api/users", userRouter);
