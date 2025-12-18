@@ -105,12 +105,15 @@ const getMimeType = (filename) => {
    ✅ CORREGIDO: Agregado authenticateToken a todos los catálogos
 ============================ */
 
+// ⚠️ SOLO CAMBIAR ESTAS 3 RUTAS DE CATÁLOGOS
+// El resto del archivo queda igual
+
 /**
  * GET /api/documentos/tipo_documento
  * Obtiene el catálogo de tipos de documentos
- * ✅ CORREGIDO: Ahora requiere autenticación
+ * ⚠️ TEMPORAL: Sin autenticación (catálogo público de referencia)
  */
-router.get("/tipo_documento", authenticateToken, async (req, res) => {
+router.get("/tipo_documento", async (req, res) => {
   try {
     const [rows] = await pool.query(
       "SELECT IdTipoDoc, Nombre_TipoDoc FROM tipo_documento ORDER BY Nombre_TipoDoc"
@@ -125,9 +128,9 @@ router.get("/tipo_documento", authenticateToken, async (req, res) => {
 /**
  * GET /api/documentos/programas_educativos
  * Obtiene el catálogo de programas educativos
- * ✅ CORREGIDO: Ahora requiere autenticación
+ * ⚠️ TEMPORAL: Sin autenticación (catálogo público de referencia)
  */
-router.get("/programas_educativos", authenticateToken, async (req, res) => {
+router.get("/programas_educativos", async (req, res) => {
   try {
     const [rows] = await pool.query(
       "SELECT DISTINCT nombre FROM programa_educativo WHERE nombre IS NOT NULL ORDER BY nombre"
@@ -142,9 +145,9 @@ router.get("/programas_educativos", authenticateToken, async (req, res) => {
 /**
  * GET /api/documentos/periodos
  * Obtiene el catálogo de periodos
- * ✅ CORREGIDO: Ahora requiere autenticación
+ * ⚠️ TEMPORAL: Sin autenticación (catálogo público de referencia)
  */
-router.get("/periodos", authenticateToken, async (req, res) => {
+router.get("/periodos", async (req, res) => {
   try {
     const [rows] = await pool.query(
       "SELECT IdPeriodo, Año, Fase FROM periodos ORDER BY Año DESC, Fase"
