@@ -21,7 +21,7 @@ export const authenticateToken = async (req, res, next) => {
     
     // Verificar que el usuario existe y está activo
     const [users] = await pool.query(
-      "SELECT id_user, email, role, nombre, apellido FROM users WHERE id_user = ?", 
+      "SELECT id_user, email, role, nombre, apellido_paterno, apellido_materno FROM users WHERE id_user = ?", 
       [decoded.id]
     );
     
@@ -35,7 +35,8 @@ export const authenticateToken = async (req, res, next) => {
       email: users[0].email,
       role: users[0].role,
       nombre: users[0].nombre,
-      apellido: users[0].apellido
+      apellido_paterno: users[0].apellido_paterno,
+      apellido_materno: users[0].apellido_materno
     };
     
     next();
