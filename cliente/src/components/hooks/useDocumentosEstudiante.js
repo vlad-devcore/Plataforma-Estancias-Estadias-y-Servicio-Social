@@ -1,8 +1,3 @@
-// ============================================
-// 🔧 SOLUCIÓN: useDocumentosEstudiante.js
-// Agregar token en cada petición
-// ============================================
-
 import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 
@@ -15,14 +10,6 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
   const [success, setSuccess] = useState(null);
 
   const user = useMemo(() => JSON.parse(localStorage.getItem("user")), []);
-
-  // ✅ NUEVO: Función helper para obtener headers con token
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
-    return {
-      'Authorization': `Bearer ${token}`,
-    };
-  };
 
   // Definir documentos según el tipo de proceso
   const tiposDocumentos =
@@ -42,7 +29,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
           "Reporte Mensual 12",
         ]
       : [
-          "Número NSS",
+          "Número NSS", // Movido al inicio para que sea la primera fila
           "Carta de presentación",
           "Carta de aceptación",
           "Cédula de registro",
@@ -67,7 +54,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
           "Reporte Mensual 12": 18,
         }
       : {
-          "Número NSS": 19,
+          "Número NSS": 19, // Mapeo para IdTipoDoc 19
           "Carta de presentación": 1,
           "Carta de aceptación": 2,
           "Cédula de registro": 3,
@@ -83,12 +70,8 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     setLoading(true);
     setError(null);
     try {
-      // ✅ MODIFICADO: Agregar headers con token
       const response = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin`,
-        {
-          headers: getAuthHeaders()
-        }
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin`
       );
       const data = response.data;
 
@@ -105,15 +88,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
 
       setPlantillas(combined);
     } catch (err) {
-      // ✅ NUEVO: Manejar error 401 (token inválido)
-      if (err.response?.status === 401) {
-        setError("Sesión expirada. Por favor inicia sesión nuevamente.");
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setTimeout(() => window.location.href = '/login', 2000);
-      } else {
-        setError(err.response?.data?.error || "Error al obtener plantillas");
-      }
+      setError(err.response?.data?.error || "Error al obtener plantillas");
     } finally {
       setLoading(false);
     }
@@ -127,25 +102,17 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     setLoading(true);
     setError(null);
     try {
-      // ✅ MODIFICADO: Agregar headers con token
       const { data } = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos`,
         {
           params: { id_proceso: procesoId, id_usuario: user.id },
-          headers: getAuthHeaders()
         }
       );
       setDocumentos(data);
     } catch (err) {
-      // ✅ NUEVO: Manejar error 401
-      if (err.response?.status === 401) {
-        setError("Sesión expirada. Por favor inicia sesión nuevamente.");
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setTimeout(() => window.location.href = '/login', 2000);
-      } else {
-        setError(err.response?.data?.error || "Error al obtener documentos subidos");
-      }
+      setError(
+        err.response?.data?.error || "Error al obtener documentos subidos"
+      );
     } finally {
       setLoading(false);
     }
@@ -186,29 +153,17 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     formData.append("id_proceso", procesoId);
 
     try {
-      // ✅ MODIFICADO: Agregar headers con token
       await axios.post(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/upload`,
         formData,
         {
-          headers: { 
-            "Content-Type": "multipart/form-data",
-            ...getAuthHeaders()
-          },
+          headers: { "Content-Type": "multipart/form-data" },
         }
       );
       setSuccess("Documento subido correctamente");
       await fetchDocumentos();
     } catch (err) {
-      // ✅ NUEVO: Manejar error 401
-      if (err.response?.status === 401) {
-        setError("Sesión expirada. Por favor inicia sesión nuevamente.");
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setTimeout(() => window.location.href = '/login', 2000);
-      } else {
-        setError(err.response?.data?.error || "Error al subir documento");
-      }
+      setError(err.response?.data?.error || "Error al subir documento");
     } finally {
       setLoading(false);
     }
@@ -223,25 +178,13 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     setError(null);
     setSuccess(null);
     try {
-      // ✅ MODIFICADO: Agregar headers con token
       await axios.delete(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/${idDocumento}`,
-        {
-          headers: getAuthHeaders()
-        }
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/${idDocumento}`
       );
       setSuccess("Documento eliminado correctamente");
       await fetchDocumentos();
     } catch (err) {
-      // ✅ NUEVO: Manejar error 401
-      if (err.response?.status === 401) {
-        setError("Sesión expirada. Por favor inicia sesión nuevamente.");
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setTimeout(() => window.location.href = '/login', 2000);
-      } else {
-        setError(err.response?.data?.error || "Error al eliminar documento");
-      }
+      setError(err.response?.data?.error || "Error al eliminar documento");
     } finally {
       setLoading(false);
     }
