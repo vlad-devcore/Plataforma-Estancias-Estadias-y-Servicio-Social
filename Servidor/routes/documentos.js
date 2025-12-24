@@ -19,8 +19,10 @@ const router = express.Router();
 const verificarPermisoDocumento = async (req, res, next) => {
   try {
     const { id_Documento } = req.params;
-    const userId = req.user.id;
-    const userRole = req.user.role;
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
+
+    console.log('Verificando permiso documento:', { id_Documento, userId, userRole });
 
     // Si es admin, tiene acceso a todo
     if (userRole === 'admin') {
@@ -55,6 +57,12 @@ const verificarPermisoDocumento = async (req, res, next) => {
 
 // Verificar que solo admin puede aprobar/rechazar
 const verificarRolAdmin = (req, res, next) => {
+  console.log('Verificando rol admin:', req.user);
+  
+  if (!req.user) {
+    return res.status(401).json({ error: "No autenticado" });
+  }
+  
   if (req.user.role !== 'admin') {
     return res.status(403).json({ error: "Solo administradores pueden realizar esta acción" });
   }
@@ -102,6 +110,8 @@ const upload = multer({
 // Obtener tipos de documentos
 router.get("/tipo_documento", authenticateToken, async (req, res) => {
   try {
+    console.log('Usuario autenticado en tipo_documento:', req.user);
+    
     const [results] = await pool.query(
       `SELECT IdTipoDoc, Nombre_TipoDoc FROM tipo_documento ORDER BY Nombre_TipoDoc`
     );
@@ -115,6 +125,8 @@ router.get("/tipo_documento", authenticateToken, async (req, res) => {
 // Obtener programas educativos
 router.get("/programas_educativos", authenticateToken, async (req, res) => {
   try {
+    console.log('Usuario autenticado en programas_educativos:', req.user);
+    
     const [results] = await pool.query(
       `SELECT DISTINCT nombre FROM programa_educativo WHERE nombre IS NOT NULL ORDER BY nombre`
     );
@@ -128,6 +140,8 @@ router.get("/programas_educativos", authenticateToken, async (req, res) => {
 // Obtener periodos
 router.get("/periodos", authenticateToken, async (req, res) => {
   try {
+    console.log('Usuario autenticado en periodos:', req.user);
+    
     const [results] = await pool.query(
       `SELECT IdPeriodo, Año, Fase FROM periodos ORDER BY Año DESC, Fase`
     );
@@ -144,9 +158,16 @@ router.get("/periodos", authenticateToken, async (req, res) => {
 
 router.get("/", authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.id;
-    const userRole = req.user.role;
+    console.log('Usuario autenticado en GET documentos:', req.user);
+    console.log('Headers:', req.headers.authorization);
+    
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
     const { estatus, idPeriodo, id_proceso, idTipoDoc, programaEducativo } = req.query;
+
+    if (!userId || !userRole) {
+      return res.status(401).json({ error: "Usuario no autenticado correctamente" });
+    }
 
     let query = `
       SELECT 
