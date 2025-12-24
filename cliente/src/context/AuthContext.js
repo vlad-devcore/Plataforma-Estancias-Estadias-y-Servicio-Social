@@ -1,7 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
- 
+import api from '../config/axiosConfig';
 
 const AuthContext = createContext();
 
@@ -10,66 +9,77 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // ✅ Función de logout memoizada
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    navigate('/login');
+  }, [navigate]);
+
+  // ✅ Verificación de autenticación mejorada
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token');
       const userData = localStorage.getItem('user');
 
-      if (token && userData) {
-        try {
-          const response = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/auth/verify`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          const verifiedUser = response.data.user;
-          localStorage.setItem('user', JSON.stringify(verifiedUser));
-          setUser(verifiedUser);
-        } catch (error) {
-          console.error('Error al verificar token:', error);
-          logout();
-        }
+      if (!token || !userData) {
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+
+      try {
+        // ✅ Usar la instancia configurada de axios
+        const response = await api.get('/auth/verify');
+        const verifiedUser = response.data.user;
+        
+        // ✅ Actualizar localStorage y estado
+        localStorage.setItem('user', JSON.stringify(verifiedUser));
+        setUser(verifiedUser);
+      } catch (error) {
+        console.error('❌ Error al verificar token:', error.response?.data || error.message);
+        
+        // ✅ Limpiar datos inválidos
+        logout();
+      } finally {
+        setLoading(false);
+      }
     };
 
     checkAuth();
-     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [logout]); // ✅ Incluir logout en dependencias
 
-
+  // ✅ Login mejorado
   const login = async (email, password) => {
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/auth/login`, {
-        email,
-        password
-      });
+      const response = await api.post('/auth/login', { email, password });
 
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      setUser(response.data.user);
-      return { success: true, user: response.data.user };
+      const { token, user: userData } = response.data;
+
+      // ✅ Guardar token y usuario
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
+
+      return { success: true, user: userData };
     } catch (error) {
-      console.error('Error en login:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Error al iniciar sesión' 
-      };
+      console.error('❌ Error en login:', error);
+      
+      const errorMessage = error.response?.data?.error || 
+                          error.response?.data?.message || 
+                          'Error al iniciar sesión';
+      
+      return { success: false, error: errorMessage };
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    navigate('/login');
-  };
-
+  // ✅ updateUser corregido - usa respuesta del servidor
   const updateUser = async (userData) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.put(`${process.env.REACT_APP_API_ENDPOINT}/api/users/${userData.id}`, userData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const updatedUser = {
+      const response = await api.put(`/users/${userData.id}`, userData);
+      
+      // ✅ Usar datos del servidor en lugar de reconstruir manualmente
+      const updatedUser = response.data.user || {
         id: userData.id,
         email: userData.email,
         nombre: userData.nombre,
@@ -78,38 +88,74 @@ export const AuthProvider = ({ children }) => {
         role: userData.role,
         genero: userData.genero,
       };
+
       localStorage.setItem('user', JSON.stringify(updatedUser));
       setUser(updatedUser);
-      return { success: true, message: response.data.message };
-    } catch (error) {
-      console.error('Error al actualizar usuario:', error);
-      return {
-        success: false,
-        error: error.response?.data?.error || 'Error al actualizar perfil'
+
+      return { 
+        success: true, 
+        message: response.data.message || 'Perfil actualizado correctamente' 
       };
+    } catch (error) {
+      console.error('❌ Error al actualizar usuario:', error);
+      
+      const errorMessage = error.response?.data?.error || 
+                          error.response?.data?.message || 
+                          'Error al actualizar perfil';
+      
+      return { success: false, error: errorMessage };
     }
   };
 
+  // ✅ changePassword mejorado
   const changePassword = async (oldPassword, newPassword) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/auth/change-password`,
-        { oldPassword, newPassword },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      return { success: true, message: response.data.message };
-    } catch (error) {
-      console.error('Error al cambiar contraseña:', error);
-      return {
-        success: false,
-        error: error.response?.data?.error || 'Error al cambiar contraseña'
+      const response = await api.post('/auth/change-password', {
+        oldPassword,
+        newPassword
+      });
+
+      return { 
+        success: true, 
+        message: response.data.message || 'Contraseña cambiada correctamente' 
       };
+    } catch (error) {
+      console.error('❌ Error al cambiar contraseña:', error);
+      
+      const errorMessage = error.response?.data?.error || 
+                          error.response?.data?.message || 
+                          'Error al cambiar contraseña';
+      
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  // ✅ Refrescar datos del usuario desde el servidor
+  const refreshUser = async () => {
+    try {
+      const response = await api.get('/auth/verify');
+      const verifiedUser = response.data.user;
+      
+      localStorage.setItem('user', JSON.stringify(verifiedUser));
+      setUser(verifiedUser);
+      
+      return { success: true, user: verifiedUser };
+    } catch (error) {
+      console.error('❌ Error al refrescar usuario:', error);
+      return { success: false, error: 'Error al refrescar datos' };
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, updateUser, changePassword }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      logout, 
+      loading, 
+      updateUser, 
+      changePassword,
+      refreshUser 
+    }}>
       {!loading && children}
     </AuthContext.Provider>
   );
