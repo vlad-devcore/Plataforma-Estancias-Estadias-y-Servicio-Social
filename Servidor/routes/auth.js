@@ -4,24 +4,13 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
 import pool from "../config/config.db.js";
+import { authenticateToken } from "./authMiddleware.js"; // ← IMPORTAMOS EL MIDDLEWARE CENTRALIZADO
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "tu_secreto_super_seguro_123!";
 
-// Middleware para verificar JWT
-const authMiddleware = (req, res, next) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
-  if (!token) {
-    return res.status(401).json({ error: 'Acceso denegado, token requerido' });
-  }
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded; // { id, email, role, nombre, id_entidad }
-    next();
-  } catch (error) {
-    res.status(401).json({ error: 'Token inválido' });
-  }
-};
+// ❌ ELIMINADO: Middleware local duplicado
+// Ahora usamos authenticateToken del archivo centralizado
 
 // Login
 router.post("/login", async (req, res) => {
@@ -75,12 +64,13 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("Error en login:", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
-// Verify
-router.get("/verify", authMiddleware, async (req, res) => {
+// Verify - AHORA USA authenticateToken CENTRALIZADO
+router.get("/verify", authenticateToken, async (req, res) => {
   try {
     const [users] = await pool.query(
       `SELECT id_user, email, nombre, apellido_paterno, apellido_materno, role, genero
@@ -106,12 +96,13 @@ router.get("/verify", authMiddleware, async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("Error en verify:", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
-// Change Password
-router.post("/change-password", authMiddleware, async (req, res) => {
+// Change Password - AHORA USA authenticateToken CENTRALIZADO
+router.post("/change-password", authenticateToken, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   const id_user = req.user.id;
 
@@ -147,6 +138,7 @@ router.post("/change-password", authMiddleware, async (req, res) => {
 
     res.json({ message: "Contraseña cambiada correctamente" });
   } catch (error) {
+    console.error("Error en change-password:", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });
@@ -223,6 +215,7 @@ router.post("/request-password-reset", async (req, res) => {
     await transporter.sendMail(mailOptions);
     res.status(200).json({ message: 'Enlace de recuperación enviado al correo' });
   } catch (error) {
+    console.error("Error en request-password-reset:", error);
     if (error.code === 'EAUTH') {
       return res.status(500).json({ error: 'Error de autenticación en el servidor de correo' });
     }
@@ -259,6 +252,7 @@ router.post("/reset-password", async (req, res) => {
 
     res.status(200).json({ message: 'Contraseña restablecida correctamente' });
   } catch (error) {
+    console.error("Error en reset-password:", error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
