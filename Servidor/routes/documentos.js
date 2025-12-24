@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import pool from "../config/config.db.js";
 import { fileURLToPath } from 'url';
+import { authenticateToken, checkRole } from './authMiddleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,8 +28,12 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// Obtener tipos de documentos
-router.get("/tipo_documento", async (req, res) => {
+// ============================================
+// 🔓 ENDPOINTS PÚBLICOS (catálogos básicos)
+// ============================================
+
+// Obtener tipos de documentos - Necesario para que estudiantes vean opciones
+router.get("/tipo_documento", authenticateToken, async (req, res) => {
   try {
     const [results] = await pool.query(
       `SELECT IdTipoDoc, Nombre_TipoDoc FROM tipo_documento ORDER BY Nombre_TipoDoc`
@@ -39,8 +44,8 @@ router.get("/tipo_documento", async (req, res) => {
   }
 });
 
-// Obtener programas educativos
-router.get("/programas_educativos", async (req, res) => {
+// Obtener programas educativos - Necesario para filtros
+router.get("/programas_educativos", authenticateToken, async (req, res) => {
   try {
     const [results] = await pool.query(
       `SELECT DISTINCT nombre FROM programa_educativo WHERE nombre IS NOT NULL ORDER BY nombre`
@@ -51,8 +56,8 @@ router.get("/programas_educativos", async (req, res) => {
   }
 });
 
-// Obtener periodos
-router.get("/periodos", async (req, res) => {
+// Obtener periodos - Necesario para filtros
+router.get("/periodos", authenticateToken, async (req, res) => {
   try {
     const [results] = await pool.query(
       `SELECT IdPeriodo, Año, Fase FROM periodos ORDER BY Año DESC, Fase`
@@ -63,14 +68,25 @@ router.get("/periodos", async (req, res) => {
   }
 });
 
-// Subir/actualizar documento
-router.post("/upload", upload.single("archivo"), async (req, res) => {
+// ============================================
+// 🔒 ENDPOINTS PROTEGIDOS
+// ============================================
+
+// ✅ CORREGIDO: Subir/actualizar documento (con autenticación)
+router.post("/upload", authenticateToken, upload.single("archivo"), async (req, res) => {
   try {
     const { IdTipoDoc, id_usuario, Comentarios = "", Estatus = "Pendiente", id_proceso } = req.body;
     const file = req.file;
+    const currentUserId = req.user.id;
+    const isAdmin = req.user.role === 'administrador';
 
     if (!IdTipoDoc || !id_usuario || !id_proceso || !file) {
       return res.status(400).json({ error: "Faltan campos obligatorios o archivo" });
+    }
+
+    // Validar que el usuario solo suba sus propios documentos (excepto admin)
+    if (!isAdmin && parseInt(id_usuario) !== currentUserId) {
+      return res.status(403).json({ error: "No puedes subir documentos en nombre de otro usuario" });
     }
 
     const nombreArchivo = decodeURIComponent(escape(file.originalname));
@@ -110,8 +126,8 @@ router.post("/upload", upload.single("archivo"), async (req, res) => {
   }
 });
 
-// Aprobar documento
-router.put("/approve/:id_Documento", async (req, res) => {
+// ✅ CORREGIDO: Aprobar documento (SOLO ADMIN)
+router.put("/approve/:id_Documento", authenticateToken, checkRole(['administrador']), async (req, res) => {
   try {
     const { id_Documento } = req.params;
 
@@ -130,8 +146,8 @@ router.put("/approve/:id_Documento", async (req, res) => {
   }
 });
 
-// Rechazar documento
-router.put("/reject/:id_Documento", async (req, res) => {
+// ✅ CORREGIDO: Rechazar documento (SOLO ADMIN)
+router.put("/reject/:id_Documento", authenticateToken, checkRole(['administrador']), async (req, res) => {
   try {
     const { id_Documento } = req.params;
     const { comentarios } = req.body;
@@ -155,8 +171,8 @@ router.put("/reject/:id_Documento", async (req, res) => {
   }
 });
 
-// Revertir documento a Pendiente
-router.put("/revert/:id_Documento", async (req, res) => {
+// ✅ CORREGIDO: Revertir documento a Pendiente (SOLO ADMIN)
+router.put("/revert/:id_Documento", authenticateToken, checkRole(['administrador']), async (req, res) => {
   try {
     const { id_Documento } = req.params;
 
@@ -175,18 +191,25 @@ router.put("/revert/:id_Documento", async (req, res) => {
   }
 });
 
-// Descargar documento
-router.get("/download/:id_Documento", async (req, res) => {
+// ✅ CORREGIDO: Descargar documento (con validación de ownership)
+router.get("/download/:id_Documento", authenticateToken, async (req, res) => {
   try {
     const { id_Documento } = req.params;
+    const currentUserId = req.user.id;
+    const isAdmin = req.user.role === 'administrador';
     
     const [documento] = await pool.query(
-      `SELECT NombreArchivo, RutaArchivo FROM documentos WHERE id_Documento = ?`,
+      `SELECT NombreArchivo, RutaArchivo, id_usuario FROM documentos WHERE id_Documento = ?`,
       [id_Documento]
     );
 
     if (documento.length === 0) {
       return res.status(404).json({ error: "Documento no encontrado" });
+    }
+
+    // Validar que solo el dueño o admin pueda descargar
+    if (!isAdmin && documento[0].id_usuario !== currentUserId) {
+      return res.status(403).json({ error: "No tienes permiso para descargar este documento" });
     }
 
     const filePath = path.join(__dirname, "..", "public", documento[0].RutaArchivo.replace(/^\/Uploads\//, 'uploads/'));
@@ -222,18 +245,25 @@ router.get("/download/:id_Documento", async (req, res) => {
   }
 });
 
-// Eliminar documento
-router.delete("/:id_Documento", async (req, res) => {
+// ✅ CORREGIDO: Eliminar documento (Owner o Admin)
+router.delete("/:id_Documento", authenticateToken, async (req, res) => {
   try {
     const { id_Documento } = req.params;
+    const currentUserId = req.user.id;
+    const isAdmin = req.user.role === 'administrador';
 
     const [documento] = await pool.query(
-      `SELECT NombreArchivo, RutaArchivo FROM documentos WHERE id_Documento = ?`,
+      `SELECT NombreArchivo, RutaArchivo, id_usuario FROM documentos WHERE id_Documento = ?`,
       [id_Documento]
     );
 
     if (documento.length === 0) {
       return res.status(404).json({ error: "Documento no encontrado" });
+    }
+
+    // Validar que solo el dueño o admin pueda eliminar
+    if (!isAdmin && documento[0].id_usuario !== currentUserId) {
+      return res.status(403).json({ error: "No tienes permiso para eliminar este documento" });
     }
 
     const filePath = path.join(__dirname, "..", "public", documento[0].RutaArchivo.replace(/^\/Uploads\//, 'uploads/'));
@@ -252,10 +282,12 @@ router.delete("/:id_Documento", async (req, res) => {
   }
 });
 
-// Obtener todos los documentos
-router.get("/", async (req, res) => {
+// ✅ CORREGIDO: Obtener todos los documentos (filtrado por usuario)
+router.get("/", authenticateToken, async (req, res) => {
   try {
     const { estatus, idPeriodo, id_proceso, id_usuario, idTipoDoc, programaEducativo } = req.query;
+    const currentUserId = req.user.id;
+    const isAdmin = req.user.role === 'administrador';
 
     let query = `
       SELECT 
@@ -279,8 +311,14 @@ router.get("/", async (req, res) => {
     `;
     
     const queryParams = [];
-    
     const conditions = [];
+
+    // Si NO es admin, solo puede ver sus propios documentos
+    if (!isAdmin) {
+      conditions.push('d.id_usuario = ?');
+      queryParams.push(currentUserId);
+    }
+    
     if (estatus && ['Pendiente', 'Aprobado', 'Rechazado'].includes(estatus)) {
       conditions.push('d.Estatus = ?');
       queryParams.push(estatus);
@@ -293,7 +331,8 @@ router.get("/", async (req, res) => {
       conditions.push('d.id_proceso = ?');
       queryParams.push(Number(id_proceso));
     }
-    if (id_usuario && !isNaN(id_usuario)) {
+    // Si es admin, puede filtrar por id_usuario específico
+    if (isAdmin && id_usuario && !isNaN(id_usuario)) {
       conditions.push('d.id_usuario = ?');
       queryParams.push(Number(id_usuario));
     }
