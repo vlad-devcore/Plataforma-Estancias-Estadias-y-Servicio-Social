@@ -1,3 +1,8 @@
+// ============================================
+// 🔧 SOLUCIÓN: useDocumentosAdmin.js
+// Agregar token en cada petición
+// ============================================
+
 import { useState, useEffect } from "react";
 import axios from "axios";
 
@@ -22,60 +27,98 @@ const useDocumentosAdmin = () => {
   const [totalDocuments, setTotalDocuments] = useState(0);
   const documentsPerPage = 50;
 
+  // ✅ NUEVO: Función helper para obtener headers con token
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return {
+      'Authorization': `Bearer ${token}`,
+    };
+  };
+
+  // ✅ NUEVO: Manejar error 401 (sesión expirada)
+  const handleAuthError = (err) => {
+    if (err.response?.status === 401) {
+      setError("Sesión expirada. Por favor inicia sesión nuevamente.");
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setTimeout(() => window.location.href = '/login', 2000);
+      return true;
+    }
+    return false;
+  };
+
   // Obtener todos los periodos
   const fetchPeriodos = async () => {
     try {
+      // ✅ MODIFICADO: Agregar headers con token
       const { data } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/periodos`
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/periodos`,
+        {
+          headers: getAuthHeaders()
+        }
       );
       setPeriodos(data);
       if (data.length === 0) {
         setError("No se encontraron periodos");
       }
     } catch (err) {
-      setError(
-        err.response?.status === 404
-          ? "Endpoint de periodos no encontrado (verifica documentos.js)"
-          : "Error al obtener periodos"
-      );
+      if (!handleAuthError(err)) {
+        setError(
+          err.response?.status === 404
+            ? "Endpoint de periodos no encontrado (verifica documentos.js)"
+            : "Error al obtener periodos"
+        );
+      }
     }
   };
 
   // Obtener tipos de documentos
   const fetchTiposDocumento = async () => {
     try {
+      // ✅ MODIFICADO: Agregar headers con token
       const { data } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/tipo_documento`
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/tipo_documento`,
+        {
+          headers: getAuthHeaders()
+        }
       );
       setTiposDocumento(data);
       if (data.length === 0) {
         setError("No se encontraron tipos de documento");
       }
     } catch (err) {
-      setError(
-        err.response?.status === 404
-          ? "Endpoint de tipos de documento no encontrado (verifica documentos.js)"
-          : "Error al obtener tipos de documento"
-      );
+      if (!handleAuthError(err)) {
+        setError(
+          err.response?.status === 404
+            ? "Endpoint de tipos de documento no encontrado (verifica documentos.js)"
+            : "Error al obtener tipos de documento"
+        );
+      }
     }
   };
 
   // Obtener programas educativos
   const fetchProgramasEducativos = async () => {
     try {
+      // ✅ MODIFICADO: Agregar headers con token
       const { data } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/programas_educativos`
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/programas_educativos`,
+        {
+          headers: getAuthHeaders()
+        }
       );
       setProgramasEducativos(data);
       if (data.length === 0) {
         setError("No se encontraron programas educativos");
       }
     } catch (err) {
-      setError(
-        err.response?.status === 404
-          ? "Endpoint de programas educativos no encontrado (verifica documentos.js)"
-          : "Error al obtener programas educativos"
-      );
+      if (!handleAuthError(err)) {
+        setError(
+          err.response?.status === 404
+            ? "Endpoint de programas educativos no encontrado (verifica documentos.js)"
+            : "Error al obtener programas educativos"
+        );
+      }
     }
   };
 
@@ -90,9 +133,13 @@ const useDocumentosAdmin = () => {
         idTipoDoc: filters.idTipoDoc ? Number(filters.idTipoDoc) : undefined,
         programaEducativo: filters.programaEducativo || undefined,
       };
+      // ✅ MODIFICADO: Agregar headers con token
       const { data } = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos`,
-        { params }
+        { 
+          params,
+          headers: getAuthHeaders()
+        }
       );
       if (!Array.isArray(data)) {
         throw new Error(
@@ -127,15 +174,17 @@ const useDocumentosAdmin = () => {
       setTotalPages(pages);
       setTotalDocuments(total);
     } catch (err) {
-      setError(
-        err.response?.status === 404
-          ? "Endpoint de documentos no encontrado (verifica documentos.js)"
-          : err.message || "Error al obtener documentos"
-      );
-      setDocuments([]);
-      setAllDocuments([]);
-      setTotalPages(1);
-      setTotalDocuments(0);
+      if (!handleAuthError(err)) {
+        setError(
+          err.response?.status === 404
+            ? "Endpoint de documentos no encontrado (verifica documentos.js)"
+            : err.message || "Error al obtener documentos"
+        );
+        setDocuments([]);
+        setAllDocuments([]);
+        setTotalPages(1);
+        setTotalDocuments(0);
+      }
     } finally {
       setLoading(false);
     }
@@ -147,18 +196,25 @@ const useDocumentosAdmin = () => {
     setError(null);
     setSuccess(null);
     try {
+      // ✅ MODIFICADO: Agregar headers con token
       await axios.put(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/approve/${idDocumento}`
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/approve/${idDocumento}`,
+        {},
+        {
+          headers: getAuthHeaders()
+        }
       );
       setSuccess("Documento aprobado correctamente");
-      setCurrentPage(1); // Volver a la primera página
+      setCurrentPage(1);
       await fetchDocuments();
     } catch (err) {
-      setError(
-        err.response?.status === 404
-          ? "Endpoint de aprobación no encontrado (verifica documentos.js)"
-          : "Error al aprobar documento"
-      );
+      if (!handleAuthError(err)) {
+        setError(
+          err.response?.status === 404
+            ? "Endpoint de aprobación no encontrado (verifica documentos.js)"
+            : "Error al aprobar documento"
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -170,19 +226,25 @@ const useDocumentosAdmin = () => {
     setError(null);
     setSuccess(null);
     try {
+      // ✅ MODIFICADO: Agregar headers con token
       await axios.put(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/reject/${idDocumento}`,
-        { comentarios }
+        { comentarios },
+        {
+          headers: getAuthHeaders()
+        }
       );
       setSuccess("Documento rechazado correctamente");
-      setCurrentPage(1); // Volver a la primera página
+      setCurrentPage(1);
       await fetchDocuments();
     } catch (err) {
-      setError(
-        err.response?.status === 404
-          ? "Endpoint de rechazo no encontrado (verifica documentos.js)"
-          : "Error al rechazar documento"
-      );
+      if (!handleAuthError(err)) {
+        setError(
+          err.response?.status === 404
+            ? "Endpoint de rechazo no encontrado (verifica documentos.js)"
+            : "Error al rechazar documento"
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -194,18 +256,25 @@ const useDocumentosAdmin = () => {
     setError(null);
     setSuccess(null);
     try {
+      // ✅ MODIFICADO: Agregar headers con token
       await axios.put(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/revert/${idDocumento}`
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/revert/${idDocumento}`,
+        {},
+        {
+          headers: getAuthHeaders()
+        }
       );
       setSuccess("Documento revertido a Pendiente correctamente");
-      setCurrentPage(1); // Volver a la primera página
+      setCurrentPage(1);
       await fetchDocuments();
     } catch (err) {
-      setError(
-        err.response?.status === 404
-          ? "Endpoint de revertir no encontrado (verifica documentos.js)"
-          : "Error al revertir documento"
-      );
+      if (!handleAuthError(err)) {
+        setError(
+          err.response?.status === 404
+            ? "Endpoint de revertir no encontrado (verifica documentos.js)"
+            : "Error al revertir documento"
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -214,7 +283,7 @@ const useDocumentosAdmin = () => {
   // Actualizar filtros
   const updateFilters = (newFilters) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
-    setCurrentPage(1); // Resetear a la primera página
+    setCurrentPage(1);
   };
 
   // Efecto para cargar periodos, tipos de documento, programas educativos y documentos al montar
