@@ -4,8 +4,6 @@ import { parse } from "csv-parse";
 import multer from "multer";
 import iconv from "iconv-lite";
 import { Readable } from "stream";
-import { authenticateToken, checkRole } from "./authMiddleware.js";
-
 
 const router = express.Router();
 
@@ -459,99 +457,12 @@ const uploadEmpresas = async (req, res, next) => {
 };
 
 // Rutas
-router.get(
-  "/",
-  authenticateToken,
-  async (req, res, next) => {
-    try {
-      const isAdmin = req.user.role === "administrador";
-
-      const fields = isAdmin
-        ? "*"
-        : `
-          id_empresa,
-          empresa_nombre,
-          empresa_tamano,
-          empresa_sociedad,
-          empresa_pagina_web
-        `;
-
-      const [results] = await pool.query(
-        `SELECT ${fields} FROM empresa`
-      );
-
-      res.status(200).json(results || []);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.get(
-  "/:id_empresa",
-  authenticateToken,
-  async (req, res, next) => {
-    try {
-      const isAdmin = req.user.role === "administrador";
-
-      const fields = isAdmin
-        ? "*"
-        : `
-          id_empresa,
-          empresa_nombre,
-          empresa_direccion,
-          empresa_email,
-          empresa_telefono,
-          empresa_tamano,
-          empresa_sociedad,
-          empresa_pagina_web
-        `;
-
-      const [results] = await pool.query(
-        `SELECT ${fields} FROM empresa WHERE id_empresa = ?`,
-        [req.params.id_empresa]
-      );
-
-      if (!results.length) {
-        return res.status(404).json({ error: "Empresa no encontrada" });
-      }
-
-      res.status(200).json(results[0]);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.post(
-  "/",
-  authenticateToken,
-  checkRole(["administrador"]),
-  postEmpresa
-);
-
-router.put(
-  "/:id_empresa",
-  authenticateToken,
-  checkRole(["administrador"]),
-  updateEmpresa
-);
-
-router.delete(
-  "/:id_empresa",
-  authenticateToken,
-  checkRole(["administrador"]),
-  deleteEmpresa
-);
-
-router.post(
-  "/upload",
-  authenticateToken,
-  checkRole(["administrador"]),
-  upload.single("file"),
-  uploadEmpresas
-);
-
+router.get("/", getEmpresas);
+router.get("/:id_empresa", getEmpresaById);
+router.post("/", postEmpresa);
+router.put("/:id_empresa", updateEmpresa);
+router.delete("/:id_empresa", deleteEmpresa);
+router.post("/upload", upload.single("file"), uploadEmpresas);
 
 // Exportar router y middleware
 export { router as default, errorHandler };
