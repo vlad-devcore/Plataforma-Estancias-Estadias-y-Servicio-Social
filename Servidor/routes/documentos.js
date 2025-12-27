@@ -10,10 +10,35 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
+// ===== FUNCIÓN HELPER PARA RESOLVER RUTAS =====
+// Esta función intenta encontrar el archivo en ambas carpetas (Uploads y uploads)
+const resolverRutaArchivo = (rutaBD) => {
+  // Limpiar la ruta (quitar / inicial)
+  let rutaRelativa = rutaBD.replace(/^\//, '');
+  
+  // Intentar primero con Uploads (mayúscula) - carpeta actual
+  let filePath = path.join(__dirname, "..", "public", rutaRelativa.replace(/^uploads\//, 'Uploads/'));
+  
+  if (fs.existsSync(filePath)) {
+    return filePath;
+  }
+  
+  // Si no existe, intentar con minúscula
+  filePath = path.join(__dirname, "..", "public", rutaRelativa);
+  
+  if (fs.existsSync(filePath)) {
+    return filePath;
+  }
+  
+  // No se encontró el archivo
+  return null;
+};
+
 // Configuración de Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = "public/uploads/documentos";
+    // IMPORTANTE: Cambiar a Uploads (mayúscula) para que coincida con donde están los archivos
+    const uploadDir = "public/Uploads/documentos";
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -35,6 +60,7 @@ router.get("/tipo_documento", async (req, res) => {
     );
     res.json(results);
   } catch (error) {
+    console.error("Error al obtener tipos de documentos:", error);
     res.status(500).json({ error: "Error al obtener tipos de documentos" });
   }
 });
@@ -47,6 +73,7 @@ router.get("/programas_educativos", async (req, res) => {
     );
     res.json(results.map(row => row.nombre));
   } catch (error) {
+    console.error("Error al obtener programas educativos:", error);
     res.status(500).json({ error: "Error al obtener programas educativos" });
   }
 });
@@ -59,6 +86,7 @@ router.get("/periodos", async (req, res) => {
     );
     res.json(results);
   } catch (error) {
+    console.error("Error al obtener periodos:", error);
     res.status(500).json({ error: "Error al obtener periodos" });
   }
 });
@@ -74,7 +102,12 @@ router.post("/upload", upload.single("archivo"), async (req, res) => {
     }
 
     const nombreArchivo = decodeURIComponent(escape(file.originalname));
-    const rutaArchivo = `/uploads/documentos/${file.filename}`;
+    // CORREGIDO: Guardar con Uploads (mayúscula) en la BD
+    const rutaArchivo = `/Uploads/documentos/${file.filename}`;
+
+    console.log(`📤 Subiendo documento: ${nombreArchivo}`);
+    console.log(`   Ruta física: public/Uploads/documentos/${file.filename}`);
+    console.log(`   Ruta BD: ${rutaArchivo}`);
 
     // Verificar si ya existe un documento
     const [existing] = await pool.query(
@@ -83,10 +116,11 @@ router.post("/upload", upload.single("archivo"), async (req, res) => {
     );
 
     if (existing.length > 0) {
-      // Eliminar archivo antiguo
-      const oldFilePath = path.join(__dirname, "..", "public", existing[0].RutaArchivo.replace(/^\/Uploads\//, 'uploads/'));
-      if (fs.existsSync(oldFilePath)) {
+      // Eliminar archivo antiguo usando la función helper
+      const oldFilePath = resolverRutaArchivo(existing[0].RutaArchivo);
+      if (oldFilePath && fs.existsSync(oldFilePath)) {
         fs.unlinkSync(oldFilePath);
+        console.log(`   🗑️  Archivo antiguo eliminado: ${oldFilePath}`);
       }
 
       // Actualizar documento existente
@@ -95,17 +129,20 @@ router.post("/upload", upload.single("archivo"), async (req, res) => {
          WHERE id_Documento = ?`,
         [nombreArchivo, rutaArchivo, existing[0].id_Documento]
       );
+      console.log(`   ✅ Documento ${existing[0].id_Documento} actualizado`);
     } else {
       // Insertar nuevo documento
-      await pool.query(
+      const [result] = await pool.query(
         `INSERT INTO documentos (NombreArchivo, RutaArchivo, IdTipoDoc, id_usuario, Comentarios, Estatus, id_proceso)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [nombreArchivo, rutaArchivo, IdTipoDoc, id_usuario, Comentarios, Estatus, id_proceso]
       );
+      console.log(`   ✅ Nuevo documento creado con ID: ${result.insertId}`);
     }
 
     res.json({ success: true });
   } catch (error) {
+    console.error("❌ Error al subir documento:", error);
     res.status(500).json({ error: "Error al subir documento" });
   }
 });
@@ -124,8 +161,10 @@ router.put("/approve/:id_Documento", async (req, res) => {
       return res.status(404).json({ error: "Documento no encontrado" });
     }
 
+    console.log(`✅ Documento ${id_Documento} aprobado`);
     res.json({ success: true });
   } catch (error) {
+    console.error("❌ Error al aprobar documento:", error);
     res.status(500).json({ error: "Error al aprobar documento" });
   }
 });
@@ -149,8 +188,10 @@ router.put("/reject/:id_Documento", async (req, res) => {
       return res.status(404).json({ error: "Documento no encontrado" });
     }
 
+    console.log(`❌ Documento ${id_Documento} rechazado: ${comentarios}`);
     res.json({ success: true });
   } catch (error) {
+    console.error("❌ Error al rechazar documento:", error);
     res.status(500).json({ error: "Error al rechazar documento" });
   }
 });
@@ -169,8 +210,10 @@ router.put("/revert/:id_Documento", async (req, res) => {
       return res.status(404).json({ error: "Documento no encontrado" });
     }
 
+    console.log(`🔄 Documento ${id_Documento} revertido a Pendiente`);
     res.json({ success: true });
   } catch (error) {
+    console.error("❌ Error al revertir documento:", error);
     res.status(500).json({ error: "Error al revertir documento" });
   }
 });
@@ -180,21 +223,36 @@ router.get("/download/:id_Documento", async (req, res) => {
   try {
     const { id_Documento } = req.params;
     
+    console.log(`📥 Solicitando descarga del documento ${id_Documento}`);
+    
     const [documento] = await pool.query(
       `SELECT NombreArchivo, RutaArchivo FROM documentos WHERE id_Documento = ?`,
       [id_Documento]
     );
 
     if (documento.length === 0) {
+      console.error(`❌ Documento ${id_Documento} no encontrado en BD`);
       return res.status(404).json({ error: "Documento no encontrado" });
     }
 
-    const filePath = path.join(__dirname, "..", "public", documento[0].RutaArchivo.replace(/^\/Uploads\//, 'uploads/'));
+    console.log(`   📄 Nombre: ${documento[0].NombreArchivo}`);
+    console.log(`   📍 Ruta BD: ${documento[0].RutaArchivo}`);
 
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: "Archivo no encontrado" });
+    // Usar la función helper para resolver la ruta
+    const filePath = resolverRutaArchivo(documento[0].RutaArchivo);
+
+    if (!filePath) {
+      console.error(`❌ Archivo físico no encontrado para documento ${id_Documento}`);
+      console.error(`   Ruta en BD: ${documento[0].RutaArchivo}`);
+      return res.status(404).json({ 
+        error: "Archivo no encontrado",
+        ruta_bd: documento[0].RutaArchivo
+      });
     }
 
+    console.log(`   ✅ Archivo encontrado: ${filePath}`);
+
+    // Determinar tipo de contenido
     let contentType;
     const fileExtension = path.extname(filePath).toLowerCase();
     switch(fileExtension) {
@@ -207,6 +265,19 @@ router.get("/download/:id_Documento", async (req, res) => {
       case '.docx':
         contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
         break;
+      case '.xls':
+        contentType = 'application/vnd.ms-excel';
+        break;
+      case '.xlsx':
+        contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        break;
+      case '.jpg':
+      case '.jpeg':
+        contentType = 'image/jpeg';
+        break;
+      case '.png':
+        contentType = 'image/png';
+        break;
       default:
         contentType = 'application/octet-stream';
     }
@@ -216,8 +287,17 @@ router.get("/download/:id_Documento", async (req, res) => {
     res.setHeader('Content-Length', fs.statSync(filePath).size);
 
     const fileStream = fs.createReadStream(filePath);
+    fileStream.on('error', (error) => {
+      console.error('❌ Error al leer el archivo:', error);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Error al leer el archivo' });
+      }
+    });
     fileStream.pipe(res);
+    
+    console.log(`   ✅ Archivo enviado correctamente`);
   } catch (error) {
+    console.error("❌ Error al descargar documento:", error);
     res.status(500).json({ error: "Error al descargar documento" });
   }
 });
@@ -226,6 +306,8 @@ router.get("/download/:id_Documento", async (req, res) => {
 router.delete("/:id_Documento", async (req, res) => {
   try {
     const { id_Documento } = req.params;
+
+    console.log(`🗑️  Intentando eliminar documento ${id_Documento}`);
 
     const [documento] = await pool.query(
       `SELECT NombreArchivo, RutaArchivo FROM documentos WHERE id_Documento = ?`,
@@ -236,9 +318,14 @@ router.delete("/:id_Documento", async (req, res) => {
       return res.status(404).json({ error: "Documento no encontrado" });
     }
 
-    const filePath = path.join(__dirname, "..", "public", documento[0].RutaArchivo.replace(/^\/Uploads\//, 'uploads/'));
-    if (fs.existsSync(filePath)) {
+    // Usar la función helper para resolver la ruta
+    const filePath = resolverRutaArchivo(documento[0].RutaArchivo);
+    
+    if (filePath && fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
+      console.log(`   ✅ Archivo físico eliminado: ${filePath}`);
+    } else {
+      console.log(`   ⚠️  Archivo físico no encontrado, continuando con eliminación en BD`);
     }
 
     await pool.query(
@@ -246,8 +333,10 @@ router.delete("/:id_Documento", async (req, res) => {
       [id_Documento]
     );
 
+    console.log(`   ✅ Documento ${id_Documento} eliminado de la BD`);
     res.json({ success: true });
   } catch (error) {
+    console.error("❌ Error al eliminar documento:", error);
     res.status(500).json({ error: "Error al eliminar documento" });
   }
 });
@@ -313,6 +402,7 @@ router.get("/", async (req, res) => {
     const [results] = await pool.query(query, queryParams);
     res.json(results);
   } catch (error) {
+    console.error("❌ Error al obtener documentos:", error);
     res.status(500).json({ error: "Error al obtener documentos" });
   }
 });
