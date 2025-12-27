@@ -4,7 +4,6 @@ import { Menu, X } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
- 
 
 const NavLink = ({ text, path, currentPath, onClick }) => {
   const isActive = currentPath === path;
@@ -14,7 +13,14 @@ const NavLink = ({ text, path, currentPath, onClick }) => {
       className={`relative cursor-pointer px-4 py-2 group transition-all duration-300 text-white/90 hover:text-white`}
     >
       <span className={isActive ? 'text-white font-medium' : ''}>{text}</span>
-      {isActive && <motion.div className="absolute inset-0 bg-white/20 rounded-lg" initial={false} animate={{ scale: 1 }} transition={{ duration: 0.2 }} />}
+      {isActive && (
+        <motion.div 
+          className="absolute inset-0 bg-white/20 rounded-lg" 
+          initial={false} 
+          animate={{ scale: 1 }} 
+          transition={{ duration: 0.2 }} 
+        />
+      )}
     </motion.a>
   );
 };
@@ -35,8 +41,12 @@ const ConfirmationModal = ({ isOpen, onConfirm, onCancel }) => (
           exit={{ scale: 0.8, opacity: 0 }}
           className="bg-white rounded-lg p-6 max-w-md w-full"
         >
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Confirmar Cierre de Sesión</h2>
-          <p className="text-gray-600 mb-6">¿Estás seguro de que deseas cerrar tu sesión?</p>
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            Confirmar Cierre de Sesión
+          </h2>
+          <p className="text-gray-600 mb-6">
+            ¿Estás seguro de que deseas cerrar tu sesión?
+          </p>
           <div className="flex justify-end space-x-4">
             <button
               onClick={onCancel}
@@ -72,32 +82,68 @@ const Header = () => {
     { text: "Cerrar Sesión", path: '/login', action: 'logout' }
   ];
 
+  /**
+   * 🔧 FUNCIÓN DE LOGOUT MEJORADA
+   * - Intenta cerrar sesión en el backend primero
+   * - Si falla (404 u otro error), continúa con logout local
+   * - Limpia todo el estado de autenticación
+   * - No muestra errores al usuario (fallback silencioso)
+   */
   const handleLogout = async () => {
     try {
       const token = localStorage.getItem('token');
+      
+      // Intentar logout en backend si existe token
       if (token) {
-        await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/auth/logout`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        try {
+          await axios.post(
+            `${process.env.REACT_APP_API_ENDPOINT}/api/auth/logout`, 
+            {}, 
+            {
+              headers: { Authorization: `Bearer ${token}` },
+              timeout: 5000 // Timeout de 5 segundos
+            }
+          );
+          console.log('✅ Logout exitoso en backend');
+        } catch (backendError) {
+          // Si el backend falla (404, 500, timeout, etc.), continuamos
+          console.warn('⚠️ Backend logout falló, continuando con logout local:', backendError.message);
+        }
       }
-      setSuccessMessage('¡Sesión cerrada con éxito!');
+
+      // Limpiar almacenamiento local (SIEMPRE se ejecuta)
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('userData');
+      sessionStorage.clear();
+
+      // Llamar al logout del contexto
       logout();
+
+      // Mostrar mensaje de éxito
+      setSuccessMessage('¡Sesión cerrada con éxito!');
+
+      // Esperar 1 segundo antes de redirigir
       setTimeout(() => {
         setSuccessMessage(null);
+        navigate('/login', { replace: true });
       }, 1000);
+
     } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-      setSuccessMessage('¡Sesión cerrada con éxito!');
+      // Fallback de seguridad (por si algo falla)
+      console.error('❌ Error inesperado en logout:', error);
+      
+      // Forzar limpieza y redirección de emergencia
+      localStorage.clear();
+      sessionStorage.clear();
       logout();
-      setTimeout(() => {
-        setSuccessMessage(null);
-      }, 1000);
+      navigate('/login', { replace: true });
     }
   };
 
   const handleNavigation = (item) => {
     if (item.action === 'logout') {
-      setIsLogoutModalOpen(true); // Abrir modal en lugar de logout directo
+      setIsLogoutModalOpen(true);
     } else {
       navigate(item.path);
       setIsMenuOpen(false);
@@ -119,6 +165,7 @@ const Header = () => {
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <img src="/logo192.png" alt="Logo" className="h-16 sm:h-20 w-auto" />
         </motion.div>
+        
         <div className="hidden md:flex space-x-2">
           {navigation.map((item) => (
             <NavLink
@@ -130,10 +177,18 @@ const Header = () => {
             />
           ))}
         </div>
-        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setIsMenuOpen(true)} className="md:hidden text-white">
+        
+        <motion.button 
+          whileHover={{ scale: 1.1 }} 
+          whileTap={{ scale: 0.9 }} 
+          onClick={() => setIsMenuOpen(true)} 
+          className="md:hidden text-white"
+        >
           <Menu className="h-6 w-6" />
         </motion.button>
       </div>
+
+      {/* Mobile Menu */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
@@ -144,7 +199,12 @@ const Header = () => {
             className="fixed inset-y-0 right-0 w-64 bg-orange-600 shadow-xl z-50"
           >
             <div className="flex justify-end p-4">
-              <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setIsMenuOpen(false)} className="text-white">
+              <motion.button 
+                whileHover={{ scale: 1.1 }} 
+                whileTap={{ scale: 0.9 }} 
+                onClick={() => setIsMenuOpen(false)} 
+                className="text-white"
+              >
                 <X className="h-6 w-6" />
               </motion.button>
             </div>
@@ -162,6 +222,8 @@ const Header = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Success Message */}
       <AnimatePresence>
         {successMessage && (
           <motion.div
@@ -175,6 +237,8 @@ const Header = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Logout Confirmation Modal */}
       <ConfirmationModal
         isOpen={isLogoutModalOpen}
         onConfirm={handleConfirmLogout}

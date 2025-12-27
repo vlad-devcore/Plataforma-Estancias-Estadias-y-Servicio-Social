@@ -4,15 +4,14 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
 import pool from "../config/config.db.js";
-import { authenticateToken } from "./authMiddleware.js"; // ← IMPORTAMOS EL MIDDLEWARE CENTRALIZADO
+import { authenticateToken } from "./authMiddleware.js";
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "tu_secreto_super_seguro_123!";
 
-// ❌ ELIMINADO: Middleware local duplicado
-// Ahora usamos authenticateToken del archivo centralizado
-
-// Login
+// ============================================================================
+// 🔐 LOGIN
+// ============================================================================
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -69,7 +68,55 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// Verify - AHORA USA authenticateToken CENTRALIZADO
+// ============================================================================
+// 🚪 LOGOUT - ¡NUEVA RUTA AGREGADA!
+// ============================================================================
+/**
+ * POST /api/auth/logout
+ * Cierra la sesión del usuario de forma segura
+ * Requiere: Token JWT válido en el header Authorization
+ */
+router.post("/logout", authenticateToken, async (req, res) => {
+  try {
+    // Información del usuario desde el token (proporcionada por authenticateToken)
+    const userId = req.user.id;
+    const userEmail = req.user.email;
+
+    // OPCIONAL: Puedes registrar el logout en una tabla de auditoría
+    // await pool.query(
+    //   'INSERT INTO audit_log (user_id, action, timestamp) VALUES (?, ?, NOW())',
+    //   [userId, 'LOGOUT']
+    // );
+
+    // Log del logout exitoso (para debugging/auditoría)
+    console.log(`✅ Logout exitoso - Usuario: ${userEmail} (ID: ${userId})`);
+
+    // Respuesta exitosa
+    res.status(200).json({
+      success: true,
+      message: "Sesión cerrada exitosamente",
+      user: {
+        id: userId,
+        email: userEmail
+      }
+    });
+
+  } catch (error) {
+    console.error("❌ Error en logout:", error);
+    
+    // Aunque falle algo en el servidor, permitimos que el logout continúe
+    // El frontend limpiará el token de todas formas
+    res.status(200).json({
+      success: true,
+      message: "Sesión cerrada (con advertencia)",
+      warning: "El logout se completó pero hubo un error en el registro"
+    });
+  }
+});
+
+// ============================================================================
+// ✅ VERIFY - Verifica token y obtiene información del usuario
+// ============================================================================
 router.get("/verify", authenticateToken, async (req, res) => {
   try {
     const [users] = await pool.query(
@@ -101,7 +148,9 @@ router.get("/verify", authenticateToken, async (req, res) => {
   }
 });
 
-// Change Password - AHORA USA authenticateToken CENTRALIZADO
+// ============================================================================
+// 🔑 CHANGE PASSWORD - Cambiar contraseña estando autenticado
+// ============================================================================
 router.post("/change-password", authenticateToken, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   const id_user = req.user.id;
@@ -143,7 +192,9 @@ router.post("/change-password", authenticateToken, async (req, res) => {
   }
 });
 
-// Solicitar enlace de recuperación
+// ============================================================================
+// 📧 REQUEST PASSWORD RESET - Solicitar enlace de recuperación
+// ============================================================================
 router.post("/request-password-reset", async (req, res) => {
   const { email } = req.body;
 
@@ -170,7 +221,7 @@ router.post("/request-password-reset", async (req, res) => {
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
       port: process.env.EMAIL_PORT,
-      secure: false, // false para 587, true para 465
+      secure: false,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -223,7 +274,9 @@ router.post("/request-password-reset", async (req, res) => {
   }
 });
 
-// Restablecer contraseña
+// ============================================================================
+// 🔓 RESET PASSWORD - Restablecer contraseña con token
+// ============================================================================
 router.post("/reset-password", async (req, res) => {
   const { token, newPassword } = req.body;
 
