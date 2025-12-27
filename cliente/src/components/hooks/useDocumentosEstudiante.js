@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import axios from "axios";
+import api from "../axiosConfig"; // ✅ CAMBIO CRÍTICO: Usar la instancia configurada
 
 const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
   const [plantillas, setPlantillas] = useState([]);
@@ -29,7 +29,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
           "Reporte Mensual 12",
         ]
       : [
-          "Número NSS", // Movido al inicio para que sea la primera fila
+          "Número NSS",
           "Carta de presentación",
           "Carta de aceptación",
           "Cédula de registro",
@@ -54,7 +54,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
           "Reporte Mensual 12": 18,
         }
       : {
-          "Número NSS": 19, // Mapeo para IdTipoDoc 19
+          "Número NSS": 19,
           "Carta de presentación": 1,
           "Carta de aceptación": 2,
           "Cédula de registro": 3,
@@ -62,6 +62,10 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
           "Carta de liberación": 5,
         };
 
+  /**
+   * 📥 Obtener plantillas disponibles
+   * ✅ AHORA usa api (con token automático)
+   */
   const fetchPlantillas = async () => {
     if (!user?.id) {
       setError("Usuario no autenticado");
@@ -70,9 +74,8 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin`
-      );
+      // ✅ CAMBIO: Ruta relativa (baseURL ya incluye /api)
+      const response = await api.get("/documentosAdmin");
       const data = response.data;
 
       const combined = tiposDocumentos.map((tipo) => {
@@ -88,12 +91,17 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
 
       setPlantillas(combined);
     } catch (err) {
+      console.error("❌ Error al obtener plantillas:", err);
       setError(err.response?.data?.error || "Error al obtener plantillas");
     } finally {
       setLoading(false);
     }
   };
 
+  /**
+   * 📄 Obtener documentos subidos del estudiante
+   * ✅ AHORA usa api (con token automático)
+   */
   const fetchDocumentos = async () => {
     if (!procesoId || !user?.id) {
       setError("No hay proceso activo o usuario no autenticado");
@@ -102,14 +110,13 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos`,
-        {
-          params: { id_proceso: procesoId, id_usuario: user.id },
-        }
-      );
+      // ✅ CAMBIO: Ruta relativa y usa api
+      const { data } = await api.get("/documentos", {
+        params: { id_proceso: procesoId, id_usuario: user.id },
+      });
       setDocumentos(data);
     } catch (err) {
+      console.error("❌ Error al obtener documentos:", err);
       setError(
         err.response?.data?.error || "Error al obtener documentos subidos"
       );
@@ -118,6 +125,10 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     }
   };
 
+  /**
+   * 📤 Subir documento
+   * ✅ AHORA usa api (con token automático)
+   */
   const uploadDocumento = async (idTipoDoc, file) => {
     if (!file || !procesoId || !user?.id) {
       setError(
@@ -153,22 +164,24 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     formData.append("id_proceso", procesoId);
 
     try {
-      await axios.post(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/upload`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
+      // ✅ CAMBIO: Usa api y ruta relativa
+      await api.post("/documentos/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       setSuccess("Documento subido correctamente");
       await fetchDocumentos();
     } catch (err) {
+      console.error("❌ Error al subir documento:", err);
       setError(err.response?.data?.error || "Error al subir documento");
     } finally {
       setLoading(false);
     }
   };
 
+  /**
+   * 🗑️ Eliminar documento
+   * ✅ AHORA usa api (con token automático)
+   */
   const deleteDocumento = async (idDocumento) => {
     if (!procesoId || !user?.id) {
       setError("No hay proceso activo o usuario no autenticado");
@@ -178,22 +191,29 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     setError(null);
     setSuccess(null);
     try {
-      await axios.delete(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/${idDocumento}`
-      );
+      // ✅ CAMBIO: Usa api y ruta relativa
+      await api.delete(`/documentos/${idDocumento}`);
       setSuccess("Documento eliminado correctamente");
       await fetchDocumentos();
     } catch (err) {
+      console.error("❌ Error al eliminar documento:", err);
       setError(err.response?.data?.error || "Error al eliminar documento");
     } finally {
       setLoading(false);
     }
   };
 
+  /**
+   * 🔧 Helper: Obtener extensión de archivo
+   */
   const getFileExtension = (filename) => {
     if (!filename) return null;
     return filename.split(".").pop().toLowerCase();
   };
+
+  // ============================================================================
+  // EFFECTS
+  // ============================================================================
 
   useEffect(() => {
     setProcesoId(procesoIdProp);
