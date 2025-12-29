@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import axios from "axios";
+import api from "../../axiosConfig";
 
 const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
   const [plantillas, setPlantillas] = useState([]);
@@ -29,7 +29,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
           "Reporte Mensual 12",
         ]
       : [
-          "Número NSS", // Movido al inicio para que sea la primera fila
+          "Número NSS",
           "Carta de presentación",
           "Carta de aceptación",
           "Cédula de registro",
@@ -54,7 +54,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
           "Reporte Mensual 12": 18,
         }
       : {
-          "Número NSS": 19, // Mapeo para IdTipoDoc 19
+          "Número NSS": 19,
           "Carta de presentación": 1,
           "Carta de aceptación": 2,
           "Cédula de registro": 3,
@@ -70,9 +70,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin`
-      );
+      const response = await api.get("/api/documentosAdmin");
       const data = response.data;
 
       const combined = tiposDocumentos.map((tipo) => {
@@ -102,12 +100,9 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos`,
-        {
-          params: { id_proceso: procesoId, id_usuario: user.id },
-        }
-      );
+      const { data } = await api.get("/api/documentos", {
+        params: { id_proceso: procesoId, id_usuario: user.id },
+      });
       setDocumentos(data);
     } catch (err) {
       setError(
@@ -153,13 +148,9 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     formData.append("id_proceso", procesoId);
 
     try {
-      await axios.post(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/upload`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
+      await api.post("/api/documentos/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       setSuccess("Documento subido correctamente");
       await fetchDocumentos();
     } catch (err) {
@@ -178,9 +169,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     setError(null);
     setSuccess(null);
     try {
-      await axios.delete(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/${idDocumento}`
-      );
+      await api.delete(`/api/documentos/${idDocumento}`);
       setSuccess("Documento eliminado correctamente");
       await fetchDocumentos();
     } catch (err) {
