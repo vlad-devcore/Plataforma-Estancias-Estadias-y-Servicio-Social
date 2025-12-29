@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../axiosConfig';
 import {
   Upload,
   Trash2,
@@ -58,20 +59,39 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
   const getDocumentoSubido = (idTipoDoc) =>
     documentos.find((doc) => doc.IdTipoDoc === idTipoDoc);
 
-  const handlePlantillaClick = (nombreDocumento) => {
-    const nombreLower = nombreDocumento.toLowerCase();
+  const handlePlantillaClick = async (nombreDocumento) => {
+  const nombreLower = nombreDocumento.toLowerCase();
 
-    if (nombreLower.includes('definición de proyecto') || nombreLower.includes('definicion de proyecto')) {
-      navigate('/DefinicionProyectoForm');
-    } else if (nombreLower.includes('cédula de registro') || nombreLower.includes('cedula de registro')) {
-      navigate('/CedulaRegistroForm');
-    } else if (nombreLower.includes('número nss')) {
-      window.open('https://serviciosdigitales.imss.gob.mx/gestionAsegurados-web-externo/vigencia', '_blank');
-    } else {
-      const downloadUrl = `${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin/download/${encodeURIComponent(nombreDocumento)}`;
-      window.open(downloadUrl, '_blank');
+  if (nombreLower.includes('definición de proyecto') || nombreLower.includes('definicion de proyecto')) {
+    navigate('/DefinicionProyectoForm');
+  } else if (nombreLower.includes('cédula de registro') || nombreLower.includes('cedula de registro')) {
+    navigate('/CedulaRegistroForm');
+  } else if (nombreLower.includes('número nss')) {
+    window.open('https://serviciosdigitales.imss.gob.mx/gestionAsegurados-web-externo/vigencia', '_blank');
+  } else {
+    try {
+      const response = await api.get(`/documentosAdmin/download/${encodeURIComponent(nombreDocumento)}`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', nombreDocumento);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error al descargar plantilla:', error);
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        alert('Tu sesión ha expirado. Por favor inicia sesión nuevamente');
+      } else {
+        alert('Error al descargar la plantilla');
+      }
     }
-  };
+  }
+};
 
   if (!procesoIdProp && !loading) {
     return (
