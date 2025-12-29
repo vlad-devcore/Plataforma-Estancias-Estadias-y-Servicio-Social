@@ -42,6 +42,41 @@ const TablaReportesMensuales = ({ tipoProceso, procesoId: procesoIdProp, documen
     }
   };
 
+  const descargarDocumento = async (idDocumento) => {
+    try {
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/download/${idDocumento}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('No autorizado');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '';
+      document.body.appendChild(a);
+      a.click();
+
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error al descargar documento:', error);
+      alert('No se pudo descargar el documento');
+    }
+  };
+
   const getDocumentoSubido = (idTipoDoc) => {
     return documentos.find((doc) => doc.IdTipoDoc === idTipoDoc) || null;
   };
@@ -115,17 +150,15 @@ const TablaReportesMensuales = ({ tipoProceso, procesoId: procesoIdProp, documen
                     <td className="px-6 py-4 text-gray-800 font-medium">{req.nombre}</td>
                     <td className="px-6 py-4">
                       {doc?.RutaArchivo ? (
-                        <motion.a
-                            onClick={() => descargarDocumento(doc.id_Documento)}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <motion.button
+                          onClick={() => descargarDocumento(doc.id_Documento)}
                           className="inline-flex items-center justify-center w-10 h-10 bg-teal-500 text-white rounded-full hover:bg-teal-600 transition-colors"
                           whileHover={{ scale: 1.1 }}
                           transition={{ duration: 0.2 }}
                           title="Ver mi documento"
                         >
                           <FileText size={20} />
-                        </motion.a>
+                        </motion.button>
                       ) : (
                         <span className="text-gray-500 italic">No subido</span>
                       )}
