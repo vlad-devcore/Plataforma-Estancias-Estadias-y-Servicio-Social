@@ -2,7 +2,7 @@
 // 📦 hooks/useDocumentosEstudiante.js - VERSIÓN PRODUCTION-SAFE
 // ============================================================================
 import { useState, useEffect, useMemo } from "react";
-import api from "../axiosConfig";
+import api from "../../axiosConfig";
 
 /**
  * ✅ PRODUCTION-SAFE HOOK
