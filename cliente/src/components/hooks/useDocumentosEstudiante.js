@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import api from "../../axiosConfig";
+import axios from "axios";
 
 const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
   const [plantillas, setPlantillas] = useState([]);
@@ -70,7 +70,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get(
+      const response = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin`
       );
       const data = response.data;
@@ -102,7 +102,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await api.get(
+      const { data } = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos`,
         {
           params: { id_proceso: procesoId, id_usuario: user.id },
@@ -153,7 +153,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     formData.append("id_proceso", procesoId);
 
     try {
-      await api.post(
+      await axios.post(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/upload`,
         formData,
         {
@@ -178,7 +178,7 @@ const useDocumentosEstudiante = (tipoProceso, procesoIdProp) => {
     setError(null);
     setSuccess(null);
     try {
-      await api.delete(
+      await axios.delete(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/${idDocumento}`
       );
       setSuccess("Documento eliminado correctamente");

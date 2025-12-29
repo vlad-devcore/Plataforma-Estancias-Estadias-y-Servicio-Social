@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import api from "../../axiosConfig";
+import axios from "axios";
 
 const useDocumentosAdmin = () => {
   const [documents, setDocuments] = useState([]);
@@ -25,7 +25,7 @@ const useDocumentosAdmin = () => {
   // Obtener todos los periodos
   const fetchPeriodos = async () => {
     try {
-      const { data } = await api.get(
+      const { data } = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/periodos`
       );
       setPeriodos(data);
@@ -44,7 +44,7 @@ const useDocumentosAdmin = () => {
   // Obtener tipos de documentos
   const fetchTiposDocumento = async () => {
     try {
-      const { data } = await api.get(
+      const { data } = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/tipo_documento`
       );
       setTiposDocumento(data);
@@ -63,7 +63,7 @@ const useDocumentosAdmin = () => {
   // Obtener programas educativos
   const fetchProgramasEducativos = async () => {
     try {
-      const { data } = await api.get(
+      const { data } = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/programas_educativos`
       );
       setProgramasEducativos(data);
@@ -90,7 +90,7 @@ const useDocumentosAdmin = () => {
         idTipoDoc: filters.idTipoDoc ? Number(filters.idTipoDoc) : undefined,
         programaEducativo: filters.programaEducativo || undefined,
       };
-      const { data } = await api.get(
+      const { data } = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos`,
         { params }
       );
@@ -147,7 +147,7 @@ const useDocumentosAdmin = () => {
     setError(null);
     setSuccess(null);
     try {
-      await api.put(
+      await axios.put(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/approve/${idDocumento}`
       );
       setSuccess("Documento aprobado correctamente");
@@ -170,7 +170,7 @@ const useDocumentosAdmin = () => {
     setError(null);
     setSuccess(null);
     try {
-      await api.put(
+      await axios.put(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/reject/${idDocumento}`,
         { comentarios }
       );
@@ -194,7 +194,7 @@ const useDocumentosAdmin = () => {
     setError(null);
     setSuccess(null);
     try {
-      await api.put(
+      await axios.put(
         `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/revert/${idDocumento}`
       );
       setSuccess("Documento revertido a Pendiente correctamente");
