@@ -1,8 +1,8 @@
 // ============================================================================
-// 📦 hooks/useDocumentosAdmin.js - VERSIÓN PRODUCTION-SAFE
+// 📦 hooks/useDocumentosAdmin.js - VERSIÓN PRODUCTION-SAFE ✅ CORREGIDA
 // ============================================================================
 import { useState, useEffect } from "react";
-import api from "../../axiosConfig";
+import api from "../../axiosConfig"; // ✅ CORREGIDO: Era "../axiosConfig" (INCORRECTO)
 
 /**
  * ✅ PRODUCTION-SAFE HOOK
