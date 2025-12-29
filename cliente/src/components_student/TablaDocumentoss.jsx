@@ -427,4 +427,4 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
   );
 };
 
-export default TablaDocumentos;
+export default TablaDocumentos; 
