@@ -45,7 +45,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 /* ===================== CATÁLOGOS ===================== */
-router.get("/tipo_documento", authenticateToken, async (req, res) => {
+router.get("/tipo_documento", async (req, res) => {
   try {
     const [rows] = await pool.query(
       "SELECT IdTipoDoc, Nombre_TipoDoc FROM tipo_documento ORDER BY Nombre_TipoDoc"
@@ -57,7 +57,7 @@ router.get("/tipo_documento", authenticateToken, async (req, res) => {
   }
 });
 
-router.get("/programas_educativos", authenticateToken, async (req, res) => {
+router.get("/programas_educativos",  async (req, res) => {
   try {
     const [rows] = await pool.query(
       "SELECT DISTINCT nombre FROM programa_educativo WHERE nombre IS NOT NULL ORDER BY nombre"
@@ -69,7 +69,7 @@ router.get("/programas_educativos", authenticateToken, async (req, res) => {
   }
 });
 
-router.get("/periodos", authenticateToken, async (req, res) => {
+router.get("/periodos", async (req, res) => {
   try {
     const [rows] = await pool.query(
       "SELECT IdPeriodo, Año, Fase FROM periodos ORDER BY Año DESC, Fase"
