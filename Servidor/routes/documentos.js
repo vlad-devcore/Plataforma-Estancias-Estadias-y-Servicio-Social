@@ -512,9 +512,9 @@ router.get("/", authenticateToken, async (req, res) => {
       conditions.push("d.id_proceso = ?");
       queryParams.push(Number(id_proceso));
     }
-    if (req.user.role === "admin" && id_usuario && !isNaN(id_usuario)) {
-      conditions.push("d.id_usuario = ?");
-      queryParams.push(Number(id_usuario));
+    if (req.user.role !== "admin") {
+      conditions.push("(d.id_usuario = ? OR e.id_usuario = ?)");
+      queryParams.push(req.user.id, req.user.id);
     }
 
     if (idTipoDoc && !isNaN(idTipoDoc)) {
