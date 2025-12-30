@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../../axiosConfig"; // ✅ Usar API con interceptores
 
 const useDocumentosAdmin = () => {
   const [documents, setDocuments] = useState([]);
@@ -25,9 +25,7 @@ const useDocumentosAdmin = () => {
   // Obtener todos los periodos
   const fetchPeriodos = async () => {
     try {
-      const { data } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/periodos`
-      );
+      const { data } = await api.get("/documentos/periodos"); // ✅ Cambiado
       setPeriodos(data);
       if (data.length === 0) {
         setError("No se encontraron periodos");
@@ -44,9 +42,7 @@ const useDocumentosAdmin = () => {
   // Obtener tipos de documentos
   const fetchTiposDocumento = async () => {
     try {
-      const { data } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/tipo_documento`
-      );
+      const { data } = await api.get("/documentos/tipo_documento"); // ✅ Cambiado
       setTiposDocumento(data);
       if (data.length === 0) {
         setError("No se encontraron tipos de documento");
@@ -63,9 +59,7 @@ const useDocumentosAdmin = () => {
   // Obtener programas educativos
   const fetchProgramasEducativos = async () => {
     try {
-      const { data } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/programas_educativos`
-      );
+      const { data } = await api.get("/documentos/programas_educativos"); // ✅ Cambiado
       setProgramasEducativos(data);
       if (data.length === 0) {
         setError("No se encontraron programas educativos");
@@ -90,15 +84,14 @@ const useDocumentosAdmin = () => {
         idTipoDoc: filters.idTipoDoc ? Number(filters.idTipoDoc) : undefined,
         programaEducativo: filters.programaEducativo || undefined,
       };
-      const { data } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos`,
-        { params }
-      );
+      const { data } = await api.get("/documentos", { params }); // ✅ Cambiado
+      
       if (!Array.isArray(data)) {
         throw new Error(
           "Formato de respuesta inválido: se esperaba un arreglo de documentos"
         );
       }
+      
       // Filtrar localmente por búsqueda y filtros adicionales
       const filtered = data.filter((doc) => {
         const matchesSearch =
@@ -114,6 +107,7 @@ const useDocumentosAdmin = () => {
             ));
         return matchesSearch;
       });
+      
       // Calcular paginación local
       const total = filtered.length;
       const pages = Math.ceil(total / documentsPerPage) || 1;
@@ -122,6 +116,7 @@ const useDocumentosAdmin = () => {
         startIndex,
         startIndex + documentsPerPage
       );
+      
       setAllDocuments(data);
       setDocuments(paginatedDocuments);
       setTotalPages(pages);
@@ -147,11 +142,9 @@ const useDocumentosAdmin = () => {
     setError(null);
     setSuccess(null);
     try {
-      await axios.put(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/approve/${idDocumento}`
-      );
+      await api.put(`/documentos/approve/${idDocumento}`); // ✅ Cambiado
       setSuccess("Documento aprobado correctamente");
-      setCurrentPage(1); // Volver a la primera página
+      setCurrentPage(1);
       await fetchDocuments();
     } catch (err) {
       setError(
@@ -170,12 +163,9 @@ const useDocumentosAdmin = () => {
     setError(null);
     setSuccess(null);
     try {
-      await axios.put(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/reject/${idDocumento}`,
-        { comentarios }
-      );
+      await api.put(`/documentos/reject/${idDocumento}`, { comentarios }); // ✅ Cambiado
       setSuccess("Documento rechazado correctamente");
-      setCurrentPage(1); // Volver a la primera página
+      setCurrentPage(1);
       await fetchDocuments();
     } catch (err) {
       setError(
@@ -194,11 +184,9 @@ const useDocumentosAdmin = () => {
     setError(null);
     setSuccess(null);
     try {
-      await axios.put(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/revert/${idDocumento}`
-      );
+      await api.put(`/documentos/revert/${idDocumento}`); // ✅ Cambiado
       setSuccess("Documento revertido a Pendiente correctamente");
-      setCurrentPage(1); // Volver a la primera página
+      setCurrentPage(1);
       await fetchDocuments();
     } catch (err) {
       setError(
@@ -214,7 +202,7 @@ const useDocumentosAdmin = () => {
   // Actualizar filtros
   const updateFilters = (newFilters) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
-    setCurrentPage(1); // Resetear a la primera página
+    setCurrentPage(1);
   };
 
   // Efecto para cargar periodos, tipos de documento, programas educativos y documentos al montar
