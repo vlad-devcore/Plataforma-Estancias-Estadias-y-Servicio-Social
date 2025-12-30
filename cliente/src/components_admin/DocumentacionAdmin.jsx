@@ -31,9 +31,52 @@ const DocumentManagement = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState('');
   const [rejectionNote, setRejectionNote] = useState('');
+  const [downloadError, setDownloadError] = useState('');
 
-  const handleViewDocument = (document) => {
-    window.open(`${process.env.REACT_APP_API_ENDPOINT}/api/documentos/download/${document.id_Documento}`, '_blank');
+  // ✅ FUNCIÓN CORREGIDA - Ahora envía el token correctamente
+  const handleViewDocument = async (document) => {
+    try {
+      setDownloadError('');
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setDownloadError("No se encontró el token de autenticación");
+        return;
+      }
+
+      const response = await fetch(
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/download/${document.id_Documento}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          setDownloadError("No autorizado. Por favor, inicia sesión nuevamente.");
+        } else if (response.status === 404) {
+          setDownloadError("Documento no encontrado.");
+        } else {
+          setDownloadError(`Error al descargar: ${response.statusText}`);
+        }
+        return;
+      }
+
+      // Crear blob y abrir en nueva pestaña
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const newWindow = window.open(url, "_blank");
+      
+      // Limpiar URL después de un tiempo
+      if (newWindow) {
+        setTimeout(() => window.URL.revokeObjectURL(url), 100);
+      }
+    } catch (err) {
+      console.error("Error al abrir documento:", err);
+      setDownloadError("Error de red al intentar abrir el documento.");
+    }
   };
 
   const openConfirmApproveModal = (document) => {
@@ -143,6 +186,19 @@ const DocumentManagement = () => {
               <button onClick={resetMessages} className="text-red-900 hover:underline">Cerrar</button>
             </motion.div>
           )}
+          
+          {/* ✅ NUEVO: Error específico de descarga */}
+          {downloadError && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex justify-between items-center"
+            >
+              <span>{downloadError}</span>
+              <button onClick={() => setDownloadError('')} className="text-red-900 hover:underline">Cerrar</button>
+            </motion.div>
+          )}
+          
           {success && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -327,6 +383,7 @@ const DocumentManagement = () => {
                                 className="text-blue-600 hover:text-blue-800"
                                 onClick={() => handleViewDocument(doc)}
                                 disabled={loading}
+                                title="Ver documento"
                               >
                                 <Eye size={18} />
                               </motion.button>
@@ -530,7 +587,7 @@ const DocumentManagement = () => {
                   <>
                     <div className="mb-4">
                       <label htmlFor="rejection-note" className="block text-sm font-medium text-gray-700 mb-1">
-                        Motivo del rechazo (OBLIGATORIO) :
+                        Motivo del rechazo (OBLIGATORIO):
                       </label>
                       <textarea
                         id="rejection-note"
