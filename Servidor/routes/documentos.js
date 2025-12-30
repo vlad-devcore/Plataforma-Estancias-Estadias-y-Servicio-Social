@@ -403,7 +403,7 @@ router.get(
       const conditions = [];
       
       // 4.6 - Si NO es admin, forzar condición de usuario
-      if (req.user.role !== 'admin') {
+      if (req.user.role !== 'administrador') {
         conditions.push('d.id_usuario = ?');
         queryParams.push(req.user.id);
       }
