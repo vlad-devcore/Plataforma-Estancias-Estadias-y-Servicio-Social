@@ -52,10 +52,24 @@ app.use(express.json());
 morgan.token("body", (req) => JSON.stringify(req.body));
 app.use(morgan(":method :url :status - Body: :body"));
 
+// 🔒 MIDDLEWARE ANTI-CACHE (CRÍTICO PARA JWT)
+// ✅ Ubicación: DESPUÉS de express.json() y ANTES de las rutas
+// ✅ Previene: 304 Not Modified en endpoints protegidos
+// ✅ Fuerza: Ejecución de authenticateToken en cada request
+app.use((req, res, next) => {
+  res.setHeader(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate"
+  );
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
+  next();
+});
+
 // Servir uploads (compatibilidad Uploads / uploads)
 app.use("/uploads", express.static(path.join(__dirname, "public", "uploads")));
 app.use("/Uploads", express.static(path.join(__dirname, "public", "Uploads")));
-
 
 // Rutas
 app.use("/api/users", userRouter);
