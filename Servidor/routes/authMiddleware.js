@@ -168,12 +168,25 @@ export const requireOwnerOrAdmin = (req, res, next) => {
  */
 export const validateDocumentOwnership = async (req, res, next) => {
   try {
+    // Verificar que req.user existe
+    if (!req.user) {
+      console.error('❌ req.user no existe en validateDocumentOwnership');
+      return res.status(401).json({ 
+        error: 'No autenticado',
+        message: 'Debes estar autenticado para acceder'
+      });
+    }
+
     const { id_Documento } = req.params;
     const userId = req.user.id;
     const userRole = req.user.role;
 
+    console.log(`🔍 Validando documento ${id_Documento}`);
+    console.log(`   Usuario: ${userId} (${userRole})`);
+
     // 1️⃣ Admin puede ver todo
     if (userRole === 'administrador') {
+      console.log(`   ✅ Admin bypass`);
       return next();
     }
 
@@ -186,13 +199,19 @@ export const validateDocumentOwnership = async (req, res, next) => {
     );
 
     if (rows.length === 0) {
+      console.log(`   ❌ Documento ${id_Documento} no encontrado`);
       return res.status(404).json({ error: 'Documento no encontrado' });
     }
 
+    console.log(`   Dueño del documento: ${rows[0].id_usuario}`);
+    console.log(`   Usuario actual: ${userId}`);
+
     if (rows[0].id_usuario !== userId) {
+      console.log(`   ❌ Acceso denegado (no es el dueño)`);
       return res.status(403).json({ error: 'Acceso denegado al documento' });
     }
 
+    console.log(`   ✅ Validación exitosa`);
     next();
   } catch (error) {
     console.error('❌ Error validando propiedad de documento:', error);
