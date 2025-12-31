@@ -9,7 +9,7 @@ const useProcesos = () => {
   const [success, setSuccess] = useState(null);
   const [user, setUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedPeriodo, setSelectedPeriodo] = useState(''); // 🆕 VACÍO POR DEFECTO
+  const [selectedPeriodo, setSelectedPeriodo] = useState('');
   const [availablePeriodos, setAvailablePeriodos] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -25,7 +25,6 @@ const useProcesos = () => {
     try {
       const { data } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos/periodos`);
       setAvailablePeriodos(data);
-      // 🆕 SELECCIONAR EL PRIMERO POR DEFECTO
       if (data.length > 0) {
         setSelectedPeriodo(data[0].IdPeriodo.toString());
       }
@@ -161,18 +160,29 @@ const useProcesos = () => {
     try {
       console.log(`📥 Exportando procesos del periodo ${selectedPeriodo}...`);
       
-      const { data: blobData } = await axios.get(
+      // 🔑 OBTENER TOKEN DEL STORAGE
+      const token = localStorage.getItem("token");
+      
+      if (!token) {
+        throw new Error("No hay token de autenticación. Por favor, inicia sesión nuevamente.");
+      }
+
+      const response = await axios.get(
         `${process.env.REACT_APP_API_ENDPOINT}/api/procesos/export`,
         { 
           params: {
             periodo: selectedPeriodo,
             search: searchTerm
           },
-          responseType: 'blob'
+          responseType: 'blob',
+          // ✅ AGREGAR HEADERS CON TOKEN
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
       );
 
-      const url = window.URL.createObjectURL(blobData);
+      const url = window.URL.createObjectURL(response.data);
       const link = document.createElement('a');
       link.href = url;
       
@@ -188,10 +198,17 @@ const useProcesos = () => {
       
     } catch (error) {
       console.error('❌ Error exportando:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error || 
-                          'Error al exportar procesos filtrados';
-      setError(errorMessage);
+      
+      // Manejar error 401 específicamente
+      if (error.response?.status === 401) {
+        setError('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      } else {
+        const errorMessage = error.response?.data?.message || 
+                            error.response?.data?.error || 
+                            error.message ||
+                            'Error al exportar procesos filtrados';
+        setError(errorMessage);
+      }
       throw error;
     }
   };
