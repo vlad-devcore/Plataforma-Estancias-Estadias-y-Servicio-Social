@@ -33,6 +33,52 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
     resetMessages,
   } = useDocumentosEstudiante(tipoProceso, procesoIdProp);
 
+  // 🔒 FUNCIÓN SEGURA PARA DESCARGAR/ABRIR DOCUMENTOS CON AUTORIZACIÓN
+  const abrirDocumentoSeguro = async (idDocumento, nombre, esPdf = false) => {
+    try {
+      const token = localStorage.getItem('token');
+
+      console.log(`🔐 Descargando documento ${idDocumento} con autorización`);
+
+      const response = await fetch(
+        `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/download/${idDocumento}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error en descarga:', errorText);
+        throw new Error('No autorizado o error al descargar');
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      if (esPdf) {
+        // Abrir en visor PDF
+        console.log(`✅ Abriendo PDF en visor`);
+        setVisorPdf({ open: true, url, nombre });
+      } else {
+        // Descargar archivo
+        console.log(`✅ Descargando archivo`);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = nombre || 'archivo';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url); // Limpiar
+      }
+    } catch (err) {
+      console.error('❌ Error al abrir documento:', err);
+      alert('No se pudo abrir el documento. Verifica tus permisos.');
+    }
+  };
+
   const handleConfirmSubir = (idTipoDoc) => {
     setModalSubirConfirm({ open: false, idTipoDoc: null });
     setModalSubir({ open: true, idTipoDoc });
@@ -176,12 +222,11 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
                         (() => {
                           const extension = doc.RutaArchivo.split('.').pop()?.toLowerCase();
                           const esPdf = extension === 'pdf';
-                          const url = `${process.env.REACT_APP_API_ENDPOINT}/api/documentos/download/${doc.id_Documento}`;
 
                           if (esPdf) {
                             return (
                               <motion.button
-                                onClick={() => setVisorPdf({ open: true, url, nombre: p.nombre_documento })}
+                                onClick={() => abrirDocumentoSeguro(doc.id_Documento, p.nombre_documento, true)}
                                 className="inline-flex items-center justify-center w-10 h-10 bg-teal-500 text-white rounded-full hover:bg-teal-600 transition-colors"
                                 whileHover={{ scale: 1.1 }}
                                 title="Ver PDF"
@@ -191,15 +236,14 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
                             );
                           } else {
                             return (
-                              <motion.a
-                                href={url}
-                                download
+                              <motion.button
+                                onClick={() => abrirDocumentoSeguro(doc.id_Documento, p.nombre_documento, false)}
                                 className="inline-flex items-center justify-center w-10 h-10 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors"
                                 whileHover={{ scale: 1.1 }}
                                 title={`Descargar ${extension?.toUpperCase() || 'archivo'}`}
                               >
                                 <Download size={20} />
-                              </motion.a>
+                              </motion.button>
                             );
                           }
                         })()
@@ -281,7 +325,11 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center p-4"
-            onClick={() => setVisorPdf({ open: false, url: null, nombre: '' })}
+            onClick={() => {
+              // Limpiar URL temporal al cerrar
+              if (visorPdf.url) URL.revokeObjectURL(visorPdf.url);
+              setVisorPdf({ open: false, url: null, nombre: '' });
+            }}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
@@ -298,7 +346,11 @@ const TablaDocumentos = ({ tipoProceso, procesoId: procesoIdProp }) => {
                   <h3 className="text-lg font-semibold truncate">{visorPdf.nombre}</h3>
                 </div>
                 <button
-                  onClick={() => setVisorPdf({ open: false, url: null, nombre: '' })}
+                  onClick={() => {
+                    // Limpiar URL temporal al cerrar
+                    if (visorPdf.url) URL.revokeObjectURL(visorPdf.url);
+                    setVisorPdf({ open: false, url: null, nombre: '' });
+                  }}
                   className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition-colors ml-4 flex-shrink-0"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
