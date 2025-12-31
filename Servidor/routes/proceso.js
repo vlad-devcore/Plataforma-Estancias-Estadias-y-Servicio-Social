@@ -1,6 +1,7 @@
 import express from "express";
 import pool from "../config/config.db.js";
 import ExcelJS from 'exceljs';
+import { authenticateToken, requireAdmin } from './authMiddleware.js';
 
 const router = express.Router();
 
@@ -238,125 +239,137 @@ router.get('/periodos', async (req, res) => {
   }
 });
 
-// Exportar procesos SOLO por PERIODO seleccionado
-router.get('/export', async (req, res) => {
-  try {
-    const { periodo, search } = req.query;
-    
-    let query = `
-      SELECT 
-        p.id_proceso,
-        p.id_periodo,
-        p.tipo_proceso,
-        e.matricula,
-        COALESCE(em.empresa_nombre, 'Sin empresa') AS empresa_nombre,
-        COALESCE(u.nombre, 'Sin asesor') AS asesor_nombre,
-        COALESCE(pr.nombre, 'Sin programa') AS programa_nombre,
-        COALESCE(CONCAT(pe.Año, ' ', pe.Fase), 'Sin periodo') AS periodo_nombre
-      FROM proceso p
-      JOIN estudiantes e ON p.id_estudiante = e.id_estudiante
-      LEFT JOIN empresa em ON p.id_empresa = em.id_empresa
-      LEFT JOIN asesores_academicos aa ON p.id_asesor_academico = aa.id_asesor
-      LEFT JOIN users u ON aa.id_user = u.id_user
-      LEFT JOIN programa_educativo pr ON p.id_programa = pr.id_programa
-      LEFT JOIN periodos pe ON p.id_periodo = pe.IdPeriodo
-      WHERE 1=1
-    `;
-    
-    const params = [];
+// 🔒 Exportar procesos SOLO por PERIODO seleccionado (ADMIN ONLY)
+router.get(
+  '/export',
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { periodo, search } = req.query;
 
-    // 🆕 SOLO FILTRA POR PERIODO SELECCIONADO (OBLIGATORIO)
-    if (periodo) {
-      query += ' AND p.id_periodo = ?';
-      params.push(periodo);
-    }
+      console.log(`📊 Admin ${req.user.id} exportando procesos del periodo ${periodo}`);
+      
+      let query = `
+        SELECT 
+          p.id_proceso,
+          p.id_periodo,
+          p.tipo_proceso,
+          e.matricula,
+          COALESCE(em.empresa_nombre, 'Sin empresa') AS empresa_nombre,
+          COALESCE(u.nombre, 'Sin asesor') AS asesor_nombre,
+          COALESCE(pr.nombre, 'Sin programa') AS programa_nombre,
+          COALESCE(CONCAT(pe.Año, ' ', pe.Fase), 'Sin periodo') AS periodo_nombre
+        FROM proceso p
+        JOIN estudiantes e ON p.id_estudiante = e.id_estudiante
+        LEFT JOIN empresa em ON p.id_empresa = em.id_empresa
+        LEFT JOIN asesores_academicos aa ON p.id_asesor_academico = aa.id_asesor
+        LEFT JOIN users u ON aa.id_user = u.id_user
+        LEFT JOIN programa_educativo pr ON p.id_programa = pr.id_programa
+        LEFT JOIN periodos pe ON p.id_periodo = pe.IdPeriodo
+        WHERE 1=1
+      `;
+      
+      const params = [];
 
-    if (search && search.trim()) {
-      query += ' AND e.matricula LIKE ?';
-      params.push(`%${search.trim()}%`);
-    }
+      // 🆕 SOLO FILTRA POR PERIODO SELECCIONADO (OBLIGATORIO)
+      if (periodo) {
+        query += ' AND p.id_periodo = ?';
+        params.push(periodo);
+      }
 
-    query += ' ORDER BY p.id_proceso DESC';
+      if (search && search.trim()) {
+        query += ' AND e.matricula LIKE ?';
+        params.push(`%${search.trim()}%`);
+      }
 
-    const [allProcesos] = await pool.query(query, params);
-    
-    if (allProcesos.length === 0) {
-      return res.status(404).json({ error: 'No se encontraron procesos para este periodo' });
-    }
+      query += ' ORDER BY p.id_proceso DESC';
 
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Procesos');
+      const [allProcesos] = await pool.query(query, params);
+      
+      if (allProcesos.length === 0) {
+        console.log(`⚠️  No se encontraron procesos para el periodo ${periodo}`);
+        return res.status(404).json({ error: 'No se encontraron procesos para este periodo' });
+      }
 
-    const headers = ['Matrícula', 'Empresa', 'Asesor', 'Programa', 'Tipo de Proceso', 'Periodo', 'ID Proceso'];
-    const headerRow = worksheet.addRow(headers);
+      console.log(`✅ Generando Excel con ${allProcesos.length} procesos`);
 
-    headerRow.eachCell((cell) => {
-      cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E40AF' } };
-      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-    });
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Procesos');
 
-    allProcesos.forEach((proceso, index) => {
-      const row = worksheet.addRow([
-        proceso.matricula || '',
-        proceso.empresa_nombre || '-',
-        proceso.asesor_nombre || '-',
-        proceso.programa_nombre || '-',
-        proceso.tipo_proceso || '-',
-        proceso.periodo_nombre || '-',
-        proceso.id_proceso || ''
-      ]);
+      const headers = ['Matrícula', 'Empresa', 'Asesor', 'Programa', 'Tipo de Proceso', 'Periodo', 'ID Proceso'];
+      const headerRow = worksheet.addRow(headers);
 
-      row.eachCell((cell) => {
-        cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
-        cell.border = {
-          top: { style: 'thin', color: { argb: 'FFE8E8E8' } },
-          left: { style: 'thin', color: { argb: 'FFE8E8E8' } },
-          bottom: { style: 'thin', color: { argb: 'FFE8E8E8' } },
-          right: { style: 'thin', color: { argb: 'FFE8E8E8' } }
-        };
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E40AF' } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+        cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
       });
 
-      if (index % 2 === 0) {
-        row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
-      }
-    });
+      allProcesos.forEach((proceso, index) => {
+        const row = worksheet.addRow([
+          proceso.matricula || '',
+          proceso.empresa_nombre || '-',
+          proceso.asesor_nombre || '-',
+          proceso.programa_nombre || '-',
+          proceso.tipo_proceso || '-',
+          proceso.periodo_nombre || '-',
+          proceso.id_proceso || ''
+        ]);
 
-    worksheet.columns = [{ width: 15 }, { width: 25 }, { width: 20 }, { width: 25 }, { width: 18 }, { width: 15 }, { width: 12 }];
+        row.eachCell((cell) => {
+          cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFE8E8E8' } },
+            left: { style: 'thin', color: { argb: 'FFE8E8E8' } },
+            bottom: { style: 'thin', color: { argb: 'FFE8E8E8' } },
+            right: { style: 'thin', color: { argb: 'FFE8E8E8' } }
+          };
+        });
 
-    const totalRow = worksheet.addRow(['', '', '', '', `TOTAL PROCESOS:`, allProcesos.length.toString()]);
-    totalRow.getCell(5).font = { bold: true, color: { argb: 'FF155E75' } };
-    totalRow.getCell(6).font = { bold: true, color: { argb: 'FF059669' } };
-    totalRow.getCell(6).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F5E8' } };
+        if (index % 2 === 0) {
+          row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+        }
+      });
+
+      worksheet.columns = [{ width: 15 }, { width: 25 }, { width: 20 }, { width: 25 }, { width: 18 }, { width: 15 }, { width: 12 }];
+
+      const totalRow = worksheet.addRow(['', '', '', '', `TOTAL PROCESOS:`, allProcesos.length.toString()]);
+      totalRow.getCell(5).font = { bold: true, color: { argb: 'FF155E75' } };
+      totalRow.getCell(6).font = { bold: true, color: { argb: 'FF059669' } };
+      totalRow.getCell(6).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F5E8' } };
 
       // 📄 Líneas vacías y metadatos
-    worksheet.addRow([]);
-    const infoRow1 = worksheet.addRow(['📅 Exportado el:', new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })]);
-    const infoRow2 = worksheet.addRow(['⚙️ Sistema de Gestión de Procesos']);
-    const infoRow3 = worksheet.addRow(['📊 Total registros exportados:', allProcesos.length.toString()]);
-    
-    // Estilo para metadatos
-    [infoRow1, infoRow2, infoRow3].forEach(row => {
-      row.getCell(1).font = { italic: true, color: { argb: 'FF6B7280' }, size: 10 };
-      row.getCell(2).font = { italic: true, color: { argb: 'FF374151' }, size: 10 };
-    });
+      worksheet.addRow([]);
+      const infoRow1 = worksheet.addRow(['📅 Exportado el:', new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })]);
+      const infoRow2 = worksheet.addRow(['⚙️ Sistema de Gestión de Procesos']);
+      const infoRow3 = worksheet.addRow(['📊 Total registros exportados:', allProcesos.length.toString()]);
+      const infoRow4 = worksheet.addRow(['👤 Exportado por:', `${req.user.nombre || 'Admin'} (ID: ${req.user.id})`]);
+      
+      // Estilo para metadatos
+      [infoRow1, infoRow2, infoRow3, infoRow4].forEach(row => {
+        row.getCell(1).font = { italic: true, color: { argb: 'FF6B7280' }, size: 10 };
+        row.getCell(2).font = { italic: true, color: { argb: 'FF374151' }, size: 10 };
+      });
 
-    const buffer = await workbook.xlsx.writeBuffer();
-    const filename = `procesos_periodo_${periodo}_${search || 'todos'}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const buffer = await workbook.xlsx.writeBuffer();
+      const filename = `procesos_periodo_${periodo}_${search || 'todos'}_${new Date().toISOString().split('T')[0]}.xlsx`;
 
-    res.set({
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': `attachment; filename="${filename}"`,
-      'Content-Length': buffer.length
-    });
+      res.set({
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Length': buffer.length
+      });
 
-    res.send(buffer);
+      console.log(`✅ Excel exportado correctamente: ${filename}`);
+      res.send(buffer);
 
-  } catch (error) {
-    console.error('Error exportando Excel:', error);
-    res.status(500).json({ error: 'Error al generar Excel' });
+    } catch (error) {
+      console.error('❌ Error exportando Excel:', error);
+      res.status(500).json({ error: 'Error al generar Excel' });
+    }
   }
-});
+);
 
 export default router;
