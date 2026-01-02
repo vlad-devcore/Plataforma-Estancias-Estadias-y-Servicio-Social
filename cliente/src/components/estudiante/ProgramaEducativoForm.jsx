@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import axios from 'axios';
+import api from '../../axiosConfig'; // ✅ CAMBIO CRÍTICO: Usar instancia con interceptores
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, AlertCircle, BookOpen, Calendar } from 'lucide-react';
 
@@ -19,9 +19,10 @@ const ProgramaEducativoForm = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // ✅ CORREGIDO: Usar Promise.all con api autenticada
         const [programasRes, periodosRes] = await Promise.all([
-          axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/programas`),
-          axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/periodos`),
+          api.get('/programas'),
+          api.get('/periodos'),
         ]);
         setProgramas(programasRes.data);
         const periodosActivos = periodosRes.data.filter((p) => p.EstadoActivo === 'Activo');
@@ -62,7 +63,8 @@ const ProgramaEducativoForm = () => {
       const user = JSON.parse(localStorage.getItem('user'));
       if (!user?.id) throw new Error('Usuario no autenticado');
 
-      await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos/inicial`, {
+      // ✅ CORREGIDO: Usar api con autenticación para crear proceso inicial
+      await api.post('/procesos/inicial', {
         id_user: user.id,
         id_programa: idPrograma,
         id_periodo: idPeriodo,
@@ -83,12 +85,12 @@ const ProgramaEducativoForm = () => {
   };
 
   const getProgramaNombre = () => {
-    const programa = programas.find((p) => String(p.id_programa) === String(idPrograma)); // Forzar string
+    const programa = programas.find((p) => String(p.id_programa) === String(idPrograma));
     return programa ? programa.nombre : 'No seleccionado';
   };
 
   const getPeriodoNombre = () => {
-    const periodo = periodos.find((p) => String(p.IdPeriodo) === String(idPeriodo)); // Forzar string
+    const periodo = periodos.find((p) => String(p.IdPeriodo) === String(idPeriodo));
     return periodo ? `${periodo.Fase} ${periodo.Año}` : 'No seleccionado';
   };
 
