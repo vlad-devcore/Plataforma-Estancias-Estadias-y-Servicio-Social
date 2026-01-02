@@ -25,29 +25,39 @@ api.interceptors.request.use(
   }
 );
 
-// ✅ INTERCEPTOR DE RESPONSE - Maneja errores de autenticación
+// 🔥 INTERCEPTOR DE RESPONSE MEJORADO - Maneja errores inteligentemente
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
-    // ✅ Detectar errores de autenticación
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      const currentPath = window.location.pathname;
-      
-      // ✅ Solo redirigir si no estamos ya en login
-      if (currentPath !== '/login') {
-        console.warn('⚠️ Sesión expirada o no autorizada');
-        
-        // Limpiar datos locales
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        
-        // Redirigir a login
-        window.location.href = '/login';
-      }
-    }
+    const status = error.response?.status;
+    const url = error.config?.url || "";
+    const errorMessage = error.response?.data?.mensaje || "";
+
+    // 🔐 REGLA 1: Solo cerrar sesión si el error viene de rutas de AUTH
+    const isAuthEndpoint = url.includes("/auth/");
     
+    // 🔐 REGLA 2: O si el backend explícitamente dice "token inválido"
+    const isTokenInvalid = 
+      errorMessage.toLowerCase().includes("token") &&
+      (errorMessage.toLowerCase().includes("inválido") || 
+       errorMessage.toLowerCase().includes("expirado"));
+
+    // 🚪 Solo cerrar sesión en estos casos específicos
+    if (
+      (status === 401 || status === 403) &&
+      (isAuthEndpoint || isTokenInvalid)
+    ) {
+      console.warn("⚠️ Sesión expirada o token inválido - Cerrando sesión");
+
+      // Limpiar datos locales
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      
+      // Redirigir a login
+      window.location.href = "/login";
+    }
+
+    // ℹ️ Para otros errores 401/403 (permisos), solo rechazar sin cerrar sesión
     return Promise.reject(error);
   }
 );
