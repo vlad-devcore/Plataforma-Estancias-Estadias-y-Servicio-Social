@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import PlantillaServicio from "../PlantillaServicio";
 import { FileText } from "lucide-react";
 import ModalRegistroProceso from "../../components/estudiante/ModalRegistroProceso";
-import axios from "axios";
+import api from "../../axiosConfig"; // ✅ CAMBIO CRÍTICO: Usar instancia con interceptores
 import TablaDocumentos from "../../components_student/TablaDocumentoss";
 
 const Estancia2 = () => {
@@ -25,22 +25,21 @@ const Estancia2 = () => {
     try {
       if (!user?.id) throw new Error("Usuario no autenticado");
 
-      const { data: periodos } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/periodos`);
+      // ✅ CORREGIDO: Obtener todos los periodos con autenticación
+      const { data: periodos } = await api.get("/periodos");
       const periodoActivo = periodos.find((p) => p.EstadoActivo === "Activo");
       setPeriodoExpirado(!periodoActivo);
 
-      const { data: formatos } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin`
-      );
+      // ✅ CORREGIDO: Obtener estados de los formatos con autenticación
+      const { data: formatos } = await api.get("/documentosAdmin");
       const hayFormatosActivos = formatos.some((f) => f.estado === "Activo");
       if (!periodoActivo && !hayFormatosActivos) setTodosBloqueados(true);
 
       const periodoId = periodoActivo?.IdPeriodo || (periodos.length > 0 ? periodos[periodos.length - 1].IdPeriodo : null);
       if (!periodoId) throw new Error("No hay periodos disponibles.");
 
-      const { data } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/procesos/validar/${user.id}/${periodoId}`
-      );
+      // ✅ CORREGIDO: Validar proceso con autenticación
+      const { data } = await api.get(`/procesos/validar/${user.id}/${periodoId}`);
 
       if (data.registrado) {
         if (data.proceso.tipo_proceso === "Estancia II") {
@@ -67,14 +66,17 @@ const Estancia2 = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ✅ CORREGIDO: useEffect duplicado también usa api con autenticación
   useEffect(() => {
     const checkRegistro = async () => {
       try {
         const user = JSON.parse(localStorage.getItem("user"));
-        const { data } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos/por-usuario/${user.id}`);
+        // ✅ CORREGIDO: Usar api con autenticación
+        const { data } = await api.get(`/procesos/por-usuario/${user.id}`);
         const yaRegistrado = data.some(p => p.tipo_proceso === "Estancia II");
         setIsRegistered(yaRegistrado);
       } catch (err) {
+        // Silenciar error - checkRegistro es secundario
       }
     };
 

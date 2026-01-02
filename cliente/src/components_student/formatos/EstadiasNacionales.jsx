@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import PlantillaServicio from "../PlantillaServicio";
 import { FileText } from "lucide-react";
 import ModalRegistroProceso from "../../components/estudiante/ModalRegistroProceso";
-import axios from "axios";
+import api from "../../axiosConfig"; // ✅ CAMBIO CRÍTICO: Usar instancia con interceptores
 import TablaDocumentos from "../../components_student/TablaDocumentoss";
 
 const EstadiasNacionales = () => {
@@ -25,22 +25,21 @@ const EstadiasNacionales = () => {
     try {
       if (!user?.id) throw new Error("Usuario no autenticado");
 
-      const { data: periodos } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/periodos`);
+      // ✅ CORREGIDO: Obtener todos los periodos con autenticación
+      const { data: periodos } = await api.get("/periodos");
       const periodoActivo = periodos.find((p) => p.EstadoActivo === "Activo");
       setPeriodoExpirado(!periodoActivo);
 
-      const { data: formatos } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin`
-      );
+      // ✅ CORREGIDO: Obtener estados de los formatos con autenticación
+      const { data: formatos } = await api.get("/documentosAdmin");
       const hayFormatosActivos = formatos.some((f) => f.estado === "Activo");
       if (!periodoActivo && !hayFormatosActivos) setTodosBloqueados(true);
 
       const periodoId = periodoActivo?.IdPeriodo || (periodos.length > 0 ? periodos[periodos.length - 1].IdPeriodo : null);
       if (!periodoId) throw new Error("No hay periodos disponibles.");
 
-      const { data } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/procesos/validar/${user.id}/${periodoId}`
-      );
+      // ✅ CORREGIDO: Validar proceso con autenticación
+      const { data } = await api.get(`/procesos/validar/${user.id}/${periodoId}`);
       
       if (data.registrado) {
         if (data.proceso.tipo_proceso === "Estadía Nacional") {
@@ -64,7 +63,7 @@ const EstadiasNacionales = () => {
       setError(err.response?.data?.error || err.message || "Error al verificar el proceso.");
       setIsRegistered(false);
       setProcesoActivo(null);
-      console.error("Error al verificar registro (Estadia Nacional):", err);
+      console.error("Error al verificar registro (Estadía Nacional):", err);
     } finally {
       setLoading(false);
     }
@@ -127,7 +126,7 @@ const EstadiasNacionales = () => {
                 className="w-full sm:w-auto bg-gradient-to-r from-red-900 to-red-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 flex items-center justify-center gap-3 mb-6 shadow-md hover:from-red-800 hover:to-red-600"
               >
                 <FileText className="w-5 h-5" />
-                <span className="font-semibold">Registrar Estadia Nacional</span>
+                <span className="font-semibold">Registrar Estadía Nacional</span>
               </motion.button>
             )}
 
@@ -150,11 +149,11 @@ const EstadiasNacionales = () => {
 
               {isRegistered && procesoActivo ? (
                 <div className="p-4">
-                  <TablaDocumentos tipoProceso="Estadia Nacional" procesoId={procesoActivo.id_proceso} todosBloqueados={todosBloqueados} />
+                  <TablaDocumentos tipoProceso="Estadía Nacional" procesoId={procesoActivo.id_proceso} todosBloqueados={todosBloqueados} />
                 </div>
               ) : (
                 <div className="p-4 text-gray-500 italic">
-                  Regístrate para comenzar a subir tus documentos de Estadia Nacional.
+                  Regístrate para comenzar a subir tus documentos de Estadía Nacional.
                 </div>
               )}
             </div>
@@ -166,7 +165,7 @@ const EstadiasNacionales = () => {
         <ModalRegistroProceso
           open={showModal}
           onClose={handleCloseModal}
-          tipoProceso="Estadia Nacional"
+          tipoProceso="Estadía Nacional"
           procesoExistente={procesoActivo}
           onSuccess={handleSuccess}
         />
