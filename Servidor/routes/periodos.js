@@ -1,9 +1,11 @@
 import express from "express";
 import pool from "../config/config.db.js";
+// ✅ IMPORTS CORRECTOS - Protección de rutas
+import { authenticateToken, requireAdmin } from "../routes/authMiddleware.js";
 
 const router = express.Router();
 
-// Obtener todos los periodos
+// 👀 VISUALIZAR - Estudiante y Admin (solo requiere autenticación)
 const getPeriodos = async (req, res) => {
     try {        
         const [results] = await pool.query(`
@@ -12,13 +14,13 @@ const getPeriodos = async (req, res) => {
           ORDER BY Año DESC, Fase
         `);        
         res.json(results);
-      } catch (error) {
+    } catch (error) {
         console.error('Error al obtener periodos:', error.message);
         res.status(500).json({ error: error.message });
-      }
+    }
 };
 
-// Obtener un periodo por ID
+// 👀 VISUALIZAR - Estudiante y Admin
 const getPeriodoById = async (req, res) => {
     const { IdPeriodo } = req.params;
     try {
@@ -31,7 +33,23 @@ const getPeriodoById = async (req, res) => {
     }
 };
 
-// Agregar un nuevo periodo
+// 👀 VISUALIZAR PERIODO ACTIVO - Estudiante y Admin
+const getPeriodoActivo = async (req, res) => {
+    try {
+        const [results] = await pool.query(
+            "SELECT * FROM periodos WHERE EstadoActivo = 'Activo' ORDER BY FechaInicio DESC LIMIT 1"
+        );
+        if (results.length === 0) {
+            return res.status(404).json({ error: "No hay un periodo activo actualmente" });
+        }
+        res.status(200).json(results[0]);
+    } catch (error) {
+        console.error("Error al obtener el periodo activo:", error);
+        res.status(500).json({ error: "Error interno del servidor" });
+    }
+};
+
+// 🔐 SOLO ADMIN - Crear periodo
 const postPeriodo = async (req, res) => {
     const { Año, FechaInicio, FechaFin, EstadoActivo, Fase } = req.body;
     if (!Año || !FechaInicio || !FechaFin || EstadoActivo == null || !Fase) {
@@ -50,7 +68,7 @@ const postPeriodo = async (req, res) => {
     }
 };
 
-// Actualizar un periodo
+// 🔐 SOLO ADMIN - Actualizar periodo
 const updatePeriodo = async (req, res) => {
     const { IdPeriodo } = req.params;
     const { Año, FechaInicio, FechaFin, EstadoActivo, Fase } = req.body;
@@ -71,36 +89,48 @@ const updatePeriodo = async (req, res) => {
     }
 };
 
-// Eliminar un periodo
+// 🔐 SOLO ADMIN - Eliminar periodo (con validación referencial)
 const deletePeriodo = async (req, res) => {
     const { IdPeriodo } = req.params;
+    
+    const connection = await pool.getConnection();
     try {
-        const [results] = await pool.query("DELETE FROM periodos WHERE IdPeriodo = ?", [IdPeriodo]);
-        if (results.affectedRows === 0) return res.status(404).json({ error: "Periodo no encontrado" });
+        await connection.beginTransaction();
+
+        // 🛡️ Verificar si tiene procesos asociados
+        const [procesos] = await connection.query(
+            "SELECT COUNT(*) as count FROM proceso WHERE id_periodo = ?", 
+            [IdPeriodo]
+        );
+
+        if (procesos[0].count > 0) {
+            const error = new Error(
+                `No se puede eliminar el periodo porque tiene ${procesos[0].count} proceso(s) asociado(s). Elimina primero los procesos relacionados.`
+            );
+            await connection.rollback();
+            return res.status(400).json({ error: error.message });
+        }
+
+        // Eliminar el periodo
+        const [results] = await connection.query("DELETE FROM periodos WHERE IdPeriodo = ?", [IdPeriodo]);
+        
+        if (results.affectedRows === 0) {
+            await connection.rollback();
+            return res.status(404).json({ error: "Periodo no encontrado" });
+        }
+
+        await connection.commit();
         res.status(200).json({ message: "Periodo eliminado correctamente" });
     } catch (error) {
+        await connection.rollback();
         console.error("Error al eliminar periodo:", error);
         res.status(500).json({ error: "Error interno del servidor" });
+    } finally {
+        connection.release();
     }
 };
 
-// Obtener el periodo activo
-const getPeriodoActivo = async (req, res) => {
-    try {
-        const [results] = await pool.query(
-            "SELECT * FROM periodos WHERE EstadoActivo = 'Activo' ORDER BY FechaInicio DESC LIMIT 1"
-        );
-        if (results.length === 0) {
-            return res.status(404).json({ error: "No hay un periodo activo actualmente" });
-        }
-        res.status(200).json(results[0]);
-    } catch (error) {
-        console.error("Error al obtener el periodo activo:", error);
-        res.status(500).json({ error: "Error interno del servidor" });
-    }
-};
-
-// Cambiar estado manualmente de un periodo (por el admin)
+// 🔐 SOLO ADMIN - Cambiar estado del periodo (ENDPOINT CRÍTICO)
 const cambiarEstadoPeriodo = async (req, res) => {
     const { IdPeriodo } = req.params;
     const { nuevoEstado } = req.body;
@@ -126,13 +156,20 @@ const cambiarEstadoPeriodo = async (req, res) => {
     }
 };
 
-// Rutas
-router.get("/", getPeriodos);
-router.get("/activo", getPeriodoActivo);
-router.get("/:IdPeriodo", getPeriodoById);
-router.post("/", postPeriodo);
-router.put("/:IdPeriodo", updatePeriodo);
-router.delete("/:IdPeriodo", deletePeriodo);
-router.patch("/:IdPeriodo/estado", cambiarEstadoPeriodo);
+// 🔒 RUTAS CON AUTENTICACIÓN Y AUTORIZACIÓN
+// ============================================
+
+// 👀 LECTURA (Autenticado) - Estudiante y Admin pueden ver
+router.get("/", authenticateToken, getPeriodos);
+router.get("/activo", authenticateToken, getPeriodoActivo);
+router.get("/:IdPeriodo", authenticateToken, getPeriodoById);
+
+// 🔐 ESCRITURA (Autenticación + requireAdmin) - Solo Admin puede modificar
+router.post("/", authenticateToken, requireAdmin, postPeriodo);
+router.put("/:IdPeriodo", authenticateToken, requireAdmin, updatePeriodo);
+router.delete("/:IdPeriodo", authenticateToken, requireAdmin, deletePeriodo);
+
+// 🚨 CRÍTICO: Cambiar estado del periodo (Solo Admin)
+router.patch("/:IdPeriodo/estado", authenticateToken, requireAdmin, cambiarEstadoPeriodo);
 
 export default router;
