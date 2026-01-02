@@ -1,11 +1,10 @@
 import express from "express";
 import pool from "../config/config.db.js";
-// ✅ IMPORTS CORRECTOS - Protección de rutas
 import { authenticateToken, requireAdmin } from "../routes/authMiddleware.js";
 
 const router = express.Router();
 
-// 👀 VISUALIZAR - Estudiante y Admin (solo requiere autenticación)
+// 👀 VISUALIZAR - Estudiante y Admin
 const getPeriodos = async (req, res) => {
     try {        
         const [results] = await pool.query(`
@@ -89,9 +88,10 @@ const updatePeriodo = async (req, res) => {
     }
 };
 
-// 🔐 SOLO ADMIN - Eliminar periodo (con validación referencial)
+// 🔐 SOLO ADMIN - Eliminar periodo con opción de forzado
 const deletePeriodo = async (req, res) => {
     const { IdPeriodo } = req.params;
+    const force = req.query.force === "true";
     
     const connection = await pool.getConnection();
     try {
@@ -103,16 +103,38 @@ const deletePeriodo = async (req, res) => {
             [IdPeriodo]
         );
 
-        if (procesos[0].count > 0) {
-            const error = new Error(
-                `No se puede eliminar el periodo porque tiene ${procesos[0].count} proceso(s) asociado(s). Elimina primero los procesos relacionados.`
-            );
+        const procesosCount = procesos[0].count;
+
+        // Si tiene procesos y NO es forzado, avisar al usuario
+        if (procesosCount > 0 && !force) {
             await connection.rollback();
-            return res.status(400).json({ error: error.message });
+            return res.status(400).json({ 
+                error: `No se puede eliminar el periodo porque tiene ${procesosCount} proceso(s) asociado(s).`,
+                canForceDelete: true,
+                procesosCount: procesosCount
+            });
         }
 
-        // Eliminar el periodo
-        const [results] = await connection.query("DELETE FROM periodos WHERE IdPeriodo = ?", [IdPeriodo]);
+        // 🔥 Si es forzado, eliminar en cascada
+        if (force && procesosCount > 0) {
+            // Primero eliminar documentos asociados a los procesos
+            await connection.query(
+                "DELETE FROM documentos WHERE id_proceso IN (SELECT id_proceso FROM proceso WHERE id_periodo = ?)",
+                [IdPeriodo]
+            );
+
+            // Luego eliminar los procesos
+            await connection.query(
+                "DELETE FROM proceso WHERE id_periodo = ?",
+                [IdPeriodo]
+            );
+        }
+
+        // Finalmente eliminar el periodo
+        const [results] = await connection.query(
+            "DELETE FROM periodos WHERE IdPeriodo = ?", 
+            [IdPeriodo]
+        );
         
         if (results.affectedRows === 0) {
             await connection.rollback();
@@ -120,7 +142,12 @@ const deletePeriodo = async (req, res) => {
         }
 
         await connection.commit();
-        res.status(200).json({ message: "Periodo eliminado correctamente" });
+        
+        res.status(200).json({ 
+            message: force 
+                ? `Periodo y ${procesosCount} proceso(s) eliminados correctamente`
+                : "Periodo eliminado correctamente"
+        });
     } catch (error) {
         await connection.rollback();
         console.error("Error al eliminar periodo:", error);
@@ -130,7 +157,7 @@ const deletePeriodo = async (req, res) => {
     }
 };
 
-// 🔐 SOLO ADMIN - Cambiar estado del periodo (ENDPOINT CRÍTICO)
+// 🔐 SOLO ADMIN - Cambiar estado del periodo
 const cambiarEstadoPeriodo = async (req, res) => {
     const { IdPeriodo } = req.params;
     const { nuevoEstado } = req.body;
@@ -157,19 +184,12 @@ const cambiarEstadoPeriodo = async (req, res) => {
 };
 
 // 🔒 RUTAS CON AUTENTICACIÓN Y AUTORIZACIÓN
-// ============================================
-
-// 👀 LECTURA (Autenticado) - Estudiante y Admin pueden ver
 router.get("/", authenticateToken, getPeriodos);
 router.get("/activo", authenticateToken, getPeriodoActivo);
 router.get("/:IdPeriodo", authenticateToken, getPeriodoById);
-
-// 🔐 ESCRITURA (Autenticación + requireAdmin) - Solo Admin puede modificar
 router.post("/", authenticateToken, requireAdmin, postPeriodo);
 router.put("/:IdPeriodo", authenticateToken, requireAdmin, updatePeriodo);
 router.delete("/:IdPeriodo", authenticateToken, requireAdmin, deletePeriodo);
-
-// 🚨 CRÍTICO: Cambiar estado del periodo (Solo Admin)
 router.patch("/:IdPeriodo/estado", authenticateToken, requireAdmin, cambiarEstadoPeriodo);
 
 export default router;
