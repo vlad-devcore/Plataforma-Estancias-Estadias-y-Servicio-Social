@@ -4,13 +4,16 @@ import { parse } from "csv-parse";
 import multer from "multer";
 import iconv from "iconv-lite";
 import { Readable } from "stream";
+// ✅ IMPORTS CORRECTOS - Usando los middlewares que SÍ existen
+import { authenticateToken, requireAdmin } from "../routes/authMiddleware.js";
 
 const router = express.Router();
 
-// Configuración de multer para procesar archivos en memoria
+// 🔒 Configuración de multer con límite de tamaño
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB máximo
   fileFilter: (req, file, cb) => {
     if (!file.originalname || !file.originalname.toLowerCase().endsWith(".csv")) {
       const error = new Error("Solo se permiten archivos CSV");
@@ -61,18 +64,29 @@ const normalizeText = (text) => {
     .trim();
 };
 
-// Generar RFC automáticamente basado en nombre con autoincremento global de 5 dígitos
-const generateRFC = async (nombre) => {
+// 🛠️ Generar RFC mejorado - usa el último RFC del mismo prefijo
+const generateRFC = async (nombre, connection) => {
   try {
     const nombrePrefix = normalizeText(nombre)
       .toUpperCase()
       .replace(/[^A-Z]/g, "")
       .slice(0, 3)
       .padEnd(3, "X");
-    const [nextIdResult] = await pool.query(
-      "SELECT AUTO_INCREMENT AS next_id FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'empresa'"
+    
+    // Obtener el último RFC similar para generar el siguiente número
+    const [lastRFC] = await connection.query(
+      "SELECT empresa_rfc FROM empresa WHERE empresa_rfc LIKE ? ORDER BY id_empresa DESC LIMIT 1",
+      [`${nombrePrefix}%`]
     );
-    const nextNumber = nextIdResult[0].next_id || 1;
+    
+    let nextNumber = 1;
+    if (lastRFC.length > 0) {
+      const lastNumber = parseInt(lastRFC[0].empresa_rfc.slice(-5));
+      if (!isNaN(lastNumber)) {
+        nextNumber = lastNumber + 1;
+      }
+    }
+    
     return `${nombrePrefix}${String(nextNumber).padStart(5, "0")}`;
   } catch (error) {
     const err = new Error("Error al generar RFC");
@@ -85,10 +99,10 @@ const generateRFC = async (nombre) => {
 const tamanosPermitidos = ["Grande", "Mediana", "Pequeña"];
 const sociedadesPermitidas = ["Privada", "Pública"];
 
-// Obtener todas las empresas
+// 👀 VISUALIZAR - Estudiante y Admin (solo requiere autenticación)
 const getEmpresas = async (req, res, next) => {
   try {
-    const [results] = await pool.query("SELECT * FROM empresa");
+    const [results] = await pool.query("SELECT * FROM empresa ORDER BY empresa_nombre");
     res.status(200).json(results || []);
   } catch (error) {
     const err = new Error("Error al obtener empresas");
@@ -98,7 +112,7 @@ const getEmpresas = async (req, res, next) => {
   }
 };
 
-// Obtener empresa por ID
+// 👀 VISUALIZAR - Estudiante y Admin (solo requiere autenticación)
 const getEmpresaById = async (req, res, next) => {
   const { id_empresa } = req.params;
   try {
@@ -117,7 +131,7 @@ const getEmpresaById = async (req, res, next) => {
   }
 };
 
-// Crear una nueva empresa
+// 🔐 SOLO ADMIN - Crear empresa
 const postEmpresa = async (req, res, next) => {
   const { empresa_nombre, empresa_direccion, empresa_email, empresa_telefono, empresa_tamano, empresa_sociedad, empresa_pagina_web } = req.body;
 
@@ -161,7 +175,7 @@ const postEmpresa = async (req, res, next) => {
       }
 
       // Generar RFC
-      const empresa_rfc = await generateRFC(empresa_nombre);
+      const empresa_rfc = await generateRFC(empresa_nombre, connection);
 
       // Insertar empresa
       const [results] = await connection.query(
@@ -196,7 +210,7 @@ const postEmpresa = async (req, res, next) => {
   }
 };
 
-// Actualizar una empresa
+// 🔐 SOLO ADMIN - Actualizar empresa
 const updateEmpresa = async (req, res, next) => {
   const { id_empresa } = req.params;
   const { empresa_nombre, empresa_direccion, empresa_email, empresa_telefono, empresa_tamano, empresa_sociedad, empresa_pagina_web } = req.body;
@@ -258,7 +272,7 @@ const updateEmpresa = async (req, res, next) => {
 
       // Generar nuevo RFC si el nombre cambió
       const new_rfc = currentEmpresa[0].empresa_nombre !== empresa_nombre
-        ? await generateRFC(empresa_nombre)
+        ? await generateRFC(empresa_nombre, connection)
         : currentEmpresa[0].empresa_rfc;
 
       // Actualizar empresa
@@ -301,26 +315,51 @@ const updateEmpresa = async (req, res, next) => {
   }
 };
 
-// Eliminar empresa
+// 🔐 SOLO ADMIN - Eliminar empresa (con validación referencial)
 const deleteEmpresa = async (req, res, next) => {
   const { id_empresa } = req.params;
+  
+  const connection = await pool.getConnection();
   try {
-    const [results] = await pool.query("DELETE FROM empresa WHERE id_empresa = ?", [id_empresa]);
+    await connection.beginTransaction();
+
+    // 🛡️ Verificar si tiene procesos asociados
+    const [procesos] = await connection.query(
+      "SELECT COUNT(*) as count FROM proceso WHERE id_empresa = ?", 
+      [id_empresa]
+    );
+
+    if (procesos[0].count > 0) {
+      const error = new Error(
+        `No se puede eliminar la empresa porque tiene ${procesos[0].count} proceso(s) asociado(s). Elimina primero los procesos relacionados.`
+      );
+      error.status = 400;
+      throw error;
+    }
+
+    // Eliminar la empresa
+    const [results] = await connection.query("DELETE FROM empresa WHERE id_empresa = ?", [id_empresa]);
+    
     if (results.affectedRows === 0) {
       const error = new Error("Empresa no encontrada");
       error.status = 404;
       throw error;
     }
+
+    await connection.commit();
     res.status(200).json({ message: "Empresa eliminada correctamente" });
   } catch (error) {
+    await connection.rollback();
     const err = error.status ? error : new Error("Error al eliminar empresa");
     err.status = error.status || 500;
     err.cause = error;
     next(err);
+  } finally {
+    connection.release();
   }
 };
 
-// Importar empresas desde CSV
+// 🔐 SOLO ADMIN - Importar empresas desde CSV (optimizado)
 const uploadEmpresas = async (req, res, next) => {
   if (!req.file) {
     const error = new Error("No se proporcionó un archivo CSV");
@@ -350,6 +389,9 @@ const uploadEmpresas = async (req, res, next) => {
   const utf8Buffer = iconv.encode(decodedBuffer, "utf8");
   const stream = Readable.from(utf8Buffer);
 
+  // 🔧 UNA SOLA CONEXIÓN para todo el proceso
+  const connection = await pool.getConnection();
+  
   try {
     const records = [];
     await new Promise((resolve, reject) => {
@@ -359,6 +401,8 @@ const uploadEmpresas = async (req, res, next) => {
         .on("end", resolve)
         .on("error", reject);
     });
+
+    await connection.beginTransaction();
 
     for (let rowIndex = 2; rowIndex <= records.length + 1; rowIndex++) {
       const record = records[rowIndex - 2];
@@ -401,20 +445,16 @@ const uploadEmpresas = async (req, res, next) => {
         continue;
       }
 
-      const connection = await pool.getConnection();
       try {
-        await connection.beginTransaction();
-
         // Verificar si el nombre ya existe
         const [existingEmpresa] = await connection.query("SELECT id_empresa FROM empresa WHERE empresa_nombre = ?", [empresa_nombre]);
         if (existingEmpresa.length > 0) {
           results.existingCount++;
-          await connection.rollback();
           continue;
         }
 
         // Generar RFC
-        const empresa_rfc = await generateRFC(empresa_nombre);
+        const empresa_rfc = await generateRFC(empresa_nombre, connection);
 
         // Insertar la empresa
         const [insertResult] = await connection.query(
@@ -433,36 +473,38 @@ const uploadEmpresas = async (req, res, next) => {
 
         if (insertResult.affectedRows === 1) {
           results.insertedCount++;
-          await connection.commit();
         } else {
           results.missingFieldsCount++;
-          await connection.rollback();
         }
       } catch (error) {
-        await connection.rollback();
         results.missingFieldsCount++;
         console.error(`Error en fila ${rowIndex}:`, error.message);
-      } finally {
-        connection.release();
       }
     }
 
+    await connection.commit();
     res.status(200).json(results);
   } catch (error) {
+    await connection.rollback();
     const err = new Error("Error al procesar el archivo CSV");
     err.status = 500;
     err.cause = error;
     next(err);
+  } finally {
+    connection.release();
   }
 };
 
-// Rutas
-router.get("/", getEmpresas);
-router.get("/:id_empresa", getEmpresaById);
-router.post("/", postEmpresa);
-router.put("/:id_empresa", updateEmpresa);
-router.delete("/:id_empresa", deleteEmpresa);
-router.post("/upload", upload.single("file"), uploadEmpresas);
+// 🔒 RUTAS CON AUTENTICACIÓN Y AUTORIZACIÓN CORRECTAS
+// 👀 Visualizar (solo autenticación) - Estudiante y Admin pueden ver
+router.get("/", authenticateToken, getEmpresas);
+router.get("/:id_empresa", authenticateToken, getEmpresaById);
+
+// 🔐 Modificar (autenticación + requireAdmin) - Solo Admin puede modificar
+router.post("/", authenticateToken, requireAdmin, postEmpresa);
+router.put("/:id_empresa", authenticateToken, requireAdmin, updateEmpresa);
+router.delete("/:id_empresa", authenticateToken, requireAdmin, deleteEmpresa);
+router.post("/upload", authenticateToken, requireAdmin, upload.single("file"), uploadEmpresas);
 
 // Exportar router y middleware
 export { router as default, errorHandler };
