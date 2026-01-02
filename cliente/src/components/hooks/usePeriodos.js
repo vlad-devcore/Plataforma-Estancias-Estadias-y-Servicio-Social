@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
-
-const API_URL = `${process.env.REACT_APP_API_ENDPOINT}/api/periodos`;
+import api from "../../axiosConfig"; // ✅ Instancia con interceptores y token
 
 const usePeriodos = () => {
   const [periodos, setPeriodos] = useState([]);
@@ -9,106 +7,117 @@ const usePeriodos = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  // Obtener todos los periodos
+  // ✅ Obtener todos los periodos
   const fetchPeriodos = async () => {
     setLoading(true);
     setError(null);
     setSuccess(null);
     try {
-      const response = await axios.get(API_URL);
+      const response = await api.get("/periodos"); // ✅ Ya incluye baseURL
       setPeriodos(response.data);
     } catch (err) {
       setError("Error al obtener los periodos");
+      console.error("Error fetchPeriodos:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Crear nuevo periodo
+  // ✅ Crear nuevo periodo
   const createPeriodo = async (nuevoPeriodo) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
     try {
-      const response = await axios.post(API_URL, nuevoPeriodo);
+      const response = await api.post("/periodos", nuevoPeriodo);
       setSuccess("Periodo creado con éxito.");
       await fetchPeriodos();
       return response.data;
     } catch (err) {
-      setError(err.response?.data?.error || "Error al crear el periodo.");
+      const mensaje = err.response?.data?.error || "Error al crear el periodo.";
+      setError(mensaje);
+      console.error("Error createPeriodo:", err);
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Actualizar periodo
+  // ✅ Actualizar periodo
   const updatePeriodo = async (id, datosActualizados) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
     try {
-      await axios.put(`${API_URL}/${id}`, datosActualizados);
+      await api.put(`/periodos/${id}`, datosActualizados);
       setSuccess("Periodo actualizado con éxito.");
       await fetchPeriodos();
     } catch (err) {
-      setError(err.response?.data?.error || "Error al actualizar el periodo.");
+      const mensaje = err.response?.data?.error || "Error al actualizar el periodo.";
+      setError(mensaje);
+      console.error("Error updatePeriodo:", err);
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Eliminar periodo
+  // ✅ Eliminar periodo
   const deletePeriodo = async (id) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
     try {
-      await axios.delete(`${API_URL}/${id}`);
+      await api.delete(`/periodos/${id}`);
       setSuccess("Periodo eliminado con éxito.");
       await fetchPeriodos();
     } catch (err) {
-      setError(err.response?.data?.error || "Error al eliminar el periodo.");
+      const mensaje = err.response?.data?.error || "Error al eliminar el periodo.";
+      setError(mensaje);
+      console.error("Error deletePeriodo:", err);
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Obtener un periodo por ID
+  // ✅ Obtener un periodo por ID
   const getPeriodoById = async (id) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
     try {
-      const response = await axios.get(`${API_URL}/${id}`);
+      const response = await api.get(`/periodos/${id}`);
       return response.data;
     } catch (err) {
-      setError(err.response?.data?.error || "Error al obtener el periodo.");
+      const mensaje = err.response?.data?.error || "Error al obtener el periodo.";
+      setError(mensaje);
+      console.error("Error getPeriodoById:", err);
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Obtener el periodo activo
+  // ✅ Obtener el periodo activo
   const getPeriodoActivo = async () => {
     setLoading(true);
     setError(null);
     setSuccess(null);
     try {
-      const response = await axios.get(`${API_URL}/activo`);
+      const response = await api.get("/periodos/activo");
       return response.data;
     } catch (err) {
-      setError(err.response?.data?.error || "Error al obtener el periodo activo.");
+      const mensaje = err.response?.data?.error || "Error al obtener el periodo activo.";
+      setError(mensaje);
+      console.error("Error getPeriodoActivo:", err);
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Limpiar mensajes de error y éxito
+  // ✅ Limpiar mensajes de error y éxito
   const resetMessages = () => {
     setError(null);
     setSuccess(null);
