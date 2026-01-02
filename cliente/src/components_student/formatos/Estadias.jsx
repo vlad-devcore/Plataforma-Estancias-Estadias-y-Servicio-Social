@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import PlantillaServicio from "../PlantillaServicio";
 import { FileText } from "lucide-react";
 import ModalRegistroProceso from "../../components/estudiante/ModalRegistroProceso";
-import axios from "axios";
+import api from "../../axiosConfig"; // ✅ CAMBIO CRÍTICO: Usar instancia con interceptores
 import TablaDocumentos from "../../components_student/TablaDocumentoss";
 
 const Estadias = () => {
@@ -25,17 +25,15 @@ const Estadias = () => {
     try {
       if (!user?.id) throw new Error("Usuario no autenticado");
 
-      // Obtener todos los periodos
-      const { data: periodos } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/periodos`);
+      // ✅ CORREGIDO: Obtener todos los periodos con autenticación
+      const { data: periodos } = await api.get("/periodos");
       const periodoActivo = periodos.find((p) => p.EstadoActivo === "Activo");
 
       // Determinar si el periodo ha expirado
       setPeriodoExpirado(!periodoActivo);
 
-      // Obtener estados de los formatos
-      const { data: formatos } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/documentosAdmin`
-      );
+      // ✅ CORREGIDO: Obtener estados de los formatos con autenticación
+      const { data: formatos } = await api.get("/documentosAdmin");
       const hayFormatosActivos = formatos.some((f) => f.estado === "Activo");
 
       // Si no hay periodo activo ni formatos manualmente activados, marcar todo como bloqueado
@@ -47,9 +45,8 @@ const Estadias = () => {
       const periodoId = periodoActivo?.IdPeriodo || (periodos.length > 0 ? periodos[periodos.length - 1].IdPeriodo : null);
       if (!periodoId) throw new Error("No hay periodos disponibles.");
 
-      const { data } = await axios.get(
-        `${process.env.REACT_APP_API_ENDPOINT}/api/procesos/validar/${user.id}/${periodoId}`
-      );
+      // ✅ CORREGIDO: Validar proceso con autenticación
+      const { data } = await api.get(`/procesos/validar/${user.id}/${periodoId}`);
       
       if (data.registrado) {
         if (data.proceso.tipo_proceso === "Estadía") {
@@ -121,7 +118,6 @@ const Estadias = () => {
             className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 flex justify-between items-center"
           >
             <span>{error}</span>
-            {/* Agregar botón para cerrar si quieres */}
           </motion.div>
         )}
 
