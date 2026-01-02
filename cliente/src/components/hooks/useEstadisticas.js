@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api'; // ✅ Ajusta la ruta según tu estructura
 
 const useEstadisticas = () => {
   const [estadisticas, setEstadisticas] = useState({
@@ -27,18 +27,21 @@ const useEstadisticas = () => {
       setLoading(true);
       setError(null);
       try {
-        // Obtener periodo activo
-        const { data: periodos } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/periodos`);
+        // ✅ Obtener periodo activo
+        const { data: periodos } = await api.get('/periodos');
         const periodoActivo = periodos.find((p) => p.EstadoActivo === 'Activo');
-        if (!periodoActivo) throw new Error('No hay periodo activo');
+        
+        if (!periodoActivo) {
+          throw new Error('No hay periodo activo');
+        }
 
-        // Obtener procesos
-        const { data: procesos } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos`);
+        // ✅ Obtener procesos
+        const { data: procesos } = await api.get('/procesos');
 
-        // Obtener total de usuarios
-        const { data: estudiantes } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/estudiantes`);
+        // ✅ Obtener total de usuarios
+        const { data: estudiantes } = await api.get('/estudiantes');
 
-        // Calcular estadísticas
+        // 📊 Calcular estadísticas
         const tiposProceso = [
           'Estancia I',
           'Estancia II',
@@ -64,31 +67,54 @@ const useEstadisticas = () => {
           EstadiaNacional: 0,
         };
 
-        // Contar procesos por tipo
+        // 🔢 Contar procesos por tipo
         procesos.forEach((proceso) => {
           const tipo = proceso.tipo_proceso;
+          
           if (tipo && tiposProceso.includes(tipo)) {
+            // Normalizar nombre del tipo para usar como clave
             let clave = tipo
-              .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-              .replace('Estancia I', 'EstanciaI')
-              .replace('Estancia II', 'EstanciaII')
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .replace(/\s+/g, '')
+              .replace('EstanciaI', 'EstanciaI')
+              .replace('EstanciaII', 'EstanciaII')
               .replace('Estadia', 'Estadia')
-              .replace('Servicio Social', 'ServicioSocial')
-              .replace('Estadia Nacional', 'EstadiaNacional');
+              .replace('ServicioSocial', 'ServicioSocial')
+              .replace('EstadiaNacional', 'EstadiaNacional');
 
-            globales[clave] += 1;
+            // Mapeo manual para asegurar claves correctas
+            const mapeoTipos = {
+              'EstanciaI': 'EstanciaI',
+              'EstanciaII': 'EstanciaII',
+              'Estadia': 'Estadia',
+              'ServicioSocial': 'ServicioSocial',
+              'EstadiaNacional': 'EstadiaNacional',
+            };
 
+            clave = mapeoTipos[clave] || clave;
+
+            // Incrementar contador global
+            if (globales.hasOwnProperty(clave)) {
+              globales[clave] += 1;
+            }
+
+            // Incrementar contador del periodo actual
             const idPeriodoProc = Number(proceso.id_periodo);
             const idPeriodoActivo = Number(periodoActivo.IdPeriodo);
-            if (idPeriodoProc === idPeriodoActivo) {
+            
+            if (idPeriodoProc === idPeriodoActivo && periodoActual.hasOwnProperty(clave)) {
               periodoActual[clave] += 1;
             }
           }
         });
 
         setEstadisticas({ periodoActual, globales });
+        
       } catch (err) {
-        setError(err.response?.data?.error || 'Error al obtener estadísticas');
+        const mensaje = err.response?.data?.error || err.message || 'Error al obtener estadísticas';
+        setError(mensaje);
+        console.error('Error fetchEstadisticas:', err);
       } finally {
         setLoading(false);
       }
