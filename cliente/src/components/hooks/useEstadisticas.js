@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../services/api'; // ✅ Ajusta la ruta según tu estructura
+import api from "../../axiosConfig"; // ✅ Ruta correcta confirmada
 
 const useEstadisticas = () => {
   const [estadisticas, setEstadisticas] = useState({
