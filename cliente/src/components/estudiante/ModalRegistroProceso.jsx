@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import axios from "axios";
+import api from "../../axiosConfig";
 import useEmpresas from "../hooks/useEmpresas";
 import useAsesoresAcademicos from "../hooks/useAsesoresAcademicos";
 import { motion, AnimatePresence } from "framer-motion";
@@ -105,21 +105,21 @@ const ModalRegistroProceso = ({ open, onClose, onSuccess, tipoProceso, procesoEx
     setLoading(true);
     try {
       if (procesoExistente) {
-        await axios.put(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos/${procesoExistente.id_proceso}`, {
+        await api.put(`/procesos/${procesoExistente.id_proceso}`, {
           id_empresa: form.empresa,
           id_asesor_academico: form.asesorAcademico,
           tipo_proceso: tipoProceso,
         });
       } else {
-        const { data: periodos } = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/api/periodos`);
+        const { data: periodos } = await api.get("/periodos");
         const periodoActivo = periodos.find((p) => p.EstadoActivo === "Activo");
         if (!periodoActivo) throw new Error("No hay periodo activo");
 
-        await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/api/procesos`, {
+        await api.post("/procesos", {
           id_user: user.id,
           id_empresa: form.empresa,
           id_asesor_academico: form.asesorAcademico,
-          id_programa: user.id_programa,
+          id_programa: user.id_programa || 1,
           tipo_proceso: tipoProceso,
           id_periodo: periodoActivo.IdPeriodo,
         });

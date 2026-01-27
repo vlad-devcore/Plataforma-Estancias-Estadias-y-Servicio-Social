@@ -22,7 +22,7 @@ import chatbotRouter from "./routes/chatbot.js";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.SERVER_PORT;
+const PORT = process.env.SERVER_PORT || 3000;
 
 // __dirname para ES Modules
 const __filename = fileURLToPath(import.meta.url);

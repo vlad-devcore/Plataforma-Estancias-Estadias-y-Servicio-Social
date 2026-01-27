@@ -10,3 +10,17 @@ cliente/.env
 
 
 Servidor/chatbot_data.db
+
+# Variables de entorno sensibles
+Servidor/.env
+cliente/.env
+cliente/.env.local
+cliente/.env.production
+
+# Backups
+*.backup
+*.bak*
+backup-*.tar.gz
+
+# Uploads de usuarios
+Servidor/public/Uploads/
